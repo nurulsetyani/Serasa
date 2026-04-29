@@ -5,11 +5,28 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Home, Clock, ChefHat, CheckCircle, Package } from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
+import { IS_MOCK_MODE } from '@/lib/mock-data'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, getStatusStep, formatTime } from '@/lib/utils'
 import StatusBadge from '@/components/StatusBadge'
 import ReviewModal from '@/components/ReviewModal'
 import { TranslationKey } from '@/lib/i18n'
+
+const MOCK_ORDER: Order = {
+  id: 'mock-preview-order',
+  restaurant_id: '550e8400-e29b-41d4-a716-446655440000',
+  table_number: '5',
+  customer_name: 'Preview User',
+  status: 'cooking',
+  total_price: 82,
+  notes: '',
+  created_at: new Date().toISOString(),
+  order_items: [
+    { id: 'oi-1', order_id: 'mock-preview-order', menu_id: 'mock-1', name: 'Mie Goreng Ayam', price: 25, qty: 1 },
+    { id: 'oi-2', order_id: 'mock-preview-order', menu_id: 'mock-5', name: 'Rendang Sapi', price: 35, qty: 1 },
+    { id: 'oi-3', order_id: 'mock-preview-order', menu_id: 'mock-9', name: 'Es Cendol', price: 12, qty: 1 },
+  ],
+}
 
 const STATUS_STEPS: { status: OrderStatus; icon: React.ElementType; descKey: TranslationKey }[] = [
   { status: 'pending',   icon: Clock,        descKey: 'pendingDesc' },
@@ -32,6 +49,13 @@ export default function OrderTrackingPage() {
 
   useEffect(() => {
     async function fetchOrder() {
+      // Mock mode: show a fake order for preview
+      if (IS_MOCK_MODE || id === 'mock-preview-order') {
+        setOrder({ ...MOCK_ORDER, table_number: params.get('table') ?? '5' })
+        setLoading(false)
+        return
+      }
+
       const res = await fetch(`/api/order/${id}`)
       if (res.ok) {
         const data = await res.json()
@@ -40,6 +64,8 @@ export default function OrderTrackingPage() {
       setLoading(false)
     }
     fetchOrder()
+
+    if (IS_MOCK_MODE || id === 'mock-preview-order') return
 
     // Real-time subscription
     const channel = supabase

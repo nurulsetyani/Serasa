@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
 import { getItemName } from '@/lib/i18n'
+import { IS_MOCK_MODE } from '@/lib/mock-data'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -31,6 +32,14 @@ export default function CheckoutPage() {
     setError('')
 
     try {
+      // Mock mode: simulate order without Supabase
+      if (IS_MOCK_MODE) {
+        await new Promise(r => setTimeout(r, 1200))
+        clearCart()
+        router.push(`/order/mock-preview-order?table=${tableNumber}`)
+        return
+      }
+
       const res = await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

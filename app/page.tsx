@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { ShoppingCart, Search, X, ChevronDown } from 'lucide-react'
 import { MenuItem } from '@/types'
 import { supabase } from '@/lib/supabase'
+import { MOCK_MENU, IS_MOCK_MODE } from '@/lib/mock-data'
 import { useLang } from '@/context/LanguageContext'
 import { useCart } from '@/context/CartContext'
 import { getItemName } from '@/lib/i18n'
@@ -44,10 +45,18 @@ export default function MenuPage() {
     setPromo(getTimeBasedPromo())
   }, [setPromo])
 
-  // Fetch menu
+  // Fetch menu (mock or Supabase)
   useEffect(() => {
     async function fetchMenu() {
       setLoading(true)
+
+      if (IS_MOCK_MODE) {
+        setMenu(MOCK_MENU)
+        setDrinkOptions(MOCK_MENU.filter(i => i.category === 'drinks'))
+        setLoading(false)
+        return
+      }
+
       const { data, error } = await supabase
         .from('menu')
         .select('*')
