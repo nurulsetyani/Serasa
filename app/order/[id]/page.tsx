@@ -71,7 +71,7 @@ export default function OrderTrackingPage() {
 
     if (IS_MOCK_MODE || id === 'mock-preview-order') return
 
-    // Real-time subscription
+    // Realtime subscription
     const channel = supabase
       .channel(`order-${id}`)
       .on(
@@ -83,7 +83,19 @@ export default function OrderTrackingPage() {
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    // Polling fallback every 5s (in case realtime not enabled)
+    const poll = setInterval(async () => {
+      const res = await fetch(`/api/order/${id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setOrder(data)
+      }
+    }, 5000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(poll)
+    }
   }, [id])
 
   // Trigger review modal on delivery
