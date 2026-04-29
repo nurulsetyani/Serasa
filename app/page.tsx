@@ -13,6 +13,7 @@ import { useCart } from '@/context/CartContext'
 import { getItemName, getItemDescription, TranslationKey } from '@/lib/i18n'
 import { formatPrice, calculateCartTotal, getTimeBasedPromo } from '@/lib/utils'
 import LanguageToggle from '@/components/LanguageToggle'
+import LanguageModal from '@/components/LanguageModal'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
@@ -121,6 +122,15 @@ export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
+  const [showLangModal, setShowLangModal] = useState(false)
+
+  // Show language picker on first visit
+  useEffect(() => {
+    try {
+      const picked = localStorage.getItem('serasa_lang_picked')
+      if (!picked) setShowLangModal(true)
+    } catch {}
+  }, [])
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -159,6 +169,7 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-dvh bg-[#0D0D0D]" dir={isRTL ? 'rtl' : 'ltr'}>
+      {showLangModal && <LanguageModal onClose={() => setShowLangModal(false)} />}
       {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-20 right-0 w-80 h-80 rounded-full bg-[#D4AF37]/6 blur-[100px]" />

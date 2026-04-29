@@ -161,28 +161,30 @@ export default function MenuDetailPage() {
           <p className="text-[#888] text-sm leading-relaxed mb-5 border-b border-white/5 pb-5">{desc}</p>
         )}
 
-        {/* Spicy level */}
-        <div className="mb-5">
-          <p className="text-white font-semibold text-sm mb-3">
-            {lang === 'ar' ? 'مستوى الحرارة' : lang === 'id' ? 'Tingkat Kepedasan' : 'Spicy Level'}
-          </p>
-          <div className="flex gap-2 flex-wrap">
-            {SPICY_LEVELS.map(s => (
-              <button
-                key={s.key}
-                onClick={() => setSpicy(s.key)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${
-                  spicy === s.key
-                    ? 'bg-[#D4AF37]/15 border-[#D4AF37] text-[#D4AF37]'
-                    : 'bg-[#1A1A1A] border-white/8 text-[#666] hover:border-white/20'
-                }`}
-              >
-                <span>{s.emoji}</span>
-                <span>{lang === 'ar' ? s.labelAr : lang === 'id' ? s.label : s.labelEn}</span>
-              </button>
-            ))}
+        {/* Spicy level — hidden for drinks */}
+        {item.category !== 'drinks' && (
+          <div className="mb-5">
+            <p className="text-white font-semibold text-sm mb-3">
+              {lang === 'ar' ? 'مستوى الحرارة' : lang === 'id' ? 'Tingkat Kepedasan' : 'Spicy Level'}
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {SPICY_LEVELS.map(s => (
+                <button
+                  key={s.key}
+                  onClick={() => setSpicy(s.key)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${
+                    spicy === s.key
+                      ? 'bg-[#D4AF37]/15 border-[#D4AF37] text-[#D4AF37]'
+                      : 'bg-[#1A1A1A] border-white/8 text-[#666] hover:border-white/20'
+                  }`}
+                >
+                  <span>{s.emoji}</span>
+                  <span>{lang === 'ar' ? s.labelAr : lang === 'id' ? s.label : s.labelEn}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Divider */}
         <div className="h-px bg-white/5 mb-5" />
