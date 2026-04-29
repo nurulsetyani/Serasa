@@ -55,7 +55,7 @@ export default function OrderTrackingPage() {
     async function fetchOrder() {
       // Mock mode: show a fake order for preview
       if (IS_MOCK_MODE || id === 'mock-preview-order') {
-        setOrder({ ...MOCK_ORDER, table_number: params.get('table') ?? '5' })
+        setOrder({ ...MOCK_ORDER, table_number: new URLSearchParams(window.location.search).get('table') ?? '5' })
         setLoading(false)
         return
       }
