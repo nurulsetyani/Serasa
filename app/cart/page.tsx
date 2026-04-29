@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
@@ -8,7 +9,7 @@ import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
 import { getItemName } from '@/lib/i18n'
 
-export default function CartPage() {
+function CartContent() {
   const router = useRouter()
   const params = useSearchParams()
   const tableNumber = params.get('table') ?? '1'
@@ -136,5 +137,13 @@ export default function CartPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+export default function CartPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-obsidian flex items-center justify-center"><div className="text-gold text-4xl animate-spin">⟳</div></div>}>
+      <CartContent />
+    </Suspense>
   )
 }

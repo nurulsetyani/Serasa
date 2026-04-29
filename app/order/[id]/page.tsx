@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Home, Clock, ChefHat, CheckCircle, Package } from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
@@ -35,7 +35,7 @@ const STATUS_STEPS: { status: OrderStatus; icon: React.ElementType; descKey: Tra
   { status: 'delivered', icon: CheckCircle,  descKey: 'deliveredDesc' },
 ]
 
-export default function OrderTrackingPage() {
+function OrderTrackingContent() {
   const { id } = useParams<{ id: string }>()
   const params = useSearchParams()
   const tableNumber = params.get('table') ?? '1'
@@ -216,5 +216,13 @@ export default function OrderTrackingPage() {
         <ReviewModal orderId={id} onClose={() => setShowReview(false)} />
       )}
     </div>
+  )
+}
+
+export default function OrderTrackingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-obsidian flex items-center justify-center"><div className="text-gold text-4xl animate-spin">⟳</div></div>}>
+      <OrderTrackingContent />
+    </Suspense>
   )
 }
