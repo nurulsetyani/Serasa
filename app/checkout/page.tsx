@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, User, FileText, MapPin, CheckCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
@@ -9,10 +9,14 @@ import { formatPrice, calculateCartTotal } from '@/lib/utils'
 import { getItemName } from '@/lib/i18n'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 
-function CheckoutContent() {
+export default function CheckoutPage() {
   const router = useRouter()
-  const params = useSearchParams()
-  const tableNumber = params.get('table') ?? '1'
+  const [tableNumber, setTableNumber] = useState('1')
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    setTableNumber(p.get('table') ?? '1')
+  }, [])
   const { lang, t, isRTL } = useLang()
   const { items, promoDiscount, clearCart } = useCart()
 
@@ -177,13 +181,5 @@ function CheckoutContent() {
         </button>
       </div>
     </div>
-  )
-}
-
-export default function CheckoutPage() {
-  return (
-    <Suspense fallback={<div className="min-h-dvh bg-obsidian flex items-center justify-center"><div className="text-gold text-4xl animate-spin">⟳</div></div>}>
-      <CheckoutContent />
-    </Suspense>
   )
 }

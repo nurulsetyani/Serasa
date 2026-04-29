@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { ShoppingCart, Search, X, ChevronDown } from 'lucide-react'
 import { MenuItem } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -24,10 +24,14 @@ const CATEGORIES = [
   { key: 'snacks', labelKey: 'snacks' as const,   icon: '🥙' },
 ]
 
-function MenuContent() {
+export default function MenuPage() {
   const router = useRouter()
-  const params = useSearchParams()
-  const tableNumber = params.get('table') ?? '1'
+  const [tableNumber, setTableNumber] = useState('1')
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    setTableNumber(p.get('table') ?? '1')
+  }, [])
   const { lang, t, isRTL } = useLang()
   const { items: cartItems, addItem, setPromo, totalItems } = useCart()
 
@@ -261,17 +265,5 @@ function MenuContent() {
         </div>
       )}
     </div>
-  )
-}
-
-export default function MenuPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-dvh bg-obsidian flex items-center justify-center">
-        <div className="text-gold text-4xl animate-spin">⟳</div>
-      </div>
-    }>
-      <MenuContent />
-    </Suspense>
   )
 }

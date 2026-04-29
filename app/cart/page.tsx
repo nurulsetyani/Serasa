@@ -1,7 +1,7 @@
 'use client'
 
-import { Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
@@ -9,10 +9,14 @@ import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
 import { getItemName } from '@/lib/i18n'
 
-function CartContent() {
+export default function CartPage() {
   const router = useRouter()
-  const params = useSearchParams()
-  const tableNumber = params.get('table') ?? '1'
+  const [tableNumber, setTableNumber] = useState('1')
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    setTableNumber(p.get('table') ?? '1')
+  }, [])
   const { lang, t, isRTL } = useLang()
   const { items, removeItem, updateQty, promoDiscount } = useCart()
 
@@ -137,13 +141,5 @@ function CartContent() {
         </button>
       </div>
     </div>
-  )
-}
-
-export default function CartPage() {
-  return (
-    <Suspense fallback={<div className="min-h-dvh bg-obsidian flex items-center justify-center"><div className="text-gold text-4xl animate-spin">⟳</div></div>}>
-      <CartContent />
-    </Suspense>
   )
 }
