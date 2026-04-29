@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, DM_Sans, Noto_Naskh_Arabic } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/context/CartContext'
@@ -27,8 +27,13 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
 export const metadata: Metadata = {
   title: 'Serasa — Indonesian Restaurant',
   description: 'Authentic Indonesian cuisine in the heart of Saudi Arabia. Order via QR.',
+}
+
+export const viewport: Viewport = {
   themeColor: '#0D0D0D',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
