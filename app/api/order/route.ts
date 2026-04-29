@@ -27,7 +27,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order must have at least one item' }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    let supabase: ReturnType<typeof createAdminClient>
+    try {
+      supabase = createAdminClient()
+    } catch {
+      return NextResponse.json({ error: 'Database not configured yet' }, { status: 503 })
+    }
 
     // Create the order
     const { data: order, error: orderError } = await supabase

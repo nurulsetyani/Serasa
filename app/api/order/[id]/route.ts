@@ -4,20 +4,29 @@ import { OrderStatus } from '@/types'
 
 const VALID_STATUSES: OrderStatus[] = ['pending', 'cooking', 'ready', 'delivered']
 
+function getClient() {
+  try {
+    return { client: createAdminClient(), error: null }
+  } catch {
+    return { client: null, error: 'Database not configured yet' }
+  }
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createAdminClient()
+    const { client, error } = getClient()
+    if (!client) return NextResponse.json({ error }, { status: 503 })
 
-    const { data, error } = await supabase
+    const { data, error: dbError } = await client
       .from('orders')
       .select('*, order_items(*)')
       .eq('id', params.id)
       .single()
 
-    if (error || !data) {
+    if (dbError || !data) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
@@ -40,16 +49,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const { client, error } = getClient()
+    if (!client) return NextResponse.json({ error }, { status: 503 })
 
-    const { data, error } = await supabase
+    const { data, error: dbError } = await client
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', params.id)
       .select()
       .single()
 
-    if (error || !data) {
+    if (dbError || !data) {
       return NextResponse.json({ error: 'Order not found or update failed' }, { status: 404 })
     }
 

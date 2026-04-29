@@ -13,7 +13,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Rating must be between 1 and 5' }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    let supabase: ReturnType<typeof createAdminClient>
+    try {
+      supabase = createAdminClient()
+    } catch {
+      return NextResponse.json({ error: 'Database not configured yet' }, { status: 503 })
+    }
 
     // Verify order exists and is delivered
     const { data: order } = await supabase
