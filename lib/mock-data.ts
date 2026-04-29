@@ -163,4 +163,12 @@ export const MOCK_MENU: MenuItem[] = [
   },
 ]
 
-export const IS_MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
+// Auto-enable mock mode if:
+// 1. Explicitly set via env var, OR
+// 2. Supabase URL is missing/placeholder (no real DB configured)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+export const IS_MOCK_MODE =
+  process.env.NEXT_PUBLIC_MOCK_MODE === 'true' ||
+  !supabaseUrl ||
+  supabaseUrl.includes('placeholder') ||
+  !supabaseUrl.startsWith('https://')

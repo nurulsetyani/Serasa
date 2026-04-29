@@ -4,9 +4,32 @@ import { useEffect, useState, useCallback } from 'react'
 import { Clock, ChefHat, CheckCircle, RefreshCw } from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
+import { IS_MOCK_MODE } from '@/lib/mock-data'
 import { formatTime } from '@/lib/utils'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
+
+const MOCK_KITCHEN_ORDERS: Order[] = [
+  {
+    id: 'demo-1', restaurant_id: RESTAURANT_ID, table_number: '3',
+    customer_name: 'Ahmad', status: 'pending', total_price: 60,
+    created_at: new Date().toISOString(),
+    order_items: [
+      { id: 'i1', order_id: 'demo-1', menu_id: 'm1', name: 'Mie Goreng Ayam', price: 25, qty: 1 },
+      { id: 'i2', order_id: 'demo-1', menu_id: 'm5', name: 'Rendang Sapi', price: 35, qty: 1 },
+    ],
+  },
+  {
+    id: 'demo-2', restaurant_id: RESTAURANT_ID, table_number: '5',
+    customer_name: 'Fatimah', status: 'cooking', total_price: 50,
+    notes: 'Tidak pedas',
+    created_at: new Date(Date.now() - 8 * 60000).toISOString(),
+    order_items: [
+      { id: 'i3', order_id: 'demo-2', menu_id: 'm3', name: 'Nasi Goreng Spesial', price: 22, qty: 2 },
+      { id: 'i4', order_id: 'demo-2', menu_id: 'm9', name: 'Es Cendol', price: 12, qty: 2 },
+    ],
+  },
+]
 
 function ElapsedTimer({ createdAt }: { createdAt: string }) {
   const [elapsed, setElapsed] = useState(0)
@@ -36,6 +59,11 @@ export default function KitchenPage() {
   const [notification, setNotification] = useState<string | null>(null)
 
   const fetchOrders = useCallback(async () => {
+    if (IS_MOCK_MODE) {
+      setOrders(MOCK_KITCHEN_ORDERS)
+      setLoading(false)
+      return
+    }
     const { data } = await supabase
       .from('orders')
       .select('*, order_items(*)')
