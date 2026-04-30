@@ -250,8 +250,7 @@ export default function MenuPage() {
         </div>
 
         {/* Category tabs */}
-        <div className="w-full overflow-hidden px-4 pb-3">
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
           {CATEGORIES.map((cat, i) => (
             <button
               key={cat.key}
@@ -267,7 +266,6 @@ export default function MenuPage() {
               <span>{t(cat.labelKey)}</span>
             </button>
           ))}
-        </div>
         </div>
       </header>
 
