@@ -2,14 +2,33 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { RefreshCw, FileText, Printer, X, UtensilsCrossed } from 'lucide-react'
+import {
+  RefreshCw, FileText, Printer, X, UtensilsCrossed,
+  ClipboardList, ChefHat, BarChart3, Clock, CheckCircle2,
+  Flame, CircleCheck, TrendingUp, ShoppingBag, AlertCircle,
+  Bell
+} from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, formatTime } from '@/lib/utils'
-import StatusBadge from '@/components/StatusBadge'
 
+// ── Design tokens ────────────────────────────────────────────
+const C = {
+  bg:       '#0F1115',
+  card:     '#171A21',
+  border:   '#23262F',
+  accent:   '#F5B041',
+  text:     '#FFFFFF',
+  muted:    '#A1A1AA',
+  success:  '#22C55E',
+  warning:  '#F59E0B',
+  danger:   '#EF4444',
+  sidebar:  '#13161C',
+}
+
+// ── Constants ────────────────────────────────────────────────
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
 const MOCK_ORDERS: Order[] = [
@@ -29,13 +48,12 @@ const MOCK_ORDERS: Order[] = [
     order_items: [
       { id: 'i3', order_id: 'demo-2', menu_id: 'm3', name: 'Nasi Goreng Spesial', price: 22, qty: 1 },
       { id: 'i4', order_id: 'demo-2', menu_id: 'm9', name: 'Es Cendol', price: 12, qty: 1 },
-      { id: 'i5', order_id: 'demo-2', menu_id: 'm10', name: 'Es Teh Manis', price: 8, qty: 1 },
       { id: 'i5b', order_id: 'demo-2', menu_id: 'm6', name: 'Sate Ayam Madura', price: 28, qty: 1 },
     ],
   },
   {
     id: 'demo-3', restaurant_id: RESTAURANT_ID, table_number: '1',
-    customer_name: 'Yusuf', status: 'ready', total_price: 40,
+    customer_name: 'Yusuf', status: 'ready', total_price: 43,
     created_at: new Date(Date.now() - 20 * 60000).toISOString(),
     order_items: [
       { id: 'i6', order_id: 'demo-3', menu_id: 'm6', name: 'Sate Ayam Madura', price: 28, qty: 1 },
@@ -44,33 +62,99 @@ const MOCK_ORDERS: Order[] = [
   },
 ]
 
-const STATUS_FILTERS: { value: string; label: string; color: string }[] = [
-  { value: 'all',       label: 'All',       color: 'border-ink-muted text-ink-muted' },
-  { value: 'pending',   label: 'Pending',   color: 'border-yellow-500 text-yellow-400' },
-  { value: 'cooking',   label: 'Cooking',   color: 'border-red-500 text-red-400' },
-  { value: 'ready',     label: 'Ready',     color: 'border-green-500 text-green-400' },
-  { value: 'delivered', label: 'Delivered', color: 'border-purple-500 text-purple-400' },
-]
-
 const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
-  pending: 'cooking',
-  cooking: 'ready',
-  ready: 'delivered',
-  delivered: null,
+  pending: 'cooking', cooking: 'ready', ready: 'delivered', delivered: null,
 }
 
-const STATUS_BUTTON: Record<OrderStatus, { label: string; class: string }> = {
-  pending:   { label: '🔥 Start Cooking', class: 'bg-red-500/90 hover:bg-red-500 text-white' },
-  cooking:   { label: '✅ Mark Ready',    class: 'bg-green-500/90 hover:bg-green-500 text-white' },
-  ready:     { label: '🎉 Mark Delivered', class: 'bg-purple-500/90 hover:bg-purple-500 text-white' },
-  delivered: { label: '',                  class: '' },
+const STATUS_CONFIG: Record<OrderStatus, {
+  label: string; dot: string; badge: string; btnLabel: string; btnClass: string; icon: React.ElementType
+}> = {
+  pending:   { label: 'Pending',   dot: 'bg-[#F59E0B]', badge: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20', btnLabel: 'Start Cooking', btnClass: 'bg-[#EF4444] hover:bg-[#DC2626] text-white', icon: Clock },
+  cooking:   { label: 'Cooking',   dot: 'bg-[#EF4444]', badge: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20', btnLabel: 'Mark Ready',    btnClass: 'bg-[#22C55E] hover:bg-[#16A34A] text-white', icon: Flame },
+  ready:     { label: 'Ready',     dot: 'bg-[#22C55E]', badge: 'bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/20', btnLabel: 'Mark Delivered', btnClass: 'bg-[#6366F1] hover:bg-[#4F46E5] text-white', icon: CircleCheck },
+  delivered: { label: 'Delivered', dot: 'bg-[#6366F1]', badge: 'bg-[#6366F1]/10 text-[#6366F1] border-[#6366F1]/20', btnLabel: '',             btnClass: '', icon: CheckCircle2 },
 }
 
+// ── Sub-components ───────────────────────────────────────────
+function StatusBadge({ status }: { status: OrderStatus }) {
+  const cfg = STATUS_CONFIG[status]
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border ${cfg.badge}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  )
+}
+
+function StatCard({ icon: Icon, label, value, sub, color }: {
+  icon: React.ElementType; label: string; value: string | number; sub?: string; color: string
+}) {
+  return (
+    <div className="rounded-xl p-4 border flex flex-col gap-3 transition-all duration-200 hover:border-[#2D303A]"
+      style={{ background: C.card, borderColor: C.border }}>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium" style={{ color: C.muted }}>{label}</span>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}15` }}>
+          <Icon size={16} style={{ color }} />
+        </div>
+      </div>
+      <div>
+        <p className="text-2xl font-semibold tracking-tight" style={{ color: C.text }}>{value}</p>
+        {sub && <p className="text-xs mt-0.5" style={{ color: C.muted }}>{sub}</p>}
+      </div>
+    </div>
+  )
+}
+
+function SidebarItem({ icon: Icon, label, active, onClick }: {
+  icon: React.ElementType; label: string; active?: boolean; onClick?: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-left relative group"
+      style={{
+        background: active ? '#1C1F26' : 'transparent',
+        color: active ? C.text : C.muted,
+      }}
+    >
+      {active && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
+          style={{ background: C.accent }} />
+      )}
+      <Icon size={16} className="flex-shrink-0" />
+      {label}
+    </button>
+  )
+}
+
+function FilterTab({ label, count, active, onClick }: {
+  label: string; count: number; active: boolean; onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all duration-150 border"
+      style={active
+        ? { background: C.accent, color: '#000', borderColor: C.accent }
+        : { background: 'transparent', color: C.muted, borderColor: C.border }
+      }
+    >
+      {label}
+      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+        style={{ background: active ? 'rgba(0,0,0,0.15)' : '#1C1F26', color: 'inherit' }}>
+        {count}
+      </span>
+    </button>
+  )
+}
+
+// ── Report Modal ─────────────────────────────────────────────
 function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void }) {
   const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
   const [period, setPeriod] = useState<'today' | 'week' | 'month'>('today')
-
   const now = new Date()
+
   const filtered = orders.filter(o => {
     const d = new Date(o.created_at)
     if (period === 'today') return d.toDateString() === now.toDateString()
@@ -82,7 +166,6 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
   const delivered = filtered.filter(o => o.status === 'delivered').length
   const avgOrder = filtered.length ? totalRevenue / filtered.length : 0
 
-  // Count popular items
   const itemCount: Record<string, { name: string; qty: number }> = {}
   filtered.forEach(o => {
     o.order_items?.forEach(i => {
@@ -91,83 +174,74 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
     })
   })
   const topItems = Object.values(itemCount).sort((a, b) => b.qty - a.qty).slice(0, 5)
-
   const periodLabel = { today: 'Hari Ini', week: '7 Hari Terakhir', month: 'Bulan Ini' }[period]
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-start justify-center overflow-auto p-4">
-      <div className="w-full max-w-2xl bg-[#1A1A1A] rounded-2xl border border-[#D4AF37]/20 my-4">
-        {/* Modal header */}
-        <div className="flex items-center justify-between p-5 border-b border-white/5 no-print">
-          <div className="flex items-center gap-3">
-            <FileText size={20} className="text-[#D4AF37]" />
-            <h2 className="font-display text-white font-bold text-lg">Laporan Penjualan</h2>
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center overflow-auto p-4">
+      <div className="w-full max-w-2xl rounded-xl border my-4 overflow-hidden"
+        style={{ background: C.card, borderColor: C.border }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b no-print" style={{ borderColor: C.border }}>
+          <div className="flex items-center gap-2.5">
+            <FileText size={18} style={{ color: C.accent }} />
+            <span className="font-semibold text-base" style={{ color: C.text }}>Laporan Penjualan</span>
           </div>
           <div className="flex items-center gap-2">
-            {/* Period filter */}
-            <div className="flex gap-1 bg-[#0D0D0D] rounded-xl p-1">
+            <div className="flex gap-1 p-1 rounded-lg" style={{ background: C.bg }}>
               {(['today', 'week', 'month'] as const).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    period === p ? 'bg-[#D4AF37] text-[#0D0D0D]' : 'text-[#666] hover:text-white'
-                  }`}
-                >
+                <button key={p} onClick={() => setPeriod(p)}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                  style={period === p ? { background: C.accent, color: '#000' } : { color: C.muted }}>
                   {{ today: 'Hari Ini', week: 'Minggu', month: 'Bulan' }[p]}
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-1.5 bg-[#D4AF37] text-[#0D0D0D] px-3 py-2 rounded-xl text-xs font-bold"
-            >
-              <Printer size={14} /> Print / PDF
+            <button onClick={() => window.print()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: C.accent, color: '#000' }}>
+              <Printer size={13} /> Print
             </button>
-            <button onClick={onClose} className="text-[#666] hover:text-white p-1">
-              <X size={18} />
+            <button onClick={onClose} className="p-1.5 rounded-lg transition-colors hover:bg-white/5"
+              style={{ color: C.muted }}>
+              <X size={16} />
             </button>
           </div>
         </div>
 
-        {/* Report content */}
-        <div id="report-content" className="p-6">
-          {/* Report header */}
-          <div className="text-center mb-6 pb-4 border-b border-[#D4AF37]/20">
-            <h1 className="font-display text-2xl font-bold text-[#D4AF37] mb-1">Serasa Restaurant</h1>
-            <p className="text-[#888] text-sm">Laporan Penjualan — {periodLabel}</p>
-            <p className="text-[#555] text-xs mt-1">Dicetak: {today}</p>
+        <div id="report-content" className="p-6 space-y-6">
+          {/* Title */}
+          <div className="text-center pb-4 border-b" style={{ borderColor: C.border }}>
+            <p className="text-xl font-semibold" style={{ color: C.accent }}>Serasa Restaurant</p>
+            <p className="text-sm mt-1" style={{ color: C.muted }}>Laporan Penjualan — {periodLabel}</p>
+            <p className="text-xs mt-0.5" style={{ color: C.muted }}>Dicetak: {today}</p>
           </div>
 
-          {/* Summary cards */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Total Pesanan', value: `${filtered.length}`, sub: `${delivered} selesai` },
+              { label: 'Total Pesanan', value: filtered.length, sub: `${delivered} selesai` },
               { label: 'Total Pendapatan', value: formatPrice(totalRevenue), sub: 'semua status' },
               { label: 'Rata-rata/Pesanan', value: formatPrice(Math.round(avgOrder)), sub: 'per transaksi' },
             ].map(s => (
-              <div key={s.label} className="bg-[#0D0D0D] rounded-xl p-3 text-center border border-[#D4AF37]/10">
-                <p className="text-[#555] text-[10px] uppercase tracking-wider mb-1">{s.label}</p>
-                <p className="text-[#D4AF37] font-bold text-base">{s.value}</p>
-                <p className="text-[#444] text-[10px] mt-0.5">{s.sub}</p>
+              <div key={s.label} className="rounded-lg p-3 border text-center" style={{ background: C.bg, borderColor: C.border }}>
+                <p className="text-[10px] uppercase tracking-wider mb-1.5" style={{ color: C.muted }}>{s.label}</p>
+                <p className="font-bold text-base" style={{ color: C.accent }}>{s.value}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: '#555' }}>{s.sub}</p>
               </div>
             ))}
           </div>
 
           {/* Status breakdown */}
-          <div className="mb-6">
-            <h3 className="text-white font-semibold text-sm mb-3">Status Pesanan</h3>
+          <div>
+            <p className="text-sm font-medium mb-3" style={{ color: C.text }}>Status Pesanan</p>
             <div className="grid grid-cols-4 gap-2">
-              {(['pending', 'cooking', 'ready', 'delivered'] as const).map(s => {
+              {(['pending', 'cooking', 'ready', 'delivered'] as OrderStatus[]).map(s => {
                 const count = filtered.filter(o => o.status === s).length
-                const rev = filtered.filter(o => o.status === s).reduce((sum, o) => sum + o.total_price, 0)
-                const colors = { pending: 'text-yellow-400', cooking: 'text-red-400', ready: 'text-green-400', delivered: 'text-purple-400' }
-                const labels = { pending: 'Menunggu', cooking: 'Memasak', ready: 'Siap', delivered: 'Selesai' }
+                const cfg = STATUS_CONFIG[s]
                 return (
-                  <div key={s} className="bg-[#0D0D0D] rounded-xl p-3 border border-white/5">
-                    <p className={`text-2xl font-black ${colors[s]}`}>{count}</p>
-                    <p className="text-[#555] text-[10px] mt-1">{labels[s]}</p>
-                    <p className="text-[#444] text-[10px]">{formatPrice(rev)}</p>
+                  <div key={s} className="rounded-lg p-3 border" style={{ background: C.bg, borderColor: C.border }}>
+                    <p className="text-xl font-bold" style={{ color: count > 0 ? cfg.dot.replace('bg-', '') : C.muted }}>{count}</p>
+                    <p className="text-[10px] mt-1" style={{ color: C.muted }}>{cfg.label}</p>
                   </div>
                 )
               })}
@@ -176,60 +250,54 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
 
           {/* Top items */}
           {topItems.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-white font-semibold text-sm mb-3">Menu Terlaris</h3>
-              <div className="space-y-2">
+            <div>
+              <p className="text-sm font-medium mb-3" style={{ color: C.text }}>Menu Terlaris</p>
+              <div className="space-y-1.5">
                 {topItems.map((item, i) => (
-                  <div key={item.name} className="flex items-center gap-3 bg-[#0D0D0D] rounded-xl px-4 py-2.5">
-                    <span className="text-[#D4AF37] font-black text-sm w-5">#{i + 1}</span>
-                    <span className="text-white text-sm flex-1">{item.name}</span>
-                    <span className="text-[#888] text-xs">{item.qty} porsi</span>
+                  <div key={item.name} className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                    style={{ background: C.bg }}>
+                    <span className="text-xs font-bold w-5" style={{ color: C.accent }}>#{i + 1}</span>
+                    <span className="text-sm flex-1" style={{ color: C.text }}>{item.name}</span>
+                    <span className="text-xs" style={{ color: C.muted }}>{item.qty} porsi</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Order list */}
+          {/* Order table */}
           <div>
-            <h3 className="text-white font-semibold text-sm mb-3">Daftar Pesanan ({filtered.length})</h3>
-            <div className="overflow-x-auto rounded-xl border border-white/5">
+            <p className="text-sm font-medium mb-3" style={{ color: C.text }}>Daftar Pesanan ({filtered.length})</p>
+            <div className="rounded-lg border overflow-hidden" style={{ borderColor: C.border }}>
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-[#0D0D0D] text-[#555] uppercase tracking-wider">
-                    <th className="px-3 py-2.5 text-left">Meja</th>
-                    <th className="px-3 py-2.5 text-left">Customer</th>
-                    <th className="px-3 py-2.5 text-left">Item</th>
-                    <th className="px-3 py-2.5 text-left">Status</th>
-                    <th className="px-3 py-2.5 text-right">Total</th>
-                    <th className="px-3 py-2.5 text-left">Waktu</th>
+                  <tr style={{ background: C.bg, color: C.muted }}>
+                    {['Meja','Customer','Item','Status','Total','Waktu'].map(h => (
+                      <th key={h} className="px-3 py-2.5 text-left font-medium uppercase tracking-wider text-[10px]">{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={6} className="px-3 py-6 text-center text-[#444]">Tidak ada pesanan</td></tr>
+                    <tr><td colSpan={6} className="px-3 py-6 text-center" style={{ color: C.muted }}>Tidak ada pesanan</td></tr>
                   ) : filtered.map((o, i) => (
-                    <tr key={o.id} className={`border-t border-white/5 ${i % 2 === 0 ? 'bg-[#0D0D0D]/50' : ''}`}>
-                      <td className="px-3 py-2.5 text-[#D4AF37] font-bold">Meja {o.table_number}</td>
-                      <td className="px-3 py-2.5 text-white">{o.customer_name}</td>
-                      <td className="px-3 py-2.5 text-[#666]">{o.order_items?.length ?? 0} item</td>
-                      <td className="px-3 py-2.5">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                          { pending: 'bg-yellow-500/15 text-yellow-400', cooking: 'bg-red-500/15 text-red-400', ready: 'bg-green-500/15 text-green-400', delivered: 'bg-purple-500/15 text-purple-400' }[o.status]
-                        }`}>
-                          {o.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-right text-[#D4AF37] font-semibold">{formatPrice(o.total_price)}</td>
-                      <td className="px-3 py-2.5 text-[#555]">{formatTime(o.created_at)}</td>
+                    <tr key={o.id} className="border-t" style={{ borderColor: C.border, background: i % 2 !== 0 ? `${C.bg}80` : 'transparent' }}>
+                      <td className="px-3 py-2.5 font-semibold" style={{ color: C.accent }}>Meja {o.table_number}</td>
+                      <td className="px-3 py-2.5" style={{ color: C.text }}>{o.customer_name}</td>
+                      <td className="px-3 py-2.5" style={{ color: C.muted }}>{o.order_items?.length ?? 0} item</td>
+                      <td className="px-3 py-2.5"><StatusBadge status={o.status} /></td>
+                      <td className="px-3 py-2.5 font-semibold" style={{ color: C.accent }}>{formatPrice(o.total_price)}</td>
+                      <td className="px-3 py-2.5" style={{ color: C.muted }}>{formatTime(o.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
                 {filtered.length > 0 && (
                   <tfoot>
-                    <tr className="border-t-2 border-[#D4AF37]/20 bg-[#0D0D0D]">
-                      <td colSpan={4} className="px-3 py-2.5 text-[#888] font-semibold">TOTAL</td>
-                      <td className="px-3 py-2.5 text-right text-[#D4AF37] font-black">{formatPrice(totalRevenue)}</td>
+                    <tr className="border-t-2" style={{ borderColor: `${C.accent}30`, background: C.bg }}>
+                      <td colSpan={4} className="px-3 py-2.5 text-xs font-semibold" style={{ color: C.muted }}>TOTAL</td>
+                      <td className="px-3 py-2.5 font-bold" style={{ color: C.accent }}>
+                        {formatPrice(filtered.reduce((s, o) => s + o.total_price, 0))}
+                      </td>
                       <td />
                     </tr>
                   </tfoot>
@@ -239,7 +307,6 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
           </div>
         </div>
       </div>
-
       <style>{`
         @media print {
           body * { visibility: hidden; }
@@ -252,9 +319,108 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
   )
 }
 
+// ── OrderCard ────────────────────────────────────────────────
+function OrderCard({
+  order, isNew, updating,
+  onUpdate,
+}: {
+  order: Order; isNew: boolean; updating: boolean; onUpdate: () => void
+}) {
+  const cfg = STATUS_CONFIG[order.status]
+  const next = NEXT_STATUS[order.status]
+
+  return (
+    <div
+      className="rounded-xl border overflow-hidden transition-all duration-200 hover:scale-[1.01] hover:shadow-lg"
+      style={{
+        background: C.card,
+        borderColor: isNew ? C.accent : C.border,
+        boxShadow: isNew ? `0 0 0 1px ${C.accent}30` : undefined,
+      }}
+    >
+      {/* Header */}
+      <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: C.border }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0"
+            style={{ background: `${C.accent}15`, color: C.accent }}>
+            {order.table_number}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold truncate" style={{ color: C.text }}>{order.customer_name}</p>
+              {isNew && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                  style={{ background: C.accent, color: '#000' }}>NEW</span>
+              )}
+            </div>
+            <p className="text-xs" style={{ color: C.muted }}>Meja {order.table_number} · {formatTime(order.created_at)}</p>
+          </div>
+        </div>
+        <StatusBadge status={order.status} />
+      </div>
+
+      {/* Items */}
+      <div className="px-4 py-3 space-y-2">
+        {order.order_items?.map(item => (
+          <div key={item.id} className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs" style={{ color: C.muted }}>
+                <span style={{ color: C.text }}>{item.qty}×</span> {item.name}
+              </p>
+              {item.notes && (
+                <p className="text-[10px] italic mt-0.5" style={{ color: '#555' }}>📝 {item.notes}</p>
+              )}
+            </div>
+            <span className="text-xs font-medium flex-shrink-0" style={{ color: C.accent }}>
+              {formatPrice(item.price * item.qty)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 pb-4 space-y-2.5">
+        <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: C.border }}>
+          <span className="text-xs" style={{ color: C.muted }}>
+            {order.order_items?.length ?? 0} item
+          </span>
+          <span className="text-sm font-bold" style={{ color: C.text }}>
+            {formatPrice(order.total_price)}
+          </span>
+        </div>
+        {next && cfg.btnLabel && (
+          <button
+            onClick={onUpdate}
+            disabled={updating}
+            className="w-full py-2 rounded-lg text-xs font-semibold transition-all duration-150 disabled:opacity-50 active:scale-[0.98]"
+            style={updating ? { background: C.border, color: C.muted } : { background: 'transparent' }}
+          >
+            {updating ? (
+              <span style={{ color: C.muted }}>Memproses...</span>
+            ) : (
+              <span className={cfg.btnClass}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: cfg.btnClass.includes('bg-[#EF4444]') ? '#EF4444' :
+                               cfg.btnClass.includes('bg-[#22C55E]') ? '#22C55E' : '#6366F1',
+                  color: '#fff',
+                  padding: '6px 0', borderRadius: 8, width: '100%',
+                }}
+              >
+                {cfg.btnLabel}
+              </span>
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Main Page ────────────────────────────────────────────────
 export default function AdminPage() {
   const router = useRouter()
-  const { t, isRTL } = useLang()
+  const { isRTL } = useLang()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -264,27 +430,18 @@ export default function AdminPage() {
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
-    if (IS_MOCK_MODE) {
-      setOrders(MOCK_ORDERS)
-      setLoading(false)
-      return
-    }
+    if (IS_MOCK_MODE) { setOrders(MOCK_ORDERS); setLoading(false); return }
     const { data } = await supabase
-      .from('orders')
-      .select('*, order_items(*)')
+      .from('orders').select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
-      .order('created_at', { ascending: false })
-      .limit(100)
-
+      .order('created_at', { ascending: false }).limit(100)
     if (data) setOrders(data as Order[])
     setLoading(false)
   }, [])
 
   useEffect(() => {
     fetchOrders()
-
-    const channel = supabase
-      .channel('admin-orders')
+    const channel = supabase.channel('admin-orders')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
         if (payload.eventType === 'INSERT') {
           setNewOrderId((payload.new as Order).id)
@@ -293,16 +450,13 @@ export default function AdminPage() {
         } else if (payload.eventType === 'UPDATE') {
           setOrders(prev => prev.map(o => o.id === (payload.new as Order).id ? { ...o, ...payload.new } : o))
         }
-      })
-      .subscribe()
-
+      }).subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [fetchOrders])
 
   async function updateStatus(orderId: string, currentStatus: OrderStatus) {
     const nextStatus = NEXT_STATUS[currentStatus]
     if (!nextStatus) return
-
     setUpdating(orderId)
     await fetch(`/api/order/${orderId}`, {
       method: 'PATCH',
@@ -313,7 +467,6 @@ export default function AdminPage() {
   }
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
-
   const counts = {
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending').length,
@@ -321,225 +474,142 @@ export default function AdminPage() {
     ready: orders.filter(o => o.status === 'ready').length,
     delivered: orders.filter(o => o.status === 'delivered').length,
   }
-
   const todayRevenue = orders
     .filter(o => o.status === 'delivered' && new Date(o.created_at).toDateString() === new Date().toDateString())
     .reduce((s, o) => s + o.total_price, 0)
 
   return (
-    <div className="min-h-dvh bg-[#0D0D0D]" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh font-body" dir={isRTL ? 'rtl' : 'ltr'} style={{ background: C.bg }}>
       {showReport && <ReportModal orders={orders} onClose={() => setShowReport(false)} />}
 
-      {/* ── SIDEBAR (desktop) ─────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-56 bg-[#111] border-r border-white/5 z-40 py-6">
-        <div className="px-5 mb-8">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">🌿</span>
-            <span className="font-display font-bold text-white text-base">Serasa</span>
+      {/* ── Sidebar ─────────────────────────────────────────── */}
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 border-r z-40 py-5"
+        style={{ background: C.sidebar, borderColor: C.border }}>
+        {/* Brand */}
+        <div className="px-5 mb-6">
+          <div className="flex items-center gap-2.5 mb-0.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
+              style={{ background: `${C.accent}20`, color: C.accent }}>🌿</div>
+            <span className="font-semibold text-[15px]" style={{ color: C.text }}>Serasa</span>
           </div>
-          <p className="text-[#444] text-[11px]">Restaurant Admin</p>
+          <p className="text-[11px] pl-9" style={{ color: C.muted }}>Restaurant Admin</p>
         </div>
-        <nav className="flex-1 px-3 space-y-1">
-          {[
-            { icon: '📋', label: 'Pesanan', active: true },
-            { icon: '🍽️', label: 'Kelola Menu', action: () => router.push('/admin/menu') },
-            { icon: '👨‍🍳', label: 'Kitchen', action: () => router.push('/kitchen') },
-            { icon: '📊', label: 'Laporan', action: () => setShowReport(true) },
-          ].map(nav => (
-            <button
-              key={nav.label}
-              onClick={nav.action}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
-                nav.active
-                  ? 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20'
-                  : 'text-[#666] hover:bg-[#1A1A1A] hover:text-white'
-              }`}
-            >
-              <span>{nav.icon}</span>
-              {nav.label}
-            </button>
-          ))}
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 space-y-0.5">
+          <SidebarItem icon={ClipboardList} label="Pesanan" active />
+          <SidebarItem icon={UtensilsCrossed} label="Kelola Menu" onClick={() => router.push('/admin/menu')} />
+          <SidebarItem icon={ChefHat} label="Kitchen Display" onClick={() => router.push('/kitchen')} />
+          <SidebarItem icon={BarChart3} label="Laporan" onClick={() => setShowReport(true)} />
         </nav>
-        <div className="px-5 pb-2">
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#1A1A1A]">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-[#555] text-[11px]">Live · Realtime ON</span>
+
+        {/* Status */}
+        <div className="px-4 mt-4">
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg" style={{ background: C.bg }}>
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+            <span className="text-[11px]" style={{ color: C.muted }}>Live · Realtime aktif</span>
           </div>
         </div>
       </aside>
 
-      {/* ── MAIN CONTENT ──────────────────────────────────── */}
-      <div className="lg:ml-56">
+      {/* ── Main ────────────────────────────────────────────── */}
+      <div className="lg:ml-60">
 
-        {/* Top header */}
-        <header className="sticky top-0 z-30 bg-[#0D0D0D]/96 backdrop-blur-xl border-b border-white/5">
-          <div className="flex items-center justify-between px-4 lg:px-6 py-3.5">
+        {/* Top bar */}
+        <header className="sticky top-0 z-30 border-b backdrop-blur-xl"
+          style={{ background: `${C.bg}F0`, borderColor: C.border }}>
+          <div className="flex items-center justify-between px-4 lg:px-6 py-3">
             <div>
-              <h1 className="font-display text-lg font-bold text-white leading-tight">Dashboard Pesanan</h1>
-              <p className="text-[#444] text-xs">{new Date().toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long' })}</p>
+              <h1 className="text-base font-semibold" style={{ color: C.text }}>Dashboard Pesanan</h1>
+              <p className="text-xs mt-0.5" style={{ color: C.muted }}>
+                {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
             </div>
             <div className="flex items-center gap-2">
-              {/* Mobile nav */}
               <div className="flex lg:hidden gap-1.5">
                 <button onClick={() => router.push('/admin/menu')}
-                  className="p-2 rounded-xl bg-[#1A1A1A] border border-white/8 text-[#888] hover:text-white transition-colors">
+                  className="p-2 rounded-lg border transition-colors hover:bg-white/5"
+                  style={{ borderColor: C.border, color: C.muted }}>
                   <UtensilsCrossed size={15} />
                 </button>
                 <button onClick={() => setShowReport(true)}
-                  className="p-2 rounded-xl bg-[#1A1A1A] border border-white/8 text-[#888] hover:text-[#D4AF37] transition-colors">
+                  className="p-2 rounded-lg border transition-colors hover:bg-white/5"
+                  style={{ borderColor: C.border, color: C.muted }}>
                   <FileText size={15} />
                 </button>
               </div>
+              {newOrderId && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium animate-fade-in"
+                  style={{ background: `${C.accent}15`, color: C.accent, border: `1px solid ${C.accent}30` }}>
+                  <Bell size={12} className="animate-bounce" /> Pesanan baru!
+                </div>
+              )}
               <button onClick={fetchOrders}
-                className="p-2 rounded-xl bg-[#1A1A1A] border border-white/8 text-[#888] hover:text-white transition-colors">
-                <RefreshCw size={15} className={loading ? 'animate-spin text-[#D4AF37]' : ''} />
+                className="p-2 rounded-lg border transition-colors hover:bg-white/5"
+                style={{ borderColor: C.border, color: C.muted }}>
+                <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
               </button>
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-4 gap-0 border-t border-white/5">
-            {[
-              { label: 'Semua', value: counts.all, color: 'text-white', bg: '' },
-              { label: 'Pending', value: counts.pending, color: 'text-yellow-400', bg: filter === 'pending' ? 'bg-yellow-500/5' : '' },
-              { label: 'Memasak', value: counts.cooking, color: 'text-red-400', bg: filter === 'cooking' ? 'bg-red-500/5' : '' },
-              { label: 'Selesai', value: counts.delivered, color: 'text-purple-400', bg: filter === 'delivered' ? 'bg-purple-500/5' : '' },
-            ].map((stat, i) => (
-              <button
-                key={stat.label}
-                onClick={() => setFilter(['all','pending','cooking','delivered'][i])}
-                className={`flex flex-col items-center py-3 border-r border-white/5 last:border-0 transition-colors ${stat.bg} hover:bg-white/3`}
-              >
-                <span className={`font-black text-xl leading-none ${stat.color}`}>{stat.value}</span>
-                <span className="text-[#444] text-[10px] mt-0.5">{stat.label}</span>
-              </button>
-            ))}
-          </div>
-
           {/* Filter tabs */}
-          <div className="flex gap-1.5 px-4 lg:px-6 py-2.5 overflow-x-auto scrollbar-hide border-t border-white/5">
-            {STATUS_FILTERS.map(sf => (
-              <button
-                key={sf.value}
-                onClick={() => setFilter(sf.value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
-                  filter === sf.value
-                    ? 'bg-[#D4AF37] text-[#0D0D0D]'
-                    : 'bg-[#1A1A1A] text-[#555] hover:text-white hover:bg-[#222]'
-                }`}
-              >
-                {sf.label}
-                <span className={`text-[10px] font-black rounded px-1 ${filter === sf.value ? 'bg-[#0D0D0D]/20' : 'bg-[#222]'}`}>
-                  {counts[sf.value as keyof typeof counts]}
-                </span>
-              </button>
+          <div className="flex gap-2 px-4 lg:px-6 py-2.5 overflow-x-auto scrollbar-hide border-t" style={{ borderColor: C.border }}>
+            {[
+              { value: 'all',       label: 'Semua' },
+              { value: 'pending',   label: 'Pending' },
+              { value: 'cooking',   label: 'Cooking' },
+              { value: 'ready',     label: 'Ready' },
+              { value: 'delivered', label: 'Delivered' },
+            ].map(tab => (
+              <FilterTab
+                key={tab.value}
+                label={tab.label}
+                count={counts[tab.value as keyof typeof counts]}
+                active={filter === tab.value}
+                onClick={() => setFilter(tab.value)}
+              />
             ))}
           </div>
         </header>
 
-        {/* Revenue strip */}
-        <div className="mx-4 lg:mx-6 mt-4 bg-gradient-to-r from-[#D4AF37]/8 to-transparent border border-[#D4AF37]/15 rounded-2xl px-5 py-3.5 flex items-center justify-between">
-          <div>
-            <p className="text-[#666] text-[11px] uppercase tracking-wider">Pendapatan Hari Ini</p>
-            <p className="text-[#D4AF37] font-black text-2xl mt-0.5">{formatPrice(todayRevenue)}</p>
+        <main className="px-4 lg:px-6 py-5 space-y-5 pb-10">
+          {/* Stat cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatCard icon={ShoppingBag}    label="Total Pesanan"     value={counts.all}               color={C.accent} />
+            <StatCard icon={TrendingUp}     label="Pendapatan Hari Ini" value={formatPrice(todayRevenue)} color={C.success} />
+            <StatCard icon={AlertCircle}    label="Pending"          value={counts.pending}            color={C.warning}
+              sub={counts.pending > 0 ? 'Menunggu diproses' : 'Semua clear'} />
+            <StatCard icon={CheckCircle2}   label="Selesai"          value={counts.delivered}          color="#6366F1"
+              sub="Hari ini" />
           </div>
-          <div className="text-right">
-            <p className="text-[#666] text-[11px] uppercase tracking-wider">Total Pesanan</p>
-            <p className="text-white font-black text-2xl mt-0.5">{counts.all}</p>
-          </div>
-        </div>
 
-        {/* New order alert */}
-        {newOrderId && (
-          <div className="mx-4 lg:mx-6 mt-3 px-4 py-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex items-center gap-2.5 animate-fade-in">
-            <span className="text-lg animate-bounce">🔔</span>
-            <span className="text-[#D4AF37] font-bold text-sm">Pesanan baru masuk!</span>
-          </div>
-        )}
-
-        {/* Orders */}
-        <main className="px-4 lg:px-6 py-4 pb-10">
+          {/* Orders grid */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {[...Array(6)].map((_, i) => <div key={i} className="skeleton rounded-2xl h-44" />)}
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-52 rounded-xl animate-pulse" style={{ background: C.card }} />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#1A1A1A] border border-white/5 flex items-center justify-center mb-4">
-                <span className="text-3xl">📋</span>
+              <div className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center"
+                style={{ background: C.card, border: `1px solid ${C.border}` }}>
+                <ClipboardList size={24} style={{ color: C.muted }} />
               </div>
-              <p className="text-white font-semibold mb-1">Tidak ada pesanan</p>
-              <p className="text-[#444] text-sm">Pesanan akan muncul di sini secara realtime</p>
+              <p className="text-sm font-medium mb-1" style={{ color: C.text }}>Tidak ada pesanan</p>
+              <p className="text-xs" style={{ color: C.muted }}>Pesanan akan muncul di sini secara realtime</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {filtered.map(order => {
-                const btn = STATUS_BUTTON[order.status]
-                const next = NEXT_STATUS[order.status]
-                const isNew = order.id === newOrderId
-
-                return (
-                  <div
-                    key={order.id}
-                    className={`bg-[#141414] rounded-2xl border overflow-hidden transition-all ${
-                      isNew ? 'border-[#D4AF37]/50 shadow-[0_0_24px_rgba(212,175,55,0.12)]' : 'border-white/5 hover:border-white/10'
-                    }`}
-                  >
-                    {/* Card header */}
-                    <div className={`px-4 py-3 flex items-center justify-between border-b border-white/5 ${
-                      order.status === 'pending' ? 'bg-yellow-500/5' :
-                      order.status === 'cooking' ? 'bg-red-500/5' :
-                      order.status === 'ready'   ? 'bg-green-500/5' : 'bg-purple-500/5'
-                    }`}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center">
-                          <span className="text-[#D4AF37] font-black text-sm">{order.table_number}</span>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <p className="text-white font-bold text-sm">{order.customer_name}</p>
-                            {isNew && <span className="text-[9px] bg-[#D4AF37] text-[#0D0D0D] px-1.5 py-0.5 rounded-full font-black">NEW</span>}
-                          </div>
-                          <p className="text-[#444] text-[10px]">Meja {order.table_number} · {formatTime(order.created_at)}</p>
-                        </div>
-                      </div>
-                      <StatusBadge status={order.status} size="sm" />
-                    </div>
-
-                    {/* Items */}
-                    <div className="px-4 py-3 space-y-1.5">
-                      {order.order_items?.map(item => (
-                        <div key={item.id} className="flex items-start justify-between gap-2 text-xs">
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[#888]">{item.qty}× {item.name}</span>
-                            {item.notes && (
-                              <p className="text-[#555] italic text-[10px] mt-0.5">📝 {item.notes}</p>
-                            )}
-                          </div>
-                          <span className="text-[#D4AF37] font-semibold flex-shrink-0">{formatPrice(item.price * item.qty)}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="px-4 pb-4 space-y-2.5">
-                      <div className="flex justify-between items-center pt-2 border-t border-white/5">
-                        <span className="text-[#555] text-xs">{order.order_items?.length ?? 0} item</span>
-                        <span className="text-[#D4AF37] font-black text-base">{formatPrice(order.total_price)}</span>
-                      </div>
-                      {next && btn.label && (
-                        <button
-                          onClick={() => updateStatus(order.id, order.status)}
-                          disabled={updating === order.id}
-                          className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 ${btn.class}`}
-                        >
-                          {updating === order.id ? '⟳ Memproses...' : btn.label}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
+              {filtered.map(order => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  isNew={order.id === newOrderId}
+                  updating={updating === order.id}
+                  onUpdate={() => updateStatus(order.id, order.status)}
+                />
+              ))}
             </div>
           )}
         </main>
