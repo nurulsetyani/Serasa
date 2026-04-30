@@ -188,13 +188,6 @@ export default function KitchenPage() {
                 ))}
               </div>
 
-              {/* Notes */}
-              {order.notes && (
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-yellow-300 text-sm">
-                  ⚠️ {order.notes}
-                </div>
-              )}
-
               {/* Start cooking button */}
               <button
                 onClick={() => startCooking(order.id)}
@@ -232,11 +225,7 @@ export default function KitchenPage() {
                 ))}
               </div>
 
-              {order.notes && (
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-yellow-300 text-sm">
-                  ⚠️ {order.notes}
-                </div>
-              )}
+
 
               <button
                 onClick={() => markReady(order.id)}
