@@ -16,12 +16,21 @@ import LanguageModal from '@/components/LanguageModal'
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
 const CATEGORIES = [
-  { key: 'all',     labelKey: 'all' as TranslationKey,     icon: '✦' },
-  { key: 'noodles', labelKey: 'noodles' as TranslationKey, icon: '🍜' },
-  { key: 'rice',    labelKey: 'rice' as TranslationKey,    icon: '🍚' },
-  { key: 'main',    labelKey: 'main' as TranslationKey,    icon: '🥘' },
-  { key: 'drinks',  labelKey: 'drinks' as TranslationKey,  icon: '🥤' },
-  { key: 'snacks',  labelKey: 'snacks' as TranslationKey,  icon: '🥙' },
+  { key: 'all',        labelKey: 'all' as TranslationKey,        icon: '✦'  },
+  { key: 'signature',  labelKey: 'signature' as TranslationKey,  icon: '⭐' },
+  { key: 'mix_rice',   labelKey: 'mix_rice' as TranslationKey,   icon: '🍱' },
+  { key: 'fried_rice', labelKey: 'fried_rice' as TranslationKey, icon: '🍳' },
+  { key: 'noodles',    labelKey: 'noodles' as TranslationKey,    icon: '🍜' },
+  { key: 'satay',      labelKey: 'satay' as TranslationKey,      icon: '🍢' },
+  { key: 'appetizer',  labelKey: 'appetizer' as TranslationKey,  icon: '🥗' },
+  { key: 'meat',       labelKey: 'meat' as TranslationKey,       icon: '🥩' },
+  { key: 'chicken',    labelKey: 'chicken' as TranslationKey,    icon: '🍗' },
+  { key: 'bebek',      labelKey: 'bebek' as TranslationKey,      icon: '🦆' },
+  { key: 'rice_bowl',  labelKey: 'rice_bowl' as TranslationKey,  icon: '🍚' },
+  { key: 'seafood',    labelKey: 'seafood' as TranslationKey,    icon: '🦐' },
+  { key: 'soup',       labelKey: 'soup' as TranslationKey,       icon: '🍲' },
+  { key: 'extra',      labelKey: 'extra' as TranslationKey,      icon: '➕' },
+  { key: 'drinks',     labelKey: 'drinks' as TranslationKey,     icon: '🥤' },
 ]
 
 const FLAG: Record<Language, string> = { id: '🇮🇩', en: '🇬🇧', ar: '🇸🇦' }

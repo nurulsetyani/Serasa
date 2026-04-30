@@ -11,12 +11,21 @@ import { MenuItem } from '@/types'
 import { supabase } from '@/lib/supabase'
 
 const CATEGORIES = [
-  { key: 'all',     label: 'Semua',    icon: '✦' },
-  { key: 'noodles', label: 'Mie',      icon: '🍜' },
-  { key: 'rice',    label: 'Nasi',     icon: '🍚' },
-  { key: 'main',    label: 'Lauk',     icon: '🥘' },
-  { key: 'drinks',  label: 'Minuman',  icon: '🥤' },
-  { key: 'snacks',  label: 'Camilan',  icon: '🥙' },
+  { key: 'all',        label: 'Semua',        icon: '✦'  },
+  { key: 'signature',  label: 'Signature',    icon: '⭐' },
+  { key: 'mix_rice',   label: 'Mix Rice',     icon: '🍱' },
+  { key: 'fried_rice', label: 'Fried Rice',   icon: '🍳' },
+  { key: 'noodles',    label: 'Noodles',      icon: '🍜' },
+  { key: 'satay',      label: 'Satay',        icon: '🍢' },
+  { key: 'appetizer',  label: 'Appetizer',    icon: '🥗' },
+  { key: 'meat',       label: 'Meat',         icon: '🥩' },
+  { key: 'chicken',    label: 'Chicken',      icon: '🍗' },
+  { key: 'bebek',      label: 'Bebek',        icon: '🦆' },
+  { key: 'rice_bowl',  label: 'Rice Bowl',    icon: '🍚' },
+  { key: 'seafood',    label: 'Seafood',      icon: '🦐' },
+  { key: 'soup',       label: 'Soup',         icon: '🍲' },
+  { key: 'extra',      label: 'Extra',        icon: '➕' },
+  { key: 'drinks',     label: 'Drinks',       icon: '🥤' },
 ]
 
 const EMPTY_FORM = {
