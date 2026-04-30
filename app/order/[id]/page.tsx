@@ -19,7 +19,6 @@ const MOCK_ORDER: Order = {
   customer_name: 'Preview User',
   status: 'cooking',
   total_price: 82,
-  notes: '',
   created_at: new Date().toISOString(),
   order_items: [
     { id: 'oi-1', order_id: 'mock-preview-order', menu_id: 'mock-1', name: 'Mie Goreng Ayam', price: 25, qty: 1 },
