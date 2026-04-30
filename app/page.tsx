@@ -192,11 +192,6 @@ export default function MenuPage() {
     en: 'Welcome! Browse our menu',
     ar: 'أهلاً! تصفح قائمتنا',
   }
-  const orderNowLabel: Record<Language, string> = {
-    id: 'Pesan Sekarang',
-    en: 'Order Now',
-    ar: 'اطلب الآن',
-  }
 
   return (
     <div className="min-h-dvh bg-[#0D0D0D]" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -216,7 +211,7 @@ export default function MenuPage() {
             <>
               {/* Logo */}
               <div className="relative h-8 w-[90px] flex-shrink-0">
-                <Image src="/logo.jpg" alt="Serasa" fill className="object-contain object-left" sizes="90px" />
+                <Image src="/logo.png" alt="Serasa" fill className="object-contain object-left" sizes="90px" />
               </div>
               <div className="h-4 w-px bg-[#D4AF37]/15 mx-0.5" />
 
@@ -296,14 +291,6 @@ export default function MenuPage() {
                 <p className="text-[#777] text-[11px] mt-0.5">{tableWelcome[lang]}</p>
               </div>
             </div>
-
-            <button
-              onClick={() => { const el = document.getElementById('menu-list'); el?.scrollIntoView({ behavior: 'smooth' }) }}
-              className="flex items-center gap-1.5 bg-[#D4AF37] text-[#0D0D0D] px-3.5 py-2 rounded-xl font-black text-xs shadow-[0_2px_12px_rgba(212,175,55,0.4)] active:scale-95 transition-transform whitespace-nowrap flex-shrink-0"
-            >
-              {orderNowLabel[lang]}
-              <ChevronRight size={12} className={isRTL ? 'rotate-180' : ''} />
-            </button>
           </div>
         </div>
       )}

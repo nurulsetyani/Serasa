@@ -26,28 +26,24 @@ export default function LanguageModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] bg-[#0D0D0D] flex flex-col items-center justify-between py-10 px-6 overflow-y-auto animate-fade-in">
 
-      {/* ── Top: logo + subtitle ──────────────────────────────── */}
+      {/* ── Logo — no white box, large PNG ─────────────────────── */}
       <div className="flex flex-col items-center">
-        {/* Logo box — white background matches the JPEG */}
-        <div className="bg-white rounded-2xl px-6 py-4 shadow-[0_4px_32px_rgba(0,0,0,0.5)]">
-          <div className="relative w-[200px] h-[90px]">
-            <Image
-              src="/logo.jpg"
-              alt="Serasa Restaurant"
-              fill
-              className="object-contain"
-              sizes="200px"
-              priority
-            />
-          </div>
+        <div className="relative w-[280px] h-[126px]">
+          <Image
+            src="/logo.png"
+            alt="Serasa Restaurant"
+            fill
+            className="object-contain"
+            sizes="280px"
+            priority
+          />
         </div>
-
-        <p className="text-[#444] text-[11px] tracking-[4px] uppercase mt-4 font-medium">
+        <p className="text-[#444] text-[11px] tracking-[4px] uppercase mt-3 font-medium">
           Saudi Arabia
         </p>
       </div>
 
-      {/* ── Middle: heading + language buttons ───────────────── */}
+      {/* ── Heading + language buttons ──────────────────────────── */}
       <div className="flex flex-col items-center w-full max-w-[340px]">
         <h1 className="font-display text-white text-[44px] font-bold text-center leading-none mb-4">
           Welcome
@@ -69,24 +65,15 @@ export default function LanguageModal({ onClose }: { onClose: () => void }) {
                   : 'bg-[#111] border-[#D4AF37]/30 hover:border-[#D4AF37]/60 active:scale-[0.97]'
               }`}
             >
-              {/* Flag */}
               <span className="text-[38px] leading-none flex-shrink-0">{l.flag}</span>
-
-              {/* Text */}
               <div className="flex-1 min-w-0">
                 <p className={`font-bold text-base leading-tight ${
                   selected === l.code ? 'text-[#0D0D0D]' : 'text-white'
-                }`}>
-                  {l.name}
-                </p>
+                }`}>{l.name}</p>
                 <p className={`text-[12px] mt-0.5 ${
                   selected === l.code ? 'text-[#0D0D0D]/65' : 'text-[#555]'
-                }`}>
-                  {l.welcome}
-                </p>
+                }`}>{l.welcome}</p>
               </div>
-
-              {/* Arrow / check */}
               <span className={`text-xl flex-shrink-0 font-light ${
                 selected === l.code ? 'text-[#0D0D0D]' : 'text-[#333]'
               }`}>
@@ -97,7 +84,7 @@ export default function LanguageModal({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* ── Bottom: footer ───────────────────────────────────── */}
+      {/* ── Footer ─────────────────────────────────────────────── */}
       <div className="flex items-center gap-4">
         <div className="h-px w-14 bg-[#222]" />
         <p className="text-[#333] text-[10px] tracking-[2.5px] uppercase font-medium text-center">
