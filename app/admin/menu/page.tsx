@@ -325,7 +325,7 @@ export default function MenuManagerPage() {
         </div>
 
         {/* Category filter */}
-        <div className="flex gap-2 px-4 lg:px-6 pb-3 overflow-x-auto scrollbar-hide">
+        <div className="flex flex-wrap justify-center gap-2 px-4 lg:px-6 pb-3">
           {CATEGORIES.map(c => {
             const count = c.key === 'all' ? menu.length : menu.filter(m => m.category === c.key).length
             const active = filter === c.key

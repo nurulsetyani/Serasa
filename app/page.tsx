@@ -250,13 +250,13 @@ export default function MenuPage() {
         </div>
 
         {/* Category tabs */}
-        <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
+        <div className="flex flex-wrap justify-center gap-2 px-4 pb-3">
           {CATEGORIES.map((cat, i) => (
             <button
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
               style={{ animationDelay: `${i * 40}ms` }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap flex-shrink-0 transition-all duration-200 active:scale-95 ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 ${
                 activeCategory === cat.key
                   ? 'bg-[#D4AF37] text-[#0D0D0D] shadow-[0_2px_14px_rgba(212,175,55,0.35)]'
                   : 'bg-[#1A1A1A] text-[#666] border border-[#D4AF37]/10 hover:border-[#D4AF37]/35 hover:text-white'
