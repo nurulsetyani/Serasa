@@ -44,7 +44,7 @@ function MenuListCard({
   const [flash, setFlash] = useState(false)
   const name = getItemName(item, lang)
   const desc = getItemDescription(item, lang)
-  const price = item.promo_price ?? item.price
+  const price = item.price
 
   function handleAdd(e: React.MouseEvent) {
     e.stopPropagation()
@@ -78,11 +78,6 @@ function MenuListCard({
             ⭐
           </div>
         )}
-        {item.promo_price && (
-          <div className="absolute bottom-1.5 left-1.5 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
-            PROMO
-          </div>
-        )}
       </div>
 
       {/* Content */}
@@ -103,14 +98,7 @@ function MenuListCard({
 
         <div className="flex items-center justify-between mt-2.5">
           <div>
-            {item.promo_price ? (
-              <div>
-                <span className="text-[#444] text-[10px] line-through mr-1">{formatPrice(item.price)}</span>
-                <span className="text-[#D4AF37] font-black text-sm">{formatPrice(price)}</span>
-              </div>
-            ) : (
-              <span className="text-[#D4AF37] font-black text-sm">{formatPrice(item.price)}</span>
-            )}
+            <span className="text-[#D4AF37] font-black text-sm">{formatPrice(price)}</span>
           </div>
 
           <button

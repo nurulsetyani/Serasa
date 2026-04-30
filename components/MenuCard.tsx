@@ -21,8 +21,6 @@ export default function MenuCard({ item, onAddWithUpsell }: Props) {
 
   const cartItem = items.find(i => i.id === item.id)
   const qty = cartItem?.qty ?? 0
-  const displayPrice = item.promo_price ?? item.price
-  const hasPromo = !!item.promo_price && item.promo_price < item.price
   const name = getItemName(item, lang)
   const desc = getItemDescription(item, lang)
 
@@ -60,11 +58,6 @@ export default function MenuCard({ item, onAddWithUpsell }: Props) {
               {t('bestSeller')}
             </span>
           )}
-          {hasPromo && (
-            <span className="bg-red-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-              {t('promo')}
-            </span>
-          )}
         </div>
         {/* Cook time */}
         <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm text-ink-muted text-[10px] px-2 py-0.5 rounded-full">
@@ -87,14 +80,7 @@ export default function MenuCard({ item, onAddWithUpsell }: Props) {
         {/* Price + Add button */}
         <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/5">
           <div>
-            {hasPromo ? (
-              <div className="flex flex-col">
-                <span className="text-ink-faint text-[11px] line-through">{formatPrice(item.price)}</span>
-                <span className="text-gold font-bold text-sm">{formatPrice(displayPrice)}</span>
-              </div>
-            ) : (
-              <span className="text-gold font-bold text-sm">{formatPrice(item.price)}</span>
-            )}
+            <span className="text-gold font-bold text-sm">{formatPrice(item.price)}</span>
           </div>
 
           {qty === 0 ? (
