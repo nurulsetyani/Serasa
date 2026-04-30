@@ -137,11 +137,9 @@ export default function MenuPage() {
   const [showLangModal, setShowLangModal] = useState(false)
   const [cartBounce, setCartBounce] = useState(false)
 
-  // First-visit language modal
+  // Always show language modal on every scan/page load
   useEffect(() => {
-    try {
-      if (!localStorage.getItem('serasa_lang_picked')) setShowLangModal(true)
-    } catch {}
+    setShowLangModal(true)
   }, [])
 
   useEffect(() => {
