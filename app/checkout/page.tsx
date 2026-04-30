@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, FileText, MapPin, CheckCircle } from 'lucide-react'
+import { ArrowLeft, User, MapPin, CheckCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
@@ -12,33 +12,28 @@ import { IS_MOCK_MODE } from '@/lib/mock-data'
 export default function CheckoutPage() {
   const router = useRouter()
   const [tableNumber, setTableNumber] = useState('1')
+  const { lang, t, isRTL } = useLang()
+  const { items, clearCart } = useCart()
+
+  const [customerName, setCustomerName] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     setTableNumber(p.get('table') ?? '1')
   }, [])
-  const { lang, t, isRTL } = useLang()
-  const { items, promoDiscount, clearCart } = useCart()
 
-  const [customerName, setCustomerName] = useState('')
-  const [notes, setNotes] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const total = calculateCartTotal(items)
 
-  const { subtotal, discount, total } = calculateCartTotal(items, promoDiscount)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!customerName.trim()) return
-    if (!items.length) { router.push(`/?table=${tableNumber}`); return }
-
+  async function handleSubmit() {
+    if (!customerName.trim() || !items.length) return
     setLoading(true)
     setError('')
 
     try {
-      // Mock mode: simulate order without Supabase
       if (IS_MOCK_MODE) {
-        await new Promise(r => setTimeout(r, 1200))
+        await new Promise(r => setTimeout(r, 1000))
         clearCart()
         router.push(`/order/mock-preview-order?table=${tableNumber}`)
         return
@@ -50,20 +45,19 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           customer_name: customerName.trim(),
           table_number: tableNumber,
-          notes: notes.trim(),
           total_price: total,
           items: items.map(i => ({
             menu_id: i.id,
             name: getItemName(i, 'en'),
-            price: i.promo_price ?? i.price,
+            price: i.price,
             qty: i.qty,
+            notes: i.itemNotes ?? null,
           })),
         }),
       })
 
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed to create order')
-
       clearCart()
       router.push(`/order/${data.id}?table=${tableNumber}`)
     } catch (err) {
@@ -73,40 +67,36 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-obsidian flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* Decorative */}
+    <div className="min-h-dvh bg-[#0D0D0D] flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gold/4 rounded-full blur-[100px]" />
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/4 rounded-full blur-[100px]" />
       </div>
 
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 bg-obsidian/90 backdrop-blur-xl border-b border-gold-border safe-top">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-[#0D0D0D]/95 backdrop-blur-xl border-b border-[#D4AF37]/12">
         <div className="flex items-center gap-3 px-4 py-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-xl hover:bg-obsidian-surface text-ink-muted hover:text-ink transition-colors"
-          >
+          <button onClick={() => router.back()}
+            className="p-2 rounded-xl hover:bg-[#1A1A1A] text-[#888] hover:text-white transition-colors">
             <ArrowLeft size={20} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 className="font-display text-xl font-bold text-ink">{t('checkoutTitle')}</h1>
+          <h1 className="font-display text-xl font-bold text-white">{t('checkoutTitle')}</h1>
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="flex-1 flex flex-col px-4 py-6 gap-6 pb-32">
-        {/* Table info */}
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-gold-muted border border-gold-border">
-          <MapPin size={20} className="text-gold" />
+      <div className="flex-1 px-4 py-6 space-y-5 pb-32">
+        {/* Table */}
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#D4AF37]/8 border border-[#D4AF37]/20">
+          <MapPin size={20} className="text-[#D4AF37]" />
           <div>
-            <p className="text-ink-muted text-xs">{t('tableNumber')}</p>
-            <p className="text-ink font-bold text-lg">{tableNumber}</p>
+            <p className="text-[#888] text-xs">{t('tableNumber')}</p>
+            <p className="text-white font-bold text-lg">{tableNumber}</p>
           </div>
         </div>
 
-        {/* Customer name */}
+        {/* Name */}
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-semibold text-ink-muted">
-            <User size={14} />
-            {t('yourName')} <span className="text-red-400">*</span>
+          <label className="flex items-center gap-2 text-sm font-semibold text-[#888]">
+            <User size={14} /> {t('yourName')} <span className="text-red-400">*</span>
           </label>
           <input
             type="text"
@@ -118,43 +108,25 @@ export default function CheckoutPage() {
           />
         </div>
 
-        {/* Notes */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-semibold text-ink-muted">
-            <FileText size={14} />
-            {t('notes')}
-          </label>
-          <textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder={t('notesPlaceholder')}
-            rows={3}
-            className="input-dark w-full px-4 py-3 text-sm resize-none"
-          />
-        </div>
-
         {/* Order summary */}
-        <div className="card-dark p-4 space-y-3">
-          <h3 className="font-semibold text-ink text-sm">{t('orderSummary')}</h3>
-          <div className="space-y-2">
+        <div className="bg-[#1A1A1A] rounded-2xl border border-white/5 p-4 space-y-3">
+          <h3 className="font-semibold text-white text-sm">{t('orderSummary')}</h3>
+          <div className="space-y-2.5">
             {items.map(item => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-ink-muted">{getItemName(item, lang)} × {item.qty}</span>
-                <span className="text-ink">{formatPrice((item.promo_price ?? item.price) * item.qty)}</span>
+              <div key={item.id} className="flex justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <span className="text-[#888] text-sm">{getItemName(item, lang)} × {item.qty}</span>
+                  {item.itemNotes && (
+                    <p className="text-[#555] text-[11px] italic mt-0.5">📝 {item.itemNotes}</p>
+                  )}
+                </div>
+                <span className="text-white text-sm flex-shrink-0">{formatPrice(item.price * item.qty)}</span>
               </div>
             ))}
           </div>
-          <div className="border-t border-gold-border pt-3 space-y-1.5">
-            {promoDiscount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-green-400">{t('discount')} ({promoDiscount}%)</span>
-                <span className="text-green-400">-{formatPrice(subtotal - total)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-bold">
-              <span className="text-ink">{t('total')}</span>
-              <span className="text-gold text-lg">{formatPrice(total)}</span>
-            </div>
+          <div className="border-t border-[#D4AF37]/15 pt-3 flex justify-between font-bold">
+            <span className="text-white">{t('total')}</span>
+            <span className="text-[#D4AF37] text-lg">{formatPrice(total)}</span>
           </div>
         </div>
 
@@ -163,21 +135,16 @@ export default function CheckoutPage() {
             {error}
           </div>
         )}
-      </form>
+      </div>
 
-      {/* Submit button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 safe-bottom bg-obsidian/95 backdrop-blur-xl border-t border-gold-border">
+      {/* Submit */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 safe-bottom bg-[#0D0D0D]/98 backdrop-blur-xl border-t border-[#D4AF37]/12">
         <button
-          form="checkout-form"
           onClick={handleSubmit}
           disabled={loading || !customerName.trim() || !items.length}
-          className="btn-gold w-full py-4 text-base font-bold flex items-center justify-center gap-2"
+          className="w-full bg-[#D4AF37] text-[#0D0D0D] py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 shadow-[0_4px_24px_rgba(212,175,55,0.35)] disabled:opacity-50 active:scale-[0.98] transition-transform"
         >
-          {loading ? (
-            <><span className="animate-spin">⟳</span> {t('processing')}</>
-          ) : (
-            <><CheckCircle size={18} /> {t('placeOrder')}</>
-          )}
+          {loading ? <><span className="animate-spin">⟳</span> {t('processing')}</> : <><CheckCircle size={18} /> {t('placeOrder')}</>}
         </button>
       </div>
     </div>

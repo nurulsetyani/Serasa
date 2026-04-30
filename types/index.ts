@@ -16,8 +16,8 @@ export interface MenuItem {
   description_en?: string
   description_ar?: string
   price: number
-  promo_price?: number
   cook_time: number
+  calories?: number
   image: string
   is_best_seller: boolean
   category: string
@@ -26,6 +26,7 @@ export interface MenuItem {
 
 export interface CartItem extends MenuItem {
   qty: number
+  itemNotes?: string
 }
 
 export interface Order {
@@ -35,7 +36,6 @@ export interface Order {
   customer_name: string
   status: OrderStatus
   total_price: number
-  notes?: string
   created_at: string
   updated_at?: string
   order_items?: OrderItem[]
@@ -48,6 +48,7 @@ export interface OrderItem {
   name: string
   price: number
   qty: number
+  notes?: string
 }
 
 export interface Review {

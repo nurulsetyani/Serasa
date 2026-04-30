@@ -10,7 +10,7 @@ import { MOCK_MENU, IS_MOCK_MODE } from '@/lib/mock-data'
 import { useLang } from '@/context/LanguageContext'
 import { useCart } from '@/context/CartContext'
 import { getItemName, getItemDescription, TranslationKey } from '@/lib/i18n'
-import { formatPrice, calculateCartTotal, getTimeBasedPromo } from '@/lib/utils'
+import { formatPrice, calculateCartTotal } from '@/lib/utils'
 import LanguageModal from '@/components/LanguageModal'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
@@ -135,7 +135,7 @@ function MenuListCard({
 export default function MenuPage() {
   const router = useRouter()
   const { lang, t, isRTL } = useLang()
-  const { items: cartItems, addItem, setPromo, totalItems } = useCart()
+  const { items: cartItems, addItem, totalItems } = useCart()
 
   const [tableNumber, setTableNumber] = useState('1')
   const [menu, setMenu] = useState<MenuItem[]>([])
@@ -156,7 +156,6 @@ export default function MenuPage() {
     setTableNumber(p.get('table') ?? '1')
   }, [])
 
-  useEffect(() => { setPromo(getTimeBasedPromo()) }, [setPromo])
 
   // Fetch menu from Supabase or mock
   const fetchMenu = useCallback(async () => {
@@ -194,7 +193,7 @@ export default function MenuPage() {
   })
 
   const hero = menu.find(i => i.is_best_seller) ?? menu[0]
-  const { total } = calculateCartTotal(cartItems)
+  const total = calculateCartTotal(cartItems)
 
   const tableWelcome: Record<Language, string> = {
     id: 'Selamat datang! Silakan pilih menu',

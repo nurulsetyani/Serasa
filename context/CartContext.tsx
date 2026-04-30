@@ -5,25 +5,23 @@ import { CartItem, MenuItem } from '@/types'
 
 interface CartState {
   items: CartItem[]
-  promoDiscount: number
 }
 
 type CartAction =
-  | { type: 'ADD'; payload: MenuItem }
+  | { type: 'ADD'; payload: MenuItem; notes?: string }
   | { type: 'REMOVE'; payload: string }
   | { type: 'UPDATE_QTY'; payload: { id: string; qty: number } }
+  | { type: 'UPDATE_NOTES'; payload: { id: string; notes: string } }
   | { type: 'CLEAR' }
-  | { type: 'SET_PROMO'; payload: number }
   | { type: 'HYDRATE'; payload: CartState }
 
 interface CartContextValue extends CartState {
-  addItem: (item: MenuItem) => void
+  addItem: (item: MenuItem, notes?: string) => void
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
+  updateNotes: (id: string, notes: string) => void
   clearCart: () => void
-  setPromo: (pct: number) => void
   totalItems: number
-  hasDrinks: boolean
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -42,7 +40,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           ),
         }
       }
-      return { ...state, items: [...state.items, { ...action.payload, qty: 1 }] }
+      return {
+        ...state,
+        items: [...state.items, { ...action.payload, qty: 1, itemNotes: action.notes }],
+      }
     }
     case 'REMOVE':
       return { ...state, items: state.items.filter(i => i.id !== action.payload) }
@@ -57,10 +58,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         ),
       }
     }
+    case 'UPDATE_NOTES':
+      return {
+        ...state,
+        items: state.items.map(i =>
+          i.id === action.payload.id ? { ...i, itemNotes: action.payload.notes } : i
+        ),
+      }
     case 'CLEAR':
-      return { items: [], promoDiscount: 0 }
-    case 'SET_PROMO':
-      return { ...state, promoDiscount: action.payload }
+      return { items: [] }
     default:
       return state
   }
@@ -69,36 +75,37 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 const STORAGE_KEY = 'serasa_cart'
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, { items: [], promoDiscount: 0 })
+  const [state, dispatch] = useReducer(cartReducer, { items: [] })
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved) as CartState
-        dispatch({ type: 'HYDRATE', payload: parsed })
-      }
+      if (saved) dispatch({ type: 'HYDRATE', payload: JSON.parse(saved) as CartState })
     } catch {}
   }, [])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-    } catch {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch {}
   }, [state])
 
-  const addItem = useCallback((item: MenuItem) => dispatch({ type: 'ADD', payload: item }), [])
+  const addItem = useCallback(
+    (item: MenuItem, notes?: string) => dispatch({ type: 'ADD', payload: item, notes }),
+    []
+  )
   const removeItem = useCallback((id: string) => dispatch({ type: 'REMOVE', payload: id }), [])
-  const updateQty = useCallback((id: string, qty: number) =>
-    dispatch({ type: 'UPDATE_QTY', payload: { id, qty } }), [])
+  const updateQty = useCallback(
+    (id: string, qty: number) => dispatch({ type: 'UPDATE_QTY', payload: { id, qty } }),
+    []
+  )
+  const updateNotes = useCallback(
+    (id: string, notes: string) => dispatch({ type: 'UPDATE_NOTES', payload: { id, notes } }),
+    []
+  )
   const clearCart = useCallback(() => dispatch({ type: 'CLEAR' }), [])
-  const setPromo = useCallback((pct: number) => dispatch({ type: 'SET_PROMO', payload: pct }), [])
-
   const totalItems = state.items.reduce((s, i) => s + i.qty, 0)
-  const hasDrinks = state.items.some(i => i.category === 'drinks')
 
   return (
-    <CartContext.Provider value={{ ...state, addItem, removeItem, updateQty, clearCart, setPromo, totalItems, hasDrinks }}>
+    <CartContext.Provider value={{ ...state, addItem, removeItem, updateQty, updateNotes, clearCart, totalItems }}>
       {children}
     </CartContext.Provider>
   )

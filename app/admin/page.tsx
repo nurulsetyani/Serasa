@@ -322,143 +322,228 @@ export default function AdminPage() {
     delivered: orders.filter(o => o.status === 'delivered').length,
   }
 
-  return (
-    <div className="min-h-dvh bg-obsidian" dir={isRTL ? 'rtl' : 'ltr'}>
-      {showReport && <ReportModal orders={orders} onClose={() => setShowReport(false)} />}
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-obsidian/95 backdrop-blur-xl border-b border-gold-border">
-        <div className="flex items-center justify-between px-4 md:px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gold/10 border border-gold-border flex items-center justify-center">
-              <span className="text-gold text-sm">🌿</span>
-            </div>
-            <div>
-              <h1 className="font-display text-xl font-bold text-ink">Admin Dashboard</h1>
-              <p className="text-ink-muted text-xs">Serasa Restaurant</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push('/admin/menu')}
-              className="flex items-center gap-1.5 bg-[#1A1A1A] border border-white/10 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:border-[#D4AF37]/30 transition-colors"
-            >
-              <UtensilsCrossed size={14} /> Kelola Menu
-            </button>
-            <button
-              onClick={() => setShowReport(true)}
-              className="flex items-center gap-1.5 bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[#D4AF37] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#D4AF37]/20 transition-colors"
-            >
-              <FileText size={14} /> Laporan PDF
-            </button>
-            <button onClick={fetchOrders} className="btn-ghost p-2 rounded-xl" title="Refresh">
-              <RefreshCw size={16} className={loading ? 'animate-spin text-gold' : 'text-ink-muted'} />
-            </button>
-          </div>
-        </div>
+  const todayRevenue = orders
+    .filter(o => o.status === 'delivered' && new Date(o.created_at).toDateString() === new Date().toDateString())
+    .reduce((s, o) => s + o.total_price, 0)
 
-        {/* Status filter tabs */}
-        <div className="flex gap-2 px-4 md:px-6 pb-4 overflow-x-auto">
-          {STATUS_FILTERS.map(sf => (
+  return (
+    <div className="min-h-dvh bg-[#0D0D0D]" dir={isRTL ? 'rtl' : 'ltr'}>
+      {showReport && <ReportModal orders={orders} onClose={() => setShowReport(false)} />}
+
+      {/* ── SIDEBAR (desktop) ─────────────────────────────── */}
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-56 bg-[#111] border-r border-white/5 z-40 py-6">
+        <div className="px-5 mb-8">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">🌿</span>
+            <span className="font-display font-bold text-white text-base">Serasa</span>
+          </div>
+          <p className="text-[#444] text-[11px]">Restaurant Admin</p>
+        </div>
+        <nav className="flex-1 px-3 space-y-1">
+          {[
+            { icon: '📋', label: 'Pesanan', active: true },
+            { icon: '🍽️', label: 'Kelola Menu', action: () => router.push('/admin/menu') },
+            { icon: '👨‍🍳', label: 'Kitchen', action: () => router.push('/kitchen') },
+            { icon: '📊', label: 'Laporan', action: () => setShowReport(true) },
+          ].map(nav => (
             <button
-              key={sf.value}
-              onClick={() => setFilter(sf.value)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-all flex-shrink-0 ${
-                filter === sf.value
-                  ? 'bg-gold text-obsidian border-gold'
-                  : `bg-obsidian-light ${sf.color} hover:bg-obsidian-surface`
+              key={nav.label}
+              onClick={nav.action}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
+                nav.active
+                  ? 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20'
+                  : 'text-[#666] hover:bg-[#1A1A1A] hover:text-white'
               }`}
             >
-              {sf.label}
-              <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold ${
-                filter === sf.value ? 'bg-obsidian/20' : 'bg-obsidian-surface'
-              }`}>
-                {counts[sf.value as keyof typeof counts]}
-              </span>
+              <span>{nav.icon}</span>
+              {nav.label}
             </button>
           ))}
-        </div>
-      </header>
-
-      {/* New order notification */}
-      {newOrderId && (
-        <div className="mx-4 mt-4 p-3 rounded-xl bg-gold-muted border border-gold-border flex items-center gap-2 animate-fade-in">
-          <span className="animate-spin">⟳</span>
-          <span className="text-gold font-semibold text-sm">🆕 New order incoming!</span>
-        </div>
-      )}
-
-      {/* Orders grid */}
-      <main className="px-4 md:px-6 py-4 pb-8">
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => <div key={i} className="skeleton rounded-2xl h-48" />)}
+        </nav>
+        <div className="px-5 pb-2">
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#1A1A1A]">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-[#555] text-[11px]">Live · Realtime ON</span>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span className="text-5xl mb-4">📋</span>
-            <p className="text-ink-muted">{t('noOrders')}</p>
+        </div>
+      </aside>
+
+      {/* ── MAIN CONTENT ──────────────────────────────────── */}
+      <div className="lg:ml-56">
+
+        {/* Top header */}
+        <header className="sticky top-0 z-30 bg-[#0D0D0D]/96 backdrop-blur-xl border-b border-white/5">
+          <div className="flex items-center justify-between px-4 lg:px-6 py-3.5">
+            <div>
+              <h1 className="font-display text-lg font-bold text-white leading-tight">Dashboard Pesanan</h1>
+              <p className="text-[#444] text-xs">{new Date().toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long' })}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Mobile nav */}
+              <div className="flex lg:hidden gap-1.5">
+                <button onClick={() => router.push('/admin/menu')}
+                  className="p-2 rounded-xl bg-[#1A1A1A] border border-white/8 text-[#888] hover:text-white transition-colors">
+                  <UtensilsCrossed size={15} />
+                </button>
+                <button onClick={() => setShowReport(true)}
+                  className="p-2 rounded-xl bg-[#1A1A1A] border border-white/8 text-[#888] hover:text-[#D4AF37] transition-colors">
+                  <FileText size={15} />
+                </button>
+              </div>
+              <button onClick={fetchOrders}
+                className="p-2 rounded-xl bg-[#1A1A1A] border border-white/8 text-[#888] hover:text-white transition-colors">
+                <RefreshCw size={15} className={loading ? 'animate-spin text-[#D4AF37]' : ''} />
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map(order => {
-              const btn = STATUS_BUTTON[order.status]
-              const next = NEXT_STATUS[order.status]
-              const isNew = order.id === newOrderId
 
-              return (
-                <div
-                  key={order.id}
-                  className={`card-dark p-4 space-y-3 transition-all ${isNew ? 'border-gold/50 shadow-gold-md animate-pulse-gold' : ''}`}
-                >
-                  {/* Order header */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-gold font-bold text-lg">Meja {order.table_number}</span>
-                        {isNew && <span className="text-[10px] bg-gold text-obsidian px-2 py-0.5 rounded-full font-bold">NEW</span>}
-                      </div>
-                      <p className="text-ink-muted text-xs">{order.customer_name} · {formatTime(order.created_at)}</p>
-                    </div>
-                    <StatusBadge status={order.status} size="sm" />
-                  </div>
+          {/* Stats row */}
+          <div className="grid grid-cols-4 gap-0 border-t border-white/5">
+            {[
+              { label: 'Semua', value: counts.all, color: 'text-white', bg: '' },
+              { label: 'Pending', value: counts.pending, color: 'text-yellow-400', bg: filter === 'pending' ? 'bg-yellow-500/5' : '' },
+              { label: 'Memasak', value: counts.cooking, color: 'text-red-400', bg: filter === 'cooking' ? 'bg-red-500/5' : '' },
+              { label: 'Selesai', value: counts.delivered, color: 'text-purple-400', bg: filter === 'delivered' ? 'bg-purple-500/5' : '' },
+            ].map((stat, i) => (
+              <button
+                key={stat.label}
+                onClick={() => setFilter(['all','pending','cooking','delivered'][i])}
+                className={`flex flex-col items-center py-3 border-r border-white/5 last:border-0 transition-colors ${stat.bg} hover:bg-white/3`}
+              >
+                <span className={`font-black text-xl leading-none ${stat.color}`}>{stat.value}</span>
+                <span className="text-[#444] text-[10px] mt-0.5">{stat.label}</span>
+              </button>
+            ))}
+          </div>
 
-                  {/* Items */}
-                  <div className="bg-obsidian-surface rounded-xl p-3 space-y-1.5">
-                    {order.order_items?.map(item => (
-                      <div key={item.id} className="flex justify-between text-xs">
-                        <span className="text-ink-muted">{item.qty}× {item.name}</span>
-                        <span className="text-ink">{formatPrice(item.price * item.qty)}</span>
-                      </div>
-                    ))}
-                    <div className="border-t border-white/5 pt-1.5 flex justify-between font-bold text-sm">
-                      <span className="text-ink">{t('total')}</span>
-                      <span className="text-gold">{formatPrice(order.total_price)}</span>
-                    </div>
-                  </div>
+          {/* Filter tabs */}
+          <div className="flex gap-1.5 px-4 lg:px-6 py-2.5 overflow-x-auto scrollbar-hide border-t border-white/5">
+            {STATUS_FILTERS.map(sf => (
+              <button
+                key={sf.value}
+                onClick={() => setFilter(sf.value)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
+                  filter === sf.value
+                    ? 'bg-[#D4AF37] text-[#0D0D0D]'
+                    : 'bg-[#1A1A1A] text-[#555] hover:text-white hover:bg-[#222]'
+                }`}
+              >
+                {sf.label}
+                <span className={`text-[10px] font-black rounded px-1 ${filter === sf.value ? 'bg-[#0D0D0D]/20' : 'bg-[#222]'}`}>
+                  {counts[sf.value as keyof typeof counts]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </header>
 
-                  {/* Notes */}
-                  {order.notes && (
-                    <p className="text-xs text-ink-muted bg-obsidian-surface rounded-lg p-2">
-                      📝 {order.notes}
-                    </p>
-                  )}
+        {/* Revenue strip */}
+        <div className="mx-4 lg:mx-6 mt-4 bg-gradient-to-r from-[#D4AF37]/8 to-transparent border border-[#D4AF37]/15 rounded-2xl px-5 py-3.5 flex items-center justify-between">
+          <div>
+            <p className="text-[#666] text-[11px] uppercase tracking-wider">Pendapatan Hari Ini</p>
+            <p className="text-[#D4AF37] font-black text-2xl mt-0.5">{formatPrice(todayRevenue)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[#666] text-[11px] uppercase tracking-wider">Total Pesanan</p>
+            <p className="text-white font-black text-2xl mt-0.5">{counts.all}</p>
+          </div>
+        </div>
 
-                  {/* Action button */}
-                  {next && btn.label && (
-                    <button
-                      onClick={() => updateStatus(order.id, order.status)}
-                      disabled={updating === order.id}
-                      className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all ${btn.class} disabled:opacity-50`}
-                    >
-                      {updating === order.id ? '...' : btn.label}
-                    </button>
-                  )}
-                </div>
-              )
-            })}
+        {/* New order alert */}
+        {newOrderId && (
+          <div className="mx-4 lg:mx-6 mt-3 px-4 py-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex items-center gap-2.5 animate-fade-in">
+            <span className="text-lg animate-bounce">🔔</span>
+            <span className="text-[#D4AF37] font-bold text-sm">Pesanan baru masuk!</span>
           </div>
         )}
-      </main>
+
+        {/* Orders */}
+        <main className="px-4 lg:px-6 py-4 pb-10">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {[...Array(6)].map((_, i) => <div key={i} className="skeleton rounded-2xl h-44" />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-[#1A1A1A] border border-white/5 flex items-center justify-center mb-4">
+                <span className="text-3xl">📋</span>
+              </div>
+              <p className="text-white font-semibold mb-1">Tidak ada pesanan</p>
+              <p className="text-[#444] text-sm">Pesanan akan muncul di sini secara realtime</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {filtered.map(order => {
+                const btn = STATUS_BUTTON[order.status]
+                const next = NEXT_STATUS[order.status]
+                const isNew = order.id === newOrderId
+
+                return (
+                  <div
+                    key={order.id}
+                    className={`bg-[#141414] rounded-2xl border overflow-hidden transition-all ${
+                      isNew ? 'border-[#D4AF37]/50 shadow-[0_0_24px_rgba(212,175,55,0.12)]' : 'border-white/5 hover:border-white/10'
+                    }`}
+                  >
+                    {/* Card header */}
+                    <div className={`px-4 py-3 flex items-center justify-between border-b border-white/5 ${
+                      order.status === 'pending' ? 'bg-yellow-500/5' :
+                      order.status === 'cooking' ? 'bg-red-500/5' :
+                      order.status === 'ready'   ? 'bg-green-500/5' : 'bg-purple-500/5'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center">
+                          <span className="text-[#D4AF37] font-black text-sm">{order.table_number}</span>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-white font-bold text-sm">{order.customer_name}</p>
+                            {isNew && <span className="text-[9px] bg-[#D4AF37] text-[#0D0D0D] px-1.5 py-0.5 rounded-full font-black">NEW</span>}
+                          </div>
+                          <p className="text-[#444] text-[10px]">Meja {order.table_number} · {formatTime(order.created_at)}</p>
+                        </div>
+                      </div>
+                      <StatusBadge status={order.status} size="sm" />
+                    </div>
+
+                    {/* Items */}
+                    <div className="px-4 py-3 space-y-1.5">
+                      {order.order_items?.map(item => (
+                        <div key={item.id} className="flex items-start justify-between gap-2 text-xs">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[#888]">{item.qty}× {item.name}</span>
+                            {item.notes && (
+                              <p className="text-[#555] italic text-[10px] mt-0.5">📝 {item.notes}</p>
+                            )}
+                          </div>
+                          <span className="text-[#D4AF37] font-semibold flex-shrink-0">{formatPrice(item.price * item.qty)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-4 pb-4 space-y-2.5">
+                      <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                        <span className="text-[#555] text-xs">{order.order_items?.length ?? 0} item</span>
+                        <span className="text-[#D4AF37] font-black text-base">{formatPrice(order.total_price)}</span>
+                      </div>
+                      {next && btn.label && (
+                        <button
+                          onClick={() => updateStatus(order.id, order.status)}
+                          disabled={updating === order.id}
+                          className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 ${btn.class}`}
+                        >
+                          {updating === order.id ? '⟳ Memproses...' : btn.label}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   )
 }

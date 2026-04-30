@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
   Plus, Pencil, Trash2, X, Check, ArrowLeft,
-  Upload, Clock, Star, Eye, EyeOff, Loader2
+  Upload, Clock, Star, Loader2, Flame
 } from 'lucide-react'
 import { MenuItem } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -31,7 +31,7 @@ const CATEGORIES = [
 const EMPTY_FORM = {
   name_id: '', name_en: '', name_ar: '',
   description_id: '', description_en: '', description_ar: '',
-  price: '', cook_time: '15', category: 'main',
+  price: '', cook_time: '15', calories: '', category: 'main',
   image: '', is_best_seller: false, is_available: true,
 }
 
@@ -84,6 +84,7 @@ export default function MenuManagerPage() {
       description_ar: item.description_ar ?? '',
       price: String(item.price),
       cook_time: String(item.cook_time),
+      calories: item.calories ? String(item.calories) : '',
       category: item.category,
       image: item.image ?? '',
       is_best_seller: item.is_best_seller,
@@ -128,6 +129,7 @@ export default function MenuManagerPage() {
       description_ar: form.description_ar.trim() || null,
       price: parseFloat(form.price),
       cook_time: parseInt(form.cook_time) || 15,
+      calories: form.calories ? parseInt(form.calories) : null,
       category: form.category,
       image: form.image.trim() || null,
       is_best_seller: form.is_best_seller,
@@ -427,8 +429,8 @@ export default function MenuManagerPage() {
                 </div>
               </div>
 
-              {/* Price + Cook time + Category */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Price + Cook time + Calories */}
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-2 block">
                     Harga (SR) <span className="text-red-400">*</span>
@@ -445,7 +447,7 @@ export default function MenuManagerPage() {
                 </div>
                 <div>
                   <label className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-2 block">
-                    Waktu Masak (menit)
+                    Waktu (mnt)
                   </label>
                   <input
                     type="number"
@@ -454,6 +456,19 @@ export default function MenuManagerPage() {
                     onChange={e => setForm(f => ({ ...f, cook_time: e.target.value }))}
                     className="input-dark w-full px-4 py-3 text-sm rounded-xl"
                     min="1"
+                  />
+                </div>
+                <div>
+                  <label className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-2 block flex items-center gap-1">
+                    <Flame size={10} className="text-orange-400" /> Kalori
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="kcal"
+                    value={form.calories}
+                    onChange={e => setForm(f => ({ ...f, calories: e.target.value }))}
+                    className="input-dark w-full px-4 py-3 text-sm rounded-xl"
+                    min="0"
                   />
                 </div>
               </div>
