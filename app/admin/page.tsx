@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { RefreshCw, FileText, Printer, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { RefreshCw, FileText, Printer, X, UtensilsCrossed } from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
@@ -252,6 +253,7 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
 }
 
 export default function AdminPage() {
+  const router = useRouter()
   const { t, isRTL } = useLang()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -336,6 +338,12 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push('/admin/menu')}
+              className="flex items-center gap-1.5 bg-[#1A1A1A] border border-white/10 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:border-[#D4AF37]/30 transition-colors"
+            >
+              <UtensilsCrossed size={14} /> Kelola Menu
+            </button>
             <button
               onClick={() => setShowReport(true)}
               className="flex items-center gap-1.5 bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[#D4AF37] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#D4AF37]/20 transition-colors"
