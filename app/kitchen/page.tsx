@@ -22,7 +22,6 @@ const MOCK_KITCHEN_ORDERS: Order[] = [
   {
     id: 'demo-2', restaurant_id: RESTAURANT_ID, table_number: '5',
     customer_name: 'Fatimah', status: 'cooking', total_price: 50,
-    notes: 'Tidak pedas',
     created_at: new Date(Date.now() - 8 * 60000).toISOString(),
     order_items: [
       { id: 'i3', order_id: 'demo-2', menu_id: 'm3', name: 'Nasi Goreng Spesial', price: 22, qty: 2 },
