@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
-import { Printer, CheckCircle } from 'lucide-react'
+import { CheckCircle, Download } from 'lucide-react'
 import { Order } from '@/types'
-import { supabase } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
 
 const MOCK_ORDER: Order = {
@@ -41,8 +40,10 @@ const PAYMENT_LABEL: Record<string, string> = {
 
 export default function ReceiptPage() {
   const { id } = useParams<{ id: string }>()
-  const [order, setOrder] = useState<Order | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [order, setOrder]       = useState<Order | null>(null)
+  const [loading, setLoading]   = useState(true)
+  const [downloading, setDown]  = useState(false)
+  const [done, setDone]         = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -58,17 +59,50 @@ export default function ReceiptPage() {
     load()
   }, [id])
 
+  // Auto-download when ?download=1 is in URL
+  useEffect(() => {
+    if (!order || loading) return
+    const p = new URLSearchParams(window.location.search)
+    if (p.get('download') === '1') {
+      setTimeout(() => triggerDownload(), 600)
+    }
+  }, [order, loading])
+
+  async function triggerDownload() {
+    if (downloading) return
+    setDown(true)
+    try {
+      const html2canvas = (await import('html2canvas')).default
+      const el = document.getElementById('receipt-card')
+      if (!el) return
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      })
+      const link = document.createElement('a')
+      link.download = `struk-${order?.order_number ?? id.slice(0, 8)}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+      setDone(true)
+    } catch (e) {
+      console.error(e)
+    }
+    setDown(false)
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-orange-500 rounded-full animate-spin" />
       </div>
     )
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
         <p className="text-gray-400">Pesanan tidak ditemukan.</p>
       </div>
     )
@@ -77,41 +111,47 @@ export default function ReceiptPage() {
   const subtotal = order.order_items?.reduce((s, i) => s + i.price * i.qty, 0) ?? order.total_price
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-start py-8 px-4">
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-start py-8 px-4">
 
-      {/* Print button — hidden on print */}
-      <div className="no-print flex gap-3 mb-6">
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold text-sm"
-          style={{ background: '#FF6B35', boxShadow: '0 4px 16px rgba(255,107,53,0.35)' }}
-        >
-          <Printer size={16} /> Cetak Struk
-        </button>
-      </div>
+      {/* Download button */}
+      <button
+        onClick={triggerDownload}
+        disabled={downloading}
+        className="flex items-center gap-2 mb-6 px-6 py-3 rounded-2xl text-white font-semibold text-sm disabled:opacity-70 transition-opacity hover:opacity-90 active:scale-95"
+        style={{ background: '#FF6B35', boxShadow: '0 4px 16px rgba(255,107,53,0.35)' }}
+      >
+        {downloading ? (
+          <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Memproses...</>
+        ) : done ? (
+          <><CheckCircle size={16} /> Tersimpan!</>
+        ) : (
+          <><Download size={16} /> Download Struk</>
+        )}
+      </button>
 
       {/* Receipt card */}
-      <div id="receipt" className="bg-white w-full max-w-[320px] shadow-xl rounded-2xl overflow-hidden">
+      <div id="receipt-card" className="bg-white w-full max-w-[320px] overflow-hidden"
+        style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.12)', borderRadius: 16 }}>
 
         {/* Header */}
         <div className="bg-gray-900 px-6 py-5 text-center">
-          <div className="flex justify-center mb-3">
+          <div className="flex justify-center mb-2">
             <div className="relative w-[140px] h-[50px]">
               <Image src="/logo.png" alt="Serasa" fill className="object-contain" sizes="140px" />
             </div>
           </div>
-          <p className="text-gray-400 text-[10px] tracking-widest uppercase mt-1">
+          <p className="text-gray-400 text-[10px] tracking-widest uppercase">
             from indonesia for the world
           </p>
         </div>
 
-        {/* Struk label */}
-        <div className="bg-orange-500 px-6 py-2 text-center">
+        {/* Orange stripe */}
+        <div className="px-6 py-2 text-center" style={{ background: '#FF6B35' }}>
           <p className="text-white text-[11px] font-black tracking-[3px] uppercase">Struk Pembayaran</p>
         </div>
 
         {/* Order info */}
-        <div className="px-6 py-4 space-y-2 border-b border-dashed border-gray-200">
+        <div className="px-6 py-4 space-y-2" style={{ borderBottom: '1px dashed #E5E7EB' }}>
           {[
             { label: 'No. Pesanan', value: order.order_number ?? order.id.slice(0, 8).toUpperCase() },
             { label: 'Tanggal',     value: formatDateTime(order.created_at) },
@@ -128,15 +168,15 @@ export default function ReceiptPage() {
         </div>
 
         {/* Items */}
-        <div className="px-6 py-4 border-b border-dashed border-gray-200 space-y-2.5">
+        <div className="px-6 py-4 space-y-2.5" style={{ borderBottom: '1px dashed #E5E7EB' }}>
           <p className="text-gray-400 text-[10px] tracking-widest uppercase mb-3">Pesanan</p>
           {order.order_items?.map(item => (
             <div key={item.id} className="flex justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="text-gray-900 text-[12px] font-medium leading-tight">{item.name}</p>
+              <div className="flex-1">
+                <p className="text-gray-900 text-[12px] font-medium">{item.name}</p>
                 <p className="text-gray-400 text-[10px]">{item.qty} × {formatPrice(item.price)}</p>
               </div>
-              <span className="text-gray-900 text-[12px] font-bold flex-shrink-0">
+              <span className="text-gray-900 text-[12px] font-bold">
                 {formatPrice(item.price * item.qty)}
               </span>
             </div>
@@ -144,39 +184,19 @@ export default function ReceiptPage() {
         </div>
 
         {/* Total */}
-        <div className="px-6 py-4 border-b border-dashed border-gray-200">
+        <div className="px-6 py-4" style={{ borderBottom: '1px dashed #E5E7EB' }}>
           <div className="flex justify-between items-center">
-            <span className="text-gray-500 text-sm font-semibold">TOTAL</span>
-            <span className="text-gray-900 font-black text-xl">{formatPrice(order.total_price)}</span>
+            <span className="text-gray-600 font-semibold text-sm">TOTAL</span>
+            <span className="font-black text-xl" style={{ color: '#FF6B35' }}>{formatPrice(order.total_price)}</span>
           </div>
-          {order.payment_method === 'cash' && (
-            <div className="flex justify-between items-center mt-1.5">
-              <span className="text-gray-300 text-[11px]">Metode</span>
-              <span className="text-gray-400 text-[11px]">Tunai</span>
-            </div>
-          )}
           {(order.payment_method === 'online' || order.payment_method === 'qris') && (
-            <div className="flex justify-between items-center mt-1.5">
-              <span className="text-gray-300 text-[11px]">Metode</span>
-              <span className="text-green-500 text-[11px] font-semibold flex items-center gap-1">
-                <CheckCircle size={10} /> {PAYMENT_LABEL[order.payment_method]} Lunas
+            <div className="flex justify-between mt-1.5">
+              <span className="text-gray-300 text-[11px]">Status</span>
+              <span className="text-green-500 text-[11px] font-semibold">
+                ✓ {PAYMENT_LABEL[order.payment_method]} Lunas
               </span>
             </div>
           )}
-        </div>
-
-        {/* Status */}
-        <div className="px-6 py-4 border-b border-dashed border-gray-200">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400 text-[11px]">Status</span>
-            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full"
-              style={{
-                background: order.status === 'delivered' ? '#ECFDF5' : '#FFF3EE',
-                color: order.status === 'delivered' ? '#10B981' : '#FF6B35',
-              }}>
-              {order.status === 'delivered' ? '✓ Selesai' : order.status === 'ready' ? 'Siap' : 'Diproses'}
-            </span>
-          </div>
         </div>
 
         {/* Footer */}
@@ -186,31 +206,18 @@ export default function ReceiptPage() {
           <p className="text-gray-300 text-[9px] mt-3">Serasa Indonesian Restaurant · Saudi Arabia</p>
         </div>
 
-        {/* Barcode-style bottom decoration */}
-        <div className="flex">
+        {/* Barcode decoration */}
+        <div className="flex h-4">
           {[...Array(40)].map((_, i) => (
-            <div key={i} className="flex-1 h-4"
-              style={{ background: i % 3 === 0 ? '#1a1a1a' : i % 2 === 0 ? '#555' : '#f5f5f5' }} />
+            <div key={i} className="flex-1"
+              style={{ background: i % 3 === 0 ? '#1a1a1a' : i % 2 === 0 ? '#666' : '#f5f5f5' }} />
           ))}
         </div>
       </div>
 
-      <p className="no-print text-gray-400 text-xs mt-6 text-center">
-        Tekan <strong>Cetak Struk</strong> atau gunakan <strong>Ctrl+P</strong>
+      <p className="text-gray-400 text-xs mt-6 text-center">
+        Gambar struk tersimpan di folder <strong>Downloads</strong>
       </p>
-
-      <style>{`
-        @media print {
-          body { background: white !important; margin: 0; }
-          .no-print { display: none !important; }
-          #receipt {
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-        }
-      `}</style>
     </div>
   )
 }

@@ -314,21 +314,19 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
-        {/* Payment info — transfer / qris */}
-        {(order.payment_method === 'online' || order.payment_method === 'qris') && (
+        {/* Payment info — hanya transfer bank */}
+        {order.payment_method === 'online' && (
           <PaymentInfo order={order} />
         )}
 
-        {/* Cetak Struk */}
+        {/* Download Struk */}
         <button
-          onClick={() => window.open(`/receipt/${id}`, '_blank')}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 text-sm font-semibold transition-colors"
-          style={{ borderColor: '#E5E7EB', color: '#6B7280' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.color = PRIMARY }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.color = '#6B7280' }}
+          onClick={() => window.open(`/receipt/${id}?download=1`, '_blank')}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white text-sm font-semibold transition-opacity hover:opacity-90 active:scale-[0.98]"
+          style={{ background: PRIMARY, boxShadow: `0 4px 16px rgba(255,107,53,0.3)` }}
         >
           <Printer size={15} />
-          Cetak Struk
+          Download Struk
         </button>
 
         {/* Live indicator */}
