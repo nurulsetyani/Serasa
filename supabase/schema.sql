@@ -51,7 +51,7 @@ CREATE TABLE orders (
   order_type     TEXT NOT NULL DEFAULT 'dine_in'
                    CHECK (order_type IN ('dine_in','take_away')),
   payment_method TEXT NOT NULL DEFAULT 'cash'
-                   CHECK (payment_method IN ('cash','online')),
+                   CHECK (payment_method IN ('cash','online','qris')),
   status         TEXT NOT NULL DEFAULT 'pending'
                    CHECK (status IN ('pending','cooking','ready','delivered')),
   total_price    NUMERIC(10,2) NOT NULL CHECK (total_price >= 0),

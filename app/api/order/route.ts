@@ -7,7 +7,7 @@ interface CreateOrderBody {
   customer_name: string
   table_number: string
   order_type?: 'dine_in' | 'take_away'
-  payment_method?: 'cash' | 'online'
+  payment_method?: 'cash' | 'online' | 'qris'
   notes?: string
   total_price: number
   items: {
@@ -40,7 +40,7 @@ async function sendWhatsApp(order: {
   if (!token || !adminWa) return
 
   const orderTypeLabel   = order.order_type === 'dine_in' ? 'Dine In' : 'Take Away'
-  const paymentLabel     = order.payment_method === 'cash' ? 'Tunai' : 'Transfer/Online'
+  const paymentLabel     = order.payment_method === 'cash' ? 'Tunai' : order.payment_method === 'qris' ? 'QRIS' : 'Transfer Bank'
   const itemLines        = order.items.map(i => `  ${i.qty}× ${i.name}`).join('\n')
 
   const message = `🔔 *PESANAN BARU — Serasa Restaurant*

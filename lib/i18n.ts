@@ -45,7 +45,7 @@ const translations = {
     reviewSent: 'Ulasan terkirim', skipReview: 'Lewati',
     // Order type & payment
     orderType: 'Jenis Pesanan', dineIn: 'Makan di Tempat', takeAway: 'Bawa Pulang',
-    paymentMethod: 'Metode Pembayaran', cash: 'Tunai', online: 'Transfer / QRIS',
+    paymentMethod: 'Metode Pembayaran', cash: 'Tunai', online: 'Transfer Bank', qris: 'QRIS',
     // Admin
     allOrders: 'Semua Pesanan', filterStatus: 'Filter', updateStatus: 'Update Status',
     noOrders: 'Tidak ada pesanan', ordersCount: 'pesanan', refresh: 'Refresh',
@@ -91,7 +91,7 @@ const translations = {
     submitReview: 'Submit Review', thankYouReview: 'Thank you for your review!',
     reviewSent: 'Review submitted', skipReview: 'Skip',
     orderType: 'Order Type', dineIn: 'Dine In', takeAway: 'Take Away',
-    paymentMethod: 'Payment Method', cash: 'Cash', online: 'Online Transfer / QR',
+    paymentMethod: 'Payment Method', cash: 'Cash', online: 'Bank Transfer', qris: 'QRIS',
     allOrders: 'All Orders', filterStatus: 'Filter', updateStatus: 'Update Status',
     noOrders: 'No orders', ordersCount: 'orders', refresh: 'Refresh',
     startCooking: 'Start Cooking', markReady: 'Mark Ready', newOrder: 'New Order',
@@ -134,7 +134,7 @@ const translations = {
     submitReview: 'إرسال التقييم', thankYouReview: 'شكراً على تقييمك!',
     reviewSent: 'تم الإرسال', skipReview: 'تخطي',
     orderType: 'نوع الطلب', dineIn: 'تناول في المطعم', takeAway: 'سفري',
-    paymentMethod: 'طريقة الدفع', cash: 'نقداً', online: 'تحويل / QR',
+    paymentMethod: 'طريقة الدفع', cash: 'نقداً', online: 'تحويل بنكي', qris: 'QRIS',
     allOrders: 'جميع الطلبات', filterStatus: 'تصفية', updateStatus: 'تحديث الحالة',
     noOrders: 'لا توجد طلبات', ordersCount: 'طلبات', refresh: 'تحديث',
     startCooking: 'ابدأ الطبخ', markReady: 'تحديد كجاهز', newOrder: 'طلب جديد',

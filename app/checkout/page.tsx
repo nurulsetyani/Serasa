@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, MapPin, CheckCircle, UtensilsCrossed, ShoppingBag, Banknote, Smartphone, ChefHat, Clock } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowLeft, User, MapPin, CheckCircle, UtensilsCrossed, ShoppingBag, Banknote, Smartphone, QrCode, ChefHat, Clock } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
@@ -14,15 +14,16 @@ import { OrderType, PaymentMethod } from '@/types'
 const PRIMARY = '#FF6B35'
 
 type OrderTypeOption   = { value: OrderType;     icon: React.ElementType; labelKey: 'dineIn' | 'takeAway' }
-type PaymentOption     = { value: PaymentMethod;  icon: React.ElementType; labelKey: 'cash' | 'online' }
+type PaymentOption     = { value: PaymentMethod;  icon: React.ElementType; labelKey: 'cash' | 'online' | 'qris' }
 
 const ORDER_TYPES: OrderTypeOption[] = [
   { value: 'dine_in',   icon: UtensilsCrossed, labelKey: 'dineIn' },
   { value: 'take_away', icon: ShoppingBag,     labelKey: 'takeAway' },
 ]
 const PAYMENT_METHODS: PaymentOption[] = [
-  { value: 'cash',   icon: Banknote,   labelKey: 'cash' },
-  { value: 'online', icon: Smartphone, labelKey: 'online' },
+  { value: 'cash',   icon: Banknote,    labelKey: 'cash' },
+  { value: 'online', icon: Smartphone,  labelKey: 'online' },
+  { value: 'qris',   icon: QrCode,      labelKey: 'qris' },
 ]
 
 // ─── Success Screen ────────────────────────────────────────
@@ -256,7 +257,7 @@ export default function CheckoutPage() {
         {/* Payment */}
         <div className="space-y-3">
           <p className="text-sm font-semibold text-gray-600">{t('paymentMethod')}</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2.5">
             {PAYMENT_METHODS.map(({ value, icon: Icon, labelKey }) => (
               <motion.button key={value} whileTap={{ scale: 0.96 }}
                 onClick={() => setPaymentMethod(value)}
