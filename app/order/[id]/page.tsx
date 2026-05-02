@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Home, Clock, ChefHat, CheckCircle, Package, Copy, MessageCircle } from 'lucide-react'
+import { Home, Clock, ChefHat, CheckCircle, Package, Copy, MessageCircle, Printer } from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
@@ -314,8 +314,19 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
-        {/* Payment info — hanya tampil kalau pilih online */}
-        {order.payment_method === 'online' && <PaymentInfo order={order} />}
+        {/* Payment info — hanya tampil kalau pilih online/qris */}
+        {(order.payment_method === 'online' || order.payment_method === 'qris') && (
+          <PaymentInfo order={order} />
+        )}
+
+        {/* Cetak struk */}
+        <button
+          onClick={() => window.open(`/receipt/${id}`, '_blank')}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-[#D4AF37]/25 text-[#D4AF37] text-sm font-semibold hover:bg-[#D4AF37]/8 transition-colors"
+        >
+          <Printer size={15} />
+          Cetak Struk
+        </button>
 
         {/* Realtime indicator */}
         <div className="flex items-center justify-center gap-2 text-ink-muted text-xs">
