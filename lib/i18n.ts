@@ -43,6 +43,9 @@ const translations = {
     rateExperience: 'Bagaimana pengalamanmu?', writeReview: 'Tulis ulasanmu...',
     submitReview: 'Kirim Ulasan', thankYouReview: 'Terima kasih atas ulasanmu!',
     reviewSent: 'Ulasan terkirim', skipReview: 'Lewati',
+    // Order type & payment
+    orderType: 'Jenis Pesanan', dineIn: 'Makan di Tempat', takeAway: 'Bawa Pulang',
+    paymentMethod: 'Metode Pembayaran', cash: 'Tunai', online: 'Transfer / QRIS',
     // Admin
     allOrders: 'Semua Pesanan', filterStatus: 'Filter', updateStatus: 'Update Status',
     noOrders: 'Tidak ada pesanan', ordersCount: 'pesanan', refresh: 'Refresh',
@@ -87,6 +90,8 @@ const translations = {
     rateExperience: 'How was your experience?', writeReview: 'Write a review...',
     submitReview: 'Submit Review', thankYouReview: 'Thank you for your review!',
     reviewSent: 'Review submitted', skipReview: 'Skip',
+    orderType: 'Order Type', dineIn: 'Dine In', takeAway: 'Take Away',
+    paymentMethod: 'Payment Method', cash: 'Cash', online: 'Online Transfer / QR',
     allOrders: 'All Orders', filterStatus: 'Filter', updateStatus: 'Update Status',
     noOrders: 'No orders', ordersCount: 'orders', refresh: 'Refresh',
     startCooking: 'Start Cooking', markReady: 'Mark Ready', newOrder: 'New Order',
@@ -128,6 +133,8 @@ const translations = {
     rateExperience: 'كيف كانت تجربتك؟', writeReview: 'اكتب تقييماً...',
     submitReview: 'إرسال التقييم', thankYouReview: 'شكراً على تقييمك!',
     reviewSent: 'تم الإرسال', skipReview: 'تخطي',
+    orderType: 'نوع الطلب', dineIn: 'تناول في المطعم', takeAway: 'سفري',
+    paymentMethod: 'طريقة الدفع', cash: 'نقداً', online: 'تحويل / QR',
     allOrders: 'جميع الطلبات', filterStatus: 'تصفية', updateStatus: 'تحديث الحالة',
     noOrders: 'لا توجد طلبات', ordersCount: 'طلبات', refresh: 'تحديث',
     startCooking: 'ابدأ الطبخ', markReady: 'تحديد كجاهز', newOrder: 'طلب جديد',

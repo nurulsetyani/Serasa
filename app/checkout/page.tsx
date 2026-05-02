@@ -2,12 +2,26 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, MapPin, CheckCircle } from 'lucide-react'
+import { ArrowLeft, User, MapPin, CheckCircle, UtensilsCrossed, ShoppingBag, Banknote, Smartphone } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
 import { getItemName } from '@/lib/i18n'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
+import { OrderType, PaymentMethod } from '@/types'
+
+type OrderTypeOption = { value: OrderType; icon: React.ElementType; labelKey: 'dineIn' | 'takeAway' }
+type PaymentOption  = { value: PaymentMethod; icon: React.ElementType; labelKey: 'cash' | 'online' }
+
+const ORDER_TYPES: OrderTypeOption[] = [
+  { value: 'dine_in',   icon: UtensilsCrossed, labelKey: 'dineIn' },
+  { value: 'take_away', icon: ShoppingBag,     labelKey: 'takeAway' },
+]
+
+const PAYMENT_METHODS: PaymentOption[] = [
+  { value: 'cash',   icon: Banknote,    labelKey: 'cash' },
+  { value: 'online', icon: Smartphone,  labelKey: 'online' },
+]
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -15,9 +29,12 @@ export default function CheckoutPage() {
   const { lang, t, isRTL } = useLang()
   const { items, clearCart } = useCart()
 
-  const [customerName, setCustomerName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [customerName, setCustomerName]     = useState('')
+  const [orderType, setOrderType]           = useState<OrderType>('dine_in')
+  const [paymentMethod, setPaymentMethod]   = useState<PaymentMethod>('cash')
+  const [loading, setLoading]               = useState(false)
+  const [error, setError]                   = useState('')
+  const [submitted, setSubmitted]           = useState(false)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -27,7 +44,8 @@ export default function CheckoutPage() {
   const total = calculateCartTotal(items)
 
   async function handleSubmit() {
-    if (!customerName.trim() || !items.length) return
+    if (submitted || loading || !customerName.trim() || !items.length) return
+    setSubmitted(true)
     setLoading(true)
     setError('')
 
@@ -45,6 +63,8 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           customer_name: customerName.trim(),
           table_number: tableNumber,
+          order_type: orderType,
+          payment_method: paymentMethod,
           total_price: total,
           items: items.map(i => ({
             menu_id: i.id,
@@ -63,6 +83,7 @@ export default function CheckoutPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error'))
       setLoading(false)
+      setSubmitted(false)
     }
   }
 
@@ -83,17 +104,18 @@ export default function CheckoutPage() {
         </div>
       </header>
 
-      <div className="flex-1 px-4 py-6 space-y-5 pb-32">
-        {/* Table */}
+      <div className="flex-1 px-4 py-6 space-y-5 pb-36">
+
+        {/* Table info */}
         <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#D4AF37]/8 border border-[#D4AF37]/20">
-          <MapPin size={20} className="text-[#D4AF37]" />
+          <MapPin size={20} className="text-[#D4AF37] flex-shrink-0" />
           <div>
             <p className="text-[#888] text-xs">{t('tableNumber')}</p>
             <p className="text-white font-bold text-lg">{tableNumber}</p>
           </div>
         </div>
 
-        {/* Name */}
+        {/* Customer name */}
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm font-semibold text-[#888]">
             <User size={14} /> {t('yourName')} <span className="text-red-400">*</span>
@@ -106,6 +128,74 @@ export default function CheckoutPage() {
             required
             className="input-dark w-full px-4 py-3.5 text-sm"
           />
+        </div>
+
+        {/* Order type */}
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-[#888]">{t('orderType')}</p>
+          <div className="grid grid-cols-2 gap-3">
+            {ORDER_TYPES.map(({ value, icon: Icon, labelKey }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setOrderType(value)}
+                className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all duration-200 active:scale-[0.97]"
+                style={{
+                  background: orderType === value ? 'rgba(212,175,55,0.08)' : '#1A1A1A',
+                  borderColor: orderType === value ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.06)',
+                  boxShadow: orderType === value ? '0 0 0 1px rgba(212,175,55,0.2)' : undefined,
+                }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                  style={{ background: orderType === value ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)' }}>
+                  <Icon size={20} style={{ color: orderType === value ? '#D4AF37' : '#666' }} />
+                </div>
+                <span className="text-sm font-semibold"
+                  style={{ color: orderType === value ? '#D4AF37' : '#888' }}>
+                  {t(labelKey)}
+                </span>
+                {orderType === value && (
+                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-[#D4AF37] flex items-center justify-center">
+                    <CheckCircle size={10} className="text-[#0D0D0D]" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Payment method */}
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-[#888]">{t('paymentMethod')}</p>
+          <div className="grid grid-cols-2 gap-3">
+            {PAYMENT_METHODS.map(({ value, icon: Icon, labelKey }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPaymentMethod(value)}
+                className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all duration-200 active:scale-[0.97]"
+                style={{
+                  background: paymentMethod === value ? 'rgba(212,175,55,0.08)' : '#1A1A1A',
+                  borderColor: paymentMethod === value ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.06)',
+                  boxShadow: paymentMethod === value ? '0 0 0 1px rgba(212,175,55,0.2)' : undefined,
+                }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                  style={{ background: paymentMethod === value ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)' }}>
+                  <Icon size={20} style={{ color: paymentMethod === value ? '#D4AF37' : '#666' }} />
+                </div>
+                <span className="text-sm font-semibold"
+                  style={{ color: paymentMethod === value ? '#D4AF37' : '#888' }}>
+                  {t(labelKey)}
+                </span>
+                {paymentMethod === value && (
+                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-[#D4AF37] flex items-center justify-center">
+                    <CheckCircle size={10} className="text-[#0D0D0D]" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Order summary */}
@@ -141,10 +231,13 @@ export default function CheckoutPage() {
       <div className="fixed bottom-0 left-0 right-0 p-4 safe-bottom bg-[#0D0D0D]/98 backdrop-blur-xl border-t border-[#D4AF37]/12">
         <button
           onClick={handleSubmit}
-          disabled={loading || !customerName.trim() || !items.length}
+          disabled={loading || submitted || !customerName.trim() || !items.length}
           className="w-full bg-[#D4AF37] text-[#0D0D0D] py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 shadow-[0_4px_24px_rgba(212,175,55,0.35)] disabled:opacity-50 active:scale-[0.98] transition-transform"
         >
-          {loading ? <><span className="animate-spin">⟳</span> {t('processing')}</> : <><CheckCircle size={18} /> {t('placeOrder')}</>}
+          {loading
+            ? <><span className="animate-spin">⟳</span> {t('processing')}</>
+            : <><CheckCircle size={18} /> {t('placeOrder')}</>
+          }
         </button>
       </div>
     </div>

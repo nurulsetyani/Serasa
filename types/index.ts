@@ -29,11 +29,17 @@ export interface CartItem extends MenuItem {
   itemNotes?: string
 }
 
+export type OrderType = 'dine_in' | 'take_away'
+export type PaymentMethod = 'cash' | 'online'
+
 export interface Order {
   id: string
   restaurant_id: string
+  order_number?: string
   table_number: string
   customer_name: string
+  order_type?: OrderType
+  payment_method?: PaymentMethod
   status: OrderStatus
   total_price: number
   created_at: string

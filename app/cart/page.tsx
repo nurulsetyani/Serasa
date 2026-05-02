@@ -29,7 +29,7 @@ export default function CartPage() {
         <h2 className="font-display text-2xl font-bold text-white mb-2">{t('emptyCart')}</h2>
         <p className="text-[#666] mb-8">{t('emptyCartSub')}</p>
         <button
-          onClick={() => router.push(`/?table=${tableNumber}`)}
+          onClick={() => router.push(`/menu?table=${tableNumber}`)}
           className="bg-[#D4AF37] text-[#0D0D0D] font-bold px-8 py-3.5 rounded-2xl"
         >
           {t('continueShopping')}
@@ -48,7 +48,7 @@ export default function CartPage() {
       <header className="sticky top-0 z-40 bg-[#0D0D0D]/95 backdrop-blur-xl border-b border-[#D4AF37]/12">
         <div className="flex items-center gap-3 px-4 py-4">
           <button
-            onClick={() => router.push(`/?table=${tableNumber}`)}
+            onClick={() => router.push(`/menu?table=${tableNumber}`)}
             className="p-2 rounded-xl hover:bg-[#1A1A1A] text-[#888] hover:text-white transition-colors"
           >
             <ArrowLeft size={20} className={isRTL ? 'rotate-180' : ''} />

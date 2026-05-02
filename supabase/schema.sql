@@ -43,17 +43,27 @@ CREATE TABLE menu (
 
 -- ── Orders ────────────────────────────────────────────────
 CREATE TABLE orders (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE NOT NULL,
-  table_number  TEXT NOT NULL,
-  customer_name TEXT NOT NULL,
-  status        TEXT NOT NULL DEFAULT 'pending'
-                  CHECK (status IN ('pending','cooking','ready','delivered')),
-  total_price   NUMERIC(10,2) NOT NULL CHECK (total_price >= 0),
-  notes         TEXT,
-  created_at    TIMESTAMPTZ DEFAULT NOW(),
-  updated_at    TIMESTAMPTZ DEFAULT NOW()
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  restaurant_id  UUID REFERENCES restaurants(id) ON DELETE CASCADE NOT NULL,
+  order_number   TEXT,
+  table_number   TEXT NOT NULL,
+  customer_name  TEXT NOT NULL,
+  order_type     TEXT NOT NULL DEFAULT 'dine_in'
+                   CHECK (order_type IN ('dine_in','take_away')),
+  payment_method TEXT NOT NULL DEFAULT 'cash'
+                   CHECK (payment_method IN ('cash','online')),
+  status         TEXT NOT NULL DEFAULT 'pending'
+                   CHECK (status IN ('pending','cooking','ready','delivered')),
+  total_price    NUMERIC(10,2) NOT NULL CHECK (total_price >= 0),
+  notes          TEXT,
+  created_at     TIMESTAMPTZ DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ── Migration (run if table already exists) ───────────────
+-- ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number   TEXT;
+-- ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type     TEXT NOT NULL DEFAULT 'dine_in' CHECK (order_type IN ('dine_in','take_away'));
+-- ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cash' CHECK (payment_method IN ('cash','online'));
 
 -- ── Order Items ───────────────────────────────────────────
 CREATE TABLE order_items (

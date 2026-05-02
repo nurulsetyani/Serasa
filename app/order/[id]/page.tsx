@@ -119,7 +119,7 @@ export default function OrderTrackingPage() {
     return (
       <div className="min-h-dvh bg-obsidian flex flex-col items-center justify-center p-8 text-center">
         <p className="text-ink-muted mb-4">{t('error')}</p>
-        <button onClick={() => router.push(`/?table=${tableNumber}`)} className="btn-gold px-6 py-3">
+        <button onClick={() => router.push(`/menu?table=${tableNumber}`)} className="btn-gold px-6 py-3">
           {t('backToMenu')}
         </button>
       </div>
@@ -219,7 +219,7 @@ export default function OrderTrackingPage() {
       {/* Bottom action */}
       <div className="fixed bottom-0 left-0 right-0 p-4 safe-bottom">
         <button
-          onClick={() => router.push(`/?table=${tableNumber}`)}
+          onClick={() => router.push(`/menu?table=${tableNumber}`)}
           className="btn-ghost w-full py-3.5 flex items-center justify-center gap-2"
         >
           <Home size={16} />

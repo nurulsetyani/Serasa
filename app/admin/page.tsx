@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   RefreshCw, FileText, Printer, X, UtensilsCrossed,
   ClipboardList, ChefHat, BarChart3, Clock, CheckCircle2,
@@ -359,6 +360,24 @@ function OrderCard({
         <StatusBadge status={order.status} />
       </div>
 
+      {/* Order meta tags */}
+      {(order.order_type || order.payment_method) && (
+        <div className="px-4 pb-2 flex gap-1.5 flex-wrap">
+          {order.order_type && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full border"
+              style={{ background: `${C.accent}08`, borderColor: `${C.accent}20`, color: C.muted }}>
+              {order.order_type === 'dine_in' ? '🍽 Dine In' : '🛍 Take Away'}
+            </span>
+          )}
+          {order.payment_method && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full border"
+              style={{ background: `${C.accent}08`, borderColor: `${C.accent}20`, color: C.muted }}>
+              {order.payment_method === 'cash' ? '💵 Tunai' : '📱 Online'}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Items */}
       <div className="px-4 py-3 space-y-2">
         {order.order_items?.map(item => (
@@ -487,12 +506,10 @@ export default function AdminPage() {
         style={{ background: C.sidebar, borderColor: C.border }}>
         {/* Brand */}
         <div className="px-5 mb-6">
-          <div className="flex items-center gap-2.5 mb-0.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
-              style={{ background: `${C.accent}20`, color: C.accent }}>🌿</div>
-            <span className="font-semibold text-[15px]" style={{ color: C.text }}>Serasa</span>
+          <div className="relative w-[110px] h-[40px] mb-1">
+            <Image src="/logo.png" alt="Serasa" fill className="object-contain object-left" sizes="110px" />
           </div>
-          <p className="text-[11px] pl-9" style={{ color: C.muted }}>Restaurant Admin</p>
+          <p className="text-[11px]" style={{ color: C.muted }}>Restaurant Admin</p>
         </div>
 
         {/* Nav */}
@@ -519,11 +536,16 @@ export default function AdminPage() {
         <header className="sticky top-0 z-30 border-b backdrop-blur-xl"
           style={{ background: `${C.bg}F0`, borderColor: C.border }}>
           <div className="flex items-center justify-between px-4 lg:px-6 py-3">
-            <div>
-              <h1 className="text-base font-semibold" style={{ color: C.text }}>Dashboard Pesanan</h1>
-              <p className="text-xs mt-0.5" style={{ color: C.muted }}>
-                {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="relative lg:hidden w-[80px] h-[28px]">
+                <Image src="/logo.png" alt="Serasa" fill className="object-contain object-left" sizes="80px" />
+              </div>
+              <div>
+                <h1 className="text-base font-semibold" style={{ color: C.text }}>Dashboard Pesanan</h1>
+                <p className="text-xs mt-0.5" style={{ color: C.muted }}>
+                  {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex lg:hidden gap-1.5">
