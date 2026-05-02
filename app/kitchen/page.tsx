@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { Clock, ChefHat, CheckCircle, RefreshCw, Volume2, VolumeX } from 'lucide-react'
+import { Clock, RefreshCw, Volume2, VolumeX, ChefHat, CheckCircle2, Package, Bell } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
-import { formatTime } from '@/lib/utils'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
@@ -14,97 +14,178 @@ const MOCK_ORDERS: Order[] = [
   {
     id: 'demo-1', restaurant_id: RESTAURANT_ID, table_number: '3',
     customer_name: 'Ahmad', status: 'pending', total_price: 60,
-    order_number: 'ORD-ABC123',
+    order_number: 'ORD-ABC1', order_type: 'dine_in',
     created_at: new Date().toISOString(),
     order_items: [
-      { id: 'i1', order_id: 'demo-1', menu_id: 'm1', name: 'Mie Goreng Ayam', price: 25, qty: 1 },
-      { id: 'i2', order_id: 'demo-1', menu_id: 'm5', name: 'Rendang Sapi', price: 35, qty: 1 },
+      { id: 'i1', order_id: 'demo-1', menu_id: 'm1', name: 'Mie Goreng Ayam', price: 25, qty: 2 },
+      { id: 'i2', order_id: 'demo-1', menu_id: 'm5', name: 'Es Cendol', price: 12, qty: 1 },
     ],
   },
   {
     id: 'demo-2', restaurant_id: RESTAURANT_ID, table_number: '5',
     customer_name: 'Fatimah', status: 'cooking', total_price: 50,
-    order_number: 'ORD-XYZ789',
+    order_number: 'ORD-XYZ2', order_type: 'take_away',
     created_at: new Date(Date.now() - 8 * 60000).toISOString(),
     order_items: [
-      { id: 'i3', order_id: 'demo-2', menu_id: 'm3', name: 'Nasi Goreng Spesial', price: 22, qty: 2 },
-      { id: 'i4', order_id: 'demo-2', menu_id: 'm9', name: 'Es Cendol', price: 12, qty: 2 },
+      { id: 'i3', order_id: 'demo-2', menu_id: 'm3', name: 'Nasi Goreng Spesial', price: 22, qty: 1 },
+      { id: 'i4', order_id: 'demo-2', menu_id: 'm9', name: 'Rendang Sapi', price: 35, qty: 1 },
+    ],
+  },
+  {
+    id: 'demo-3', restaurant_id: RESTAURANT_ID, table_number: '1',
+    customer_name: 'Yusuf', status: 'ready', total_price: 43,
+    order_number: 'ORD-DEF3', order_type: 'dine_in',
+    created_at: new Date(Date.now() - 22 * 60000).toISOString(),
+    order_items: [
+      { id: 'i5', order_id: 'demo-3', menu_id: 'm6', name: 'Sate Ayam Madura', price: 28, qty: 1 },
+      { id: 'i6', order_id: 'demo-3', menu_id: 'm11', name: 'Jus Alpukat', price: 15, qty: 1 },
     ],
   },
 ]
 
-function playNotificationSound() {
+function playSound() {
   try {
     const ctx = new AudioContext()
-    const times = [0, 0.18, 0.36]
-    times.forEach((t, i) => {
-      const osc  = ctx.createOscillator()
+    ;[0, 0.18, 0.36].forEach((t, i) => {
+      const osc = ctx.createOscillator()
       const gain = ctx.createGain()
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(i === 0 ? 880 : i === 1 ? 1100 : 880, ctx.currentTime + t)
-      gain.gain.setValueAtTime(0.35, ctx.currentTime + t)
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.16)
+      osc.connect(gain); gain.connect(ctx.destination)
+      osc.frequency.value = i === 1 ? 1100 : 880
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + t)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15)
       osc.start(ctx.currentTime + t)
-      osc.stop(ctx.currentTime + t + 0.16)
+      osc.stop(ctx.currentTime + t + 0.15)
     })
   } catch {}
 }
 
 function ElapsedTimer({ createdAt }: { createdAt: string }) {
-  const [elapsed, setElapsed] = useState(0)
-
+  const [mins, setMins] = useState(0)
   useEffect(() => {
-    const calc = () => Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
-    setElapsed(calc())
-    const id = setInterval(() => setElapsed(calc()), 10000)
+    const calc = () => Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000)
+    setMins(calc())
+    const id = setInterval(() => setMins(calc()), 30000)
     return () => clearInterval(id)
   }, [createdAt])
 
-  const mins = Math.floor(elapsed / 60)
   const isLate = mins >= 20
-
   return (
-    <span className={`flex items-center gap-1 font-mono font-bold text-sm ${isLate ? 'text-red-400 animate-pulse' : 'text-[#777]'}`}>
-      <Clock size={12} />
+    <span className={`flex items-center gap-1 text-xs font-mono font-bold ${isLate ? 'text-red-500' : 'text-gray-400'}`}>
+      <Clock size={11} className={isLate ? 'animate-pulse' : ''} />
       {mins}m
     </span>
   )
 }
 
-const STATUS_CONFIG: Record<'pending' | 'cooking', {
-  badge: string; btnLabel: string; btnBg: string
-}> = {
-  pending: {
-    badge: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
-    btnLabel: '🔥 Mulai Masak',
-    btnBg: 'bg-red-500 hover:bg-red-400',
-  },
-  cooking: {
-    badge: 'bg-red-500/15 text-red-400 border-red-500/30',
-    btnLabel: '✅ Tandai Siap',
-    btnBg: 'bg-green-500 hover:bg-green-400',
-  },
+const COLUMNS: { status: OrderStatus; label: string; icon: React.ElementType; color: string; bg: string; border: string }[] = [
+  { status: 'pending',   label: 'BARU',   icon: Bell,          color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
+  { status: 'cooking',   label: 'MASAK',  icon: ChefHat,       color: '#FF6B35', bg: '#FFF3EE', border: '#FFD5C4' },
+  { status: 'ready',     label: 'SIAP',   icon: CheckCircle2,  color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
+]
+
+function OrderCard({
+  order, onAdvance, advancing,
+}: {
+  order: Order; onAdvance: () => void; advancing: boolean
+}) {
+  const colCfg = COLUMNS.find(c => c.status === order.status)!
+
+  const btnConfig: Record<string, { label: string; bg: string }> = {
+    pending: { label: '🔥 Mulai Masak', bg: '#FF6B35' },
+    cooking: { label: '✅ Tandai Siap',  bg: '#10B981' },
+    ready:   { label: '',               bg: '' },
+  }
+  const btn = btnConfig[order.status]
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95, y: 16 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.92 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      className="bg-white rounded-2xl overflow-hidden border"
+      style={{
+        borderColor: colCfg.border,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+      }}
+    >
+      {/* Top stripe */}
+      <div className="h-1" style={{ background: colCfg.color }} />
+
+      {/* Header */}
+      <div className="px-4 pt-3.5 pb-3 flex items-start justify-between border-b border-gray-50">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-black text-gray-900 text-xl">Meja {order.table_number}</span>
+            {order.order_type && (
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: colCfg.bg, color: colCfg.color }}>
+                {order.order_type === 'dine_in' ? 'Dine In' : 'Take Away'}
+              </span>
+            )}
+          </div>
+          <p className="text-gray-400 text-xs mt-0.5">{order.customer_name}</p>
+          {order.order_number && (
+            <p className="text-gray-300 text-[9px] font-mono mt-0.5">{order.order_number}</p>
+          )}
+        </div>
+        <ElapsedTimer createdAt={order.created_at} />
+      </div>
+
+      {/* Items */}
+      <div className="px-4 py-3 space-y-2">
+        {order.order_items?.map(item => (
+          <div key={item.id} className="flex items-center gap-2.5">
+            <span className="font-black text-base w-6 text-center" style={{ color: colCfg.color }}>
+              {item.qty}×
+            </span>
+            <span className="text-gray-800 font-medium text-sm leading-tight">{item.name}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Action */}
+      {btn.label && (
+        <div className="px-4 pb-4">
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={onAdvance}
+            disabled={advancing}
+            className="w-full py-3 rounded-xl text-white font-bold text-sm transition-opacity disabled:opacity-50"
+            style={{ background: btn.bg, boxShadow: `0 4px 12px ${btn.bg}40` }}
+          >
+            {advancing ? '...' : btn.label}
+          </motion.button>
+        </div>
+      )}
+
+      {order.status === 'ready' && (
+        <div className="px-4 pb-4">
+          <div className="w-full py-3 rounded-xl bg-green-50 text-green-600 text-sm font-semibold text-center border border-green-100">
+            ✓ Siap Disajikan
+          </div>
+        </div>
+      )}
+    </motion.div>
+  )
 }
 
 export default function KitchenPage() {
-  const [orders, setOrders]         = useState<Order[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [updating, setUpdating]     = useState<string | null>(null)
-  const [newOrderMsg, setNewOrderMsg] = useState<string | null>(null)
-  const [soundOn, setSoundOn]       = useState(true)
-  const soundOnRef = useRef(true)
-
-  useEffect(() => { soundOnRef.current = soundOn }, [soundOn])
+  const [orders, setOrders]   = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [advancing, setAdvancing] = useState<string | null>(null)
+  const [soundOn, setSoundOn] = useState(true)
+  const [newAlert, setNewAlert] = useState<string | null>(null)
+  const soundRef = useRef(true)
+  useEffect(() => { soundRef.current = soundOn }, [soundOn])
 
   const fetchOrders = useCallback(async () => {
     if (IS_MOCK_MODE) { setOrders(MOCK_ORDERS); setLoading(false); return }
     const { data } = await supabase
-      .from('orders')
-      .select('*, order_items(*)')
+      .from('orders').select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
-      .in('status', ['pending', 'cooking'])
+      .in('status', ['pending', 'cooking', 'ready'])
       .order('created_at', { ascending: true })
     if (data) setOrders(data as Order[])
     setLoading(false)
@@ -112,224 +193,152 @@ export default function KitchenPage() {
 
   useEffect(() => {
     fetchOrders()
-
-    const channel = supabase
-      .channel('kitchen-live')
+    const channel = supabase.channel('kitchen-kanban')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
         if (payload.eventType === 'INSERT') {
           const o = payload.new as Order
-          if (soundOnRef.current) playNotificationSound()
-          setNewOrderMsg(`🆕 Pesanan Baru — Meja ${o.table_number}`)
-          setTimeout(() => setNewOrderMsg(null), 5000)
+          if (soundRef.current) playSound()
+          setNewAlert(`Pesanan baru — Meja ${o.table_number}`)
+          setTimeout(() => setNewAlert(null), 4000)
           fetchOrders()
         } else if (payload.eventType === 'UPDATE') {
           const updated = payload.new as Order
-          if (updated.status === 'ready' || updated.status === 'delivered') {
+          if (updated.status === 'delivered') {
             setOrders(prev => prev.filter(o => o.id !== updated.id))
           } else {
             setOrders(prev => prev.map(o => o.id === updated.id ? { ...o, ...updated } : o))
           }
         }
-      })
-      .subscribe()
-
+      }).subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [fetchOrders])
 
-  async function updateStatus(orderId: string, next: OrderStatus) {
-    setUpdating(orderId)
+  async function advance(orderId: string, nextStatus: OrderStatus) {
+    setAdvancing(orderId)
     await fetch(`/api/order/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: next }),
+      body: JSON.stringify({ status: nextStatus }),
     })
-    setUpdating(null)
+    setAdvancing(null)
+  }
+
+  const nextStatus: Record<string, OrderStatus> = {
+    pending: 'cooking', cooking: 'ready',
   }
 
   const pending = orders.filter(o => o.status === 'pending')
   const cooking = orders.filter(o => o.status === 'cooking')
+  const ready   = orders.filter(o => o.status === 'ready')
+  const cols = [
+    { ...COLUMNS[0], items: pending },
+    { ...COLUMNS[1], items: cooking },
+    { ...COLUMNS[2], items: ready },
+  ]
 
   return (
-    <div className="min-h-dvh bg-[#0A0C0F] p-4 md:p-6">
+    <div className="min-h-dvh bg-[#FAFAFA]">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="relative w-[100px] h-[36px] flex-shrink-0">
-            <Image src="/logo.png" alt="Serasa" fill className="object-contain object-left" sizes="100px" />
-          </div>
-          <div className="h-5 w-px bg-white/10" />
-          <ChefHat size={22} className="text-[#D4AF37]" />
-          <div>
-            <h1 className="font-semibold text-white text-base leading-tight">Kitchen Display</h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[#555] text-xs">Live · {orders.length} pesanan aktif</span>
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-30"
+        style={{ boxShadow: '0 1px 12px rgba(0,0,0,0.05)' }}>
+        <div className="flex items-center justify-between px-4 lg:px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="relative w-[90px] h-[32px]">
+              <Image src="/logo.png" alt="Serasa" fill className="object-contain object-left" sizes="90px" />
+            </div>
+            <div className="h-5 w-px bg-gray-200" />
+            <div>
+              <p className="font-bold text-gray-900 text-sm">Kitchen Display</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-gray-400 text-xs">Live · {orders.length} aktif</span>
+              </div>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSoundOn(s => !s)}
+              className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-700 transition-colors">
+              {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            </button>
+            <button onClick={fetchOrders}
+              className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-700 transition-colors">
+              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
+      </header>
 
-        <div className="flex items-center gap-2">
-          {/* Sound toggle */}
-          <button
-            onClick={() => setSoundOn(s => !s)}
-            title={soundOn ? 'Matikan suara' : 'Aktifkan suara'}
-            className="p-2 rounded-xl border border-white/8 text-[#555] hover:text-white hover:border-white/20 transition-all"
-          >
-            {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
-          </button>
-          <button
-            onClick={fetchOrders}
-            className="p-2 rounded-xl border border-white/8 text-[#555] hover:text-white hover:border-white/20 transition-all"
-          >
-            <RefreshCw size={15} className={loading ? 'animate-spin text-[#D4AF37]' : ''} />
-          </button>
-        </div>
-      </div>
+      {/* New order alert */}
+      <AnimatePresence>
+        {newAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+            className="mx-4 mt-4 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+            <span className="text-xl animate-bounce">🔔</span>
+            <span className="text-amber-800 font-semibold text-sm">{newAlert}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* New order notification */}
-      {newOrderMsg && (
-        <div className="mb-5 flex items-center gap-3 px-5 py-4 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30"
-          style={{ animation: 'slideDown 0.4s cubic-bezier(0.16,1,0.3,1)' }}>
-          <span className="text-2xl">🔔</span>
-          <span className="text-[#D4AF37] font-bold text-sm">{newOrderMsg}</span>
-        </div>
-      )}
-
+      {/* Kanban columns */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl bg-[#13161C] animate-pulse" />
+            <div key={i} className="bg-white rounded-2xl h-48 animate-pulse border border-gray-100" />
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-32 text-center">
-          <CheckCircle size={56} className="text-green-400 opacity-30 mb-4" />
-          <h2 className="text-white font-bold text-xl mb-1">Semua Beres!</h2>
-          <p className="text-[#555] text-sm">Tidak ada pesanan aktif saat ini.</p>
+        <div className="flex flex-col items-center justify-center py-32 text-center px-4">
+          <CheckCircle2 size={52} className="text-green-300 mb-4" />
+          <h2 className="font-bold text-gray-800 text-xl mb-1">Semua Beres!</h2>
+          <p className="text-gray-400 text-sm">Tidak ada pesanan aktif saat ini.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
-          {/* PENDING */}
-          {pending.map(order => {
-            const cfg = STATUS_CONFIG.pending
+        /* Mobile: vertical sections | Desktop: 3-column grid */
+        <div className="p-4 space-y-6 md:space-y-0 md:grid md:grid-cols-3 md:gap-5 md:items-start">
+          {cols.map(col => {
+            const ColIcon = col.icon
             return (
-              <div key={order.id}
-                className="bg-[#13161C] rounded-2xl border border-yellow-500/20 overflow-hidden"
-                style={{ animation: 'fadeUp 0.45s cubic-bezier(0.16,1,0.3,1)' }}>
-                {/* Card header */}
-                <div className="px-5 pt-5 pb-4 border-b border-white/5">
-                  <div className="flex items-start justify-between mb-1">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#D4AF37] font-black text-2xl">Meja {order.table_number}</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cfg.badge}`}>
-                          ⏳ BARU
-                        </span>
-                      </div>
-                      <p className="text-[#555] text-xs mt-0.5">{order.customer_name}</p>
-                    </div>
-                    <ElapsedTimer createdAt={order.created_at} />
+              <div key={col.status}>
+                {/* Column header */}
+                <div className="flex items-center gap-2.5 mb-3 px-1">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                    style={{ background: col.bg }}>
+                    <ColIcon size={16} style={{ color: col.color }} />
                   </div>
-                  {order.order_number && (
-                    <p className="text-[#333] text-[10px] font-mono mt-1">{order.order_number}</p>
-                  )}
-                  {order.order_type && (
-                    <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[#555] mt-1">
-                      {order.order_type === 'dine_in' ? '🍽 Dine In' : '🛍 Take Away'}
-                    </span>
-                  )}
+                  <span className="font-bold text-gray-900 text-sm">{col.label}</span>
+                  <span className="ml-auto w-6 h-6 rounded-full flex items-center justify-center text-xs font-black"
+                    style={{ background: col.bg, color: col.color }}>
+                    {col.items.length}
+                  </span>
                 </div>
 
-                {/* Items */}
-                <div className="px-5 py-4 space-y-2.5">
-                  {order.order_items?.map(item => (
-                    <div key={item.id} className="flex items-center gap-3">
-                      <span className="text-[#D4AF37] font-black text-lg w-7 text-center">{item.qty}×</span>
-                      <span className="text-white font-medium text-sm">{item.name}</span>
+                {/* Cards */}
+                <div className="space-y-3">
+                  {col.items.length === 0 ? (
+                    <div className="border-2 border-dashed rounded-2xl py-10 flex items-center justify-center"
+                      style={{ borderColor: col.border }}>
+                      <p className="text-xs font-medium" style={{ color: col.color }}>Kosong</p>
                     </div>
-                  ))}
-                </div>
-
-                {/* Action */}
-                <div className="px-5 pb-5">
-                  <button
-                    onClick={() => updateStatus(order.id, 'cooking')}
-                    disabled={updating === order.id}
-                    className={`w-full py-3.5 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] disabled:opacity-50 ${cfg.btnBg}`}
-                  >
-                    {updating === order.id ? '...' : cfg.btnLabel}
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-
-          {/* COOKING */}
-          {cooking.map(order => {
-            const cfg = STATUS_CONFIG.cooking
-            return (
-              <div key={order.id}
-                className="bg-[#13161C] rounded-2xl border border-red-500/20 overflow-hidden"
-                style={{ animation: 'fadeUp 0.45s cubic-bezier(0.16,1,0.3,1)' }}>
-                <div className="px-5 pt-5 pb-4 border-b border-white/5">
-                  <div className="flex items-start justify-between mb-1">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#D4AF37] font-black text-2xl">Meja {order.table_number}</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border animate-pulse ${cfg.badge}`}>
-                          🔥 MASAK
-                        </span>
-                      </div>
-                      <p className="text-[#555] text-xs mt-0.5">{order.customer_name}</p>
-                    </div>
-                    <ElapsedTimer createdAt={order.created_at} />
-                  </div>
-                  {order.order_number && (
-                    <p className="text-[#333] text-[10px] font-mono mt-1">{order.order_number}</p>
+                  ) : (
+                    <AnimatePresence>
+                      {col.items.map(order => (
+                        <OrderCard
+                          key={order.id}
+                          order={order}
+                          advancing={advancing === order.id}
+                          onAdvance={() => advance(order.id, nextStatus[order.status] as OrderStatus)}
+                        />
+                      ))}
+                    </AnimatePresence>
                   )}
-                  {order.order_type && (
-                    <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[#555] mt-1">
-                      {order.order_type === 'dine_in' ? '🍽 Dine In' : '🛍 Take Away'}
-                    </span>
-                  )}
-                </div>
-
-                <div className="px-5 py-4 space-y-2.5">
-                  {order.order_items?.map(item => (
-                    <div key={item.id} className="flex items-center gap-3">
-                      <span className="text-[#D4AF37] font-black text-lg w-7 text-center">{item.qty}×</span>
-                      <span className="text-white font-medium text-sm">{item.name}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="px-5 pb-5">
-                  <button
-                    onClick={() => updateStatus(order.id, 'ready')}
-                    disabled={updating === order.id}
-                    className={`w-full py-3.5 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] disabled:opacity-50 ${cfg.btnBg}`}
-                  >
-                    {updating === order.id ? '...' : cfg.btnLabel}
-                  </button>
                 </div>
               </div>
             )
           })}
         </div>
       )}
-
-      <style>{`
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }

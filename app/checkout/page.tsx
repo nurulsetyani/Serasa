@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, MapPin, CheckCircle, UtensilsCrossed, ShoppingBag, Banknote, Smartphone } from 'lucide-react'
+import { ArrowLeft, User, MapPin, CheckCircle, UtensilsCrossed, ShoppingBag, Banknote, Smartphone, ChefHat, Clock } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
@@ -10,31 +11,113 @@ import { getItemName } from '@/lib/i18n'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 import { OrderType, PaymentMethod } from '@/types'
 
-type OrderTypeOption = { value: OrderType; icon: React.ElementType; labelKey: 'dineIn' | 'takeAway' }
-type PaymentOption  = { value: PaymentMethod; icon: React.ElementType; labelKey: 'cash' | 'online' }
+const PRIMARY = '#FF6B35'
+
+type OrderTypeOption   = { value: OrderType;     icon: React.ElementType; labelKey: 'dineIn' | 'takeAway' }
+type PaymentOption     = { value: PaymentMethod;  icon: React.ElementType; labelKey: 'cash' | 'online' }
 
 const ORDER_TYPES: OrderTypeOption[] = [
   { value: 'dine_in',   icon: UtensilsCrossed, labelKey: 'dineIn' },
   { value: 'take_away', icon: ShoppingBag,     labelKey: 'takeAway' },
 ]
-
 const PAYMENT_METHODS: PaymentOption[] = [
-  { value: 'cash',   icon: Banknote,    labelKey: 'cash' },
-  { value: 'online', icon: Smartphone,  labelKey: 'online' },
+  { value: 'cash',   icon: Banknote,   labelKey: 'cash' },
+  { value: 'online', icon: Smartphone, labelKey: 'online' },
 ]
 
+// ─── Success Screen ────────────────────────────────────────
+function SuccessScreen({
+  orderNumber, tableNumber, onTrack,
+}: {
+  orderNumber: string; tableNumber: string; onTrack: () => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center px-6 text-center"
+    >
+      {/* Circle check */}
+      <motion.div
+        initial={{ scale: 0 }} animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
+        className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
+        style={{ background: `${PRIMARY}15` }}
+      >
+        <motion.div
+          initial={{ scale: 0 }} animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 18, delay: 0.25 }}
+          className="w-16 h-16 rounded-full flex items-center justify-center"
+          style={{ background: PRIMARY }}
+        >
+          <CheckCircle size={32} className="text-white" strokeWidth={2.5} />
+        </motion.div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <h1 className="font-black text-gray-900 text-2xl mb-2">Pesanan Diterima!</h1>
+        <p className="text-gray-500 text-sm mb-1">Dapur sedang memproses pesananmu</p>
+        <p className="text-gray-400 text-xs mb-6">Meja {tableNumber}</p>
+
+        {/* Order number */}
+        <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-5 py-3 mb-8"
+          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <span className="text-gray-400 text-sm">No. Pesanan</span>
+          <span className="font-black text-gray-900 text-base">{orderNumber}</span>
+        </div>
+
+        {/* Status steps */}
+        <div className="flex items-center gap-3 mb-10">
+          {[
+            { icon: CheckCircle, label: 'Diterima', done: true },
+            { icon: ChefHat,     label: 'Dimasak',  done: false },
+            { icon: Clock,       label: 'Siap',     done: false },
+          ].map((step, i) => {
+            const Icon = step.icon
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${step.done ? 'text-white' : 'bg-gray-100 text-gray-300'}`}
+                    style={step.done ? { background: PRIMARY } : {}}>
+                    <Icon size={16} />
+                  </div>
+                  <span className="text-[10px] text-gray-400">{step.label}</span>
+                </div>
+                {i < 2 && <div className="w-8 h-px bg-gray-200 mb-4" />}
+              </div>
+            )
+          })}
+        </div>
+
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={onTrack}
+          className="w-full max-w-xs py-4 rounded-2xl text-white font-bold text-base"
+          style={{ background: PRIMARY, boxShadow: `0 8px 24px rgba(255,107,53,0.35)` }}
+        >
+          Lacak Pesanan
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ─── Checkout Page ─────────────────────────────────────────
 export default function CheckoutPage() {
   const router = useRouter()
-  const [tableNumber, setTableNumber] = useState('1')
-  const { lang, t, isRTL } = useLang()
-  const { items, clearCart } = useCart()
+  const [tableNumber, setTableNumber]   = useState('1')
+  const { lang, t, isRTL }             = useLang()
+  const { items, clearCart }            = useCart()
 
-  const [customerName, setCustomerName]     = useState('')
-  const [orderType, setOrderType]           = useState<OrderType>('dine_in')
-  const [paymentMethod, setPaymentMethod]   = useState<PaymentMethod>('cash')
-  const [loading, setLoading]               = useState(false)
-  const [error, setError]                   = useState('')
-  const [submitted, setSubmitted]           = useState(false)
+  const [customerName, setCustomerName]   = useState('')
+  const [orderType, setOrderType]         = useState<OrderType>('dine_in')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+  const [loading, setLoading]             = useState(false)
+  const [submitted, setSubmitted]         = useState(false)
+  const [error, setError]                 = useState('')
+  const [successData, setSuccessData]     = useState<{ orderId: string; orderNumber: string } | null>(null)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -45,15 +128,14 @@ export default function CheckoutPage() {
 
   async function handleSubmit() {
     if (submitted || loading || !customerName.trim() || !items.length) return
-    setSubmitted(true)
-    setLoading(true)
-    setError('')
+    setSubmitted(true); setLoading(true); setError('')
 
     try {
       if (IS_MOCK_MODE) {
-        await new Promise(r => setTimeout(r, 1000))
+        await new Promise(r => setTimeout(r, 1200))
         clearCart()
-        router.push(`/order/mock-preview-order?table=${tableNumber}`)
+        setSuccessData({ orderId: 'mock-preview-order', orderNumber: 'ORD-DEMO1' })
+        setLoading(false)
         return
       }
 
@@ -75,170 +157,179 @@ export default function CheckoutPage() {
           })),
         }),
       })
-
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to create order')
+      if (!res.ok) throw new Error(data.error ?? 'Failed')
       clearCart()
-      router.push(`/order/${data.id}?table=${tableNumber}`)
+      setSuccessData({ orderId: data.id, orderNumber: data.order_number ?? data.id.slice(0, 8).toUpperCase() })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error'))
-      setLoading(false)
-      setSubmitted(false)
+      setLoading(false); setSubmitted(false)
     }
   }
 
+  // Show success screen
+  if (successData) {
+    return (
+      <SuccessScreen
+        orderNumber={successData.orderNumber}
+        tableNumber={tableNumber}
+        onTrack={() => router.push(`/order/${successData.orderId}?table=${tableNumber}`)}
+      />
+    )
+  }
+
   return (
-    <div className="min-h-dvh bg-[#0D0D0D] flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/4 rounded-full blur-[100px]" />
-      </div>
+    <div className="min-h-dvh bg-[#FAFAFA] flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
 
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0D0D0D]/95 backdrop-blur-xl border-b border-[#D4AF37]/12">
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-100"
+        style={{ boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
         <div className="flex items-center gap-3 px-4 py-4">
           <button onClick={() => router.back()}
-            className="p-2 rounded-xl hover:bg-[#1A1A1A] text-[#888] hover:text-white transition-colors">
-            <ArrowLeft size={20} className={isRTL ? 'rotate-180' : ''} />
+            className="p-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-500">
+            <ArrowLeft size={18} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 className="font-display text-xl font-bold text-white">{t('checkoutTitle')}</h1>
+          <h1 className="font-bold text-gray-900 text-base">{t('checkoutTitle')}</h1>
         </div>
       </header>
 
-      <div className="flex-1 px-4 py-6 space-y-5 pb-36">
+      <div className="flex-1 px-4 py-5 space-y-4 pb-36">
 
-        {/* Table info */}
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#D4AF37]/8 border border-[#D4AF37]/20">
-          <MapPin size={20} className="text-[#D4AF37] flex-shrink-0" />
+        {/* Table */}
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-gray-100"
+          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: `${PRIMARY}15` }}>
+            <MapPin size={18} style={{ color: PRIMARY }} />
+          </div>
           <div>
-            <p className="text-[#888] text-xs">{t('tableNumber')}</p>
-            <p className="text-white font-bold text-lg">{tableNumber}</p>
+            <p className="text-gray-400 text-xs">{t('tableNumber')}</p>
+            <p className="text-gray-900 font-bold">{tableNumber}</p>
           </div>
         </div>
 
-        {/* Customer name */}
+        {/* Name */}
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-semibold text-[#888]">
+          <label className="flex items-center gap-2 text-sm font-semibold text-gray-600">
             <User size={14} /> {t('yourName')} <span className="text-red-400">*</span>
           </label>
           <input
-            type="text"
-            value={customerName}
-            onChange={e => setCustomerName(e.target.value)}
-            placeholder={t('namePlaceholder')}
-            required
-            className="input-dark w-full px-4 py-3.5 text-sm"
+            type="text" value={customerName} onChange={e => setCustomerName(e.target.value)}
+            placeholder={t('namePlaceholder')} required
+            className="w-full px-4 py-3.5 text-sm bg-white border border-gray-200 rounded-2xl text-gray-900 outline-none placeholder:text-gray-300 focus:border-orange-300 transition-colors"
+            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
           />
         </div>
 
         {/* Order type */}
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-[#888]">{t('orderType')}</p>
+          <p className="text-sm font-semibold text-gray-600">{t('orderType')}</p>
           <div className="grid grid-cols-2 gap-3">
             {ORDER_TYPES.map(({ value, icon: Icon, labelKey }) => (
-              <button
-                key={value}
-                type="button"
+              <motion.button key={value} whileTap={{ scale: 0.96 }}
                 onClick={() => setOrderType(value)}
-                className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all duration-200 active:scale-[0.97]"
+                className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 transition-all"
                 style={{
-                  background: orderType === value ? 'rgba(212,175,55,0.08)' : '#1A1A1A',
-                  borderColor: orderType === value ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.06)',
-                  boxShadow: orderType === value ? '0 0 0 1px rgba(212,175,55,0.2)' : undefined,
-                }}
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                  style={{ background: orderType === value ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)' }}>
-                  <Icon size={20} style={{ color: orderType === value ? '#D4AF37' : '#666' }} />
+                  background: orderType === value ? `${PRIMARY}08` : 'white',
+                  borderColor: orderType === value ? PRIMARY : '#E5E7EB',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: orderType === value ? `${PRIMARY}15` : '#F9FAFB' }}>
+                  <Icon size={20} style={{ color: orderType === value ? PRIMARY : '#9CA3AF' }} />
                 </div>
                 <span className="text-sm font-semibold"
-                  style={{ color: orderType === value ? '#D4AF37' : '#888' }}>
+                  style={{ color: orderType === value ? PRIMARY : '#6B7280' }}>
                   {t(labelKey)}
                 </span>
                 {orderType === value && (
-                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-[#D4AF37] flex items-center justify-center">
-                    <CheckCircle size={10} className="text-[#0D0D0D]" />
+                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full flex items-center justify-center"
+                    style={{ background: PRIMARY }}>
+                    <CheckCircle size={10} className="text-white" />
                   </div>
                 )}
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
 
-        {/* Payment method */}
+        {/* Payment */}
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-[#888]">{t('paymentMethod')}</p>
+          <p className="text-sm font-semibold text-gray-600">{t('paymentMethod')}</p>
           <div className="grid grid-cols-2 gap-3">
             {PAYMENT_METHODS.map(({ value, icon: Icon, labelKey }) => (
-              <button
-                key={value}
-                type="button"
+              <motion.button key={value} whileTap={{ scale: 0.96 }}
                 onClick={() => setPaymentMethod(value)}
-                className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all duration-200 active:scale-[0.97]"
+                className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 transition-all"
                 style={{
-                  background: paymentMethod === value ? 'rgba(212,175,55,0.08)' : '#1A1A1A',
-                  borderColor: paymentMethod === value ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.06)',
-                  boxShadow: paymentMethod === value ? '0 0 0 1px rgba(212,175,55,0.2)' : undefined,
-                }}
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                  style={{ background: paymentMethod === value ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)' }}>
-                  <Icon size={20} style={{ color: paymentMethod === value ? '#D4AF37' : '#666' }} />
+                  background: paymentMethod === value ? `${PRIMARY}08` : 'white',
+                  borderColor: paymentMethod === value ? PRIMARY : '#E5E7EB',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: paymentMethod === value ? `${PRIMARY}15` : '#F9FAFB' }}>
+                  <Icon size={20} style={{ color: paymentMethod === value ? PRIMARY : '#9CA3AF' }} />
                 </div>
                 <span className="text-sm font-semibold"
-                  style={{ color: paymentMethod === value ? '#D4AF37' : '#888' }}>
+                  style={{ color: paymentMethod === value ? PRIMARY : '#6B7280' }}>
                   {t(labelKey)}
                 </span>
                 {paymentMethod === value && (
-                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-[#D4AF37] flex items-center justify-center">
-                    <CheckCircle size={10} className="text-[#0D0D0D]" />
+                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full flex items-center justify-center"
+                    style={{ background: PRIMARY }}>
+                    <CheckCircle size={10} className="text-white" />
                   </div>
                 )}
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
 
         {/* Order summary */}
-        <div className="bg-[#1A1A1A] rounded-2xl border border-white/5 p-4 space-y-3">
-          <h3 className="font-semibold text-white text-sm">{t('orderSummary')}</h3>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3"
+          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <h3 className="font-semibold text-gray-900 text-sm">{t('orderSummary')}</h3>
           <div className="space-y-2.5">
             {items.map(item => (
               <div key={item.id} className="flex justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <span className="text-[#888] text-sm">{getItemName(item, lang)} × {item.qty}</span>
+                  <span className="text-gray-600 text-sm">{getItemName(item, lang)} × {item.qty}</span>
                   {item.itemNotes && (
-                    <p className="text-[#555] text-[11px] italic mt-0.5">📝 {item.itemNotes}</p>
+                    <p className="text-gray-400 text-[11px] italic mt-0.5">📝 {item.itemNotes}</p>
                   )}
                 </div>
-                <span className="text-white text-sm flex-shrink-0">{formatPrice(item.price * item.qty)}</span>
+                <span className="text-gray-900 text-sm font-medium flex-shrink-0">
+                  {formatPrice(item.price * item.qty)}
+                </span>
               </div>
             ))}
           </div>
-          <div className="border-t border-[#D4AF37]/15 pt-3 flex justify-between font-bold">
-            <span className="text-white">{t('total')}</span>
-            <span className="text-[#D4AF37] text-lg">{formatPrice(total)}</span>
+          <div className="border-t border-gray-100 pt-3 flex justify-between font-bold">
+            <span className="text-gray-900">{t('total')}</span>
+            <span className="text-lg" style={{ color: PRIMARY }}>{formatPrice(total)}</span>
           </div>
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+          <div className="p-3.5 rounded-xl bg-red-50 border border-red-100 text-red-500 text-sm text-center">
             {error}
           </div>
         )}
       </div>
 
       {/* Submit */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 safe-bottom bg-[#0D0D0D]/98 backdrop-blur-xl border-t border-[#D4AF37]/12">
-        <button
+      <div className="fixed bottom-0 left-0 right-0 p-4 safe-bottom bg-white border-t border-gray-100">
+        <motion.button
+          whileTap={{ scale: 0.97 }}
           onClick={handleSubmit}
           disabled={loading || submitted || !customerName.trim() || !items.length}
-          className="w-full bg-[#D4AF37] text-[#0D0D0D] py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 shadow-[0_4px_24px_rgba(212,175,55,0.35)] disabled:opacity-50 active:scale-[0.98] transition-transform"
+          className="w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-center gap-2 disabled:opacity-50"
+          style={{ background: PRIMARY, boxShadow: `0 8px 24px rgba(255,107,53,0.35)` }}
         >
           {loading
-            ? <><span className="animate-spin">⟳</span> {t('processing')}</>
-            : <><CheckCircle size={18} /> {t('placeOrder')}</>
-          }
-        </button>
+            ? <><span className="animate-spin text-lg">⟳</span> {t('processing')}</>
+            : <><CheckCircle size={18} /> {t('placeOrder')}</>}
+        </motion.button>
       </div>
     </div>
   )
