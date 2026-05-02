@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Home, Clock, ChefHat, CheckCircle, Package } from 'lucide-react'
+import { Home, Clock, ChefHat, CheckCircle, Package, Copy, MessageCircle } from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
@@ -33,6 +33,111 @@ const STATUS_STEPS: { status: OrderStatus; icon: React.ElementType; descKey: Tra
   { status: 'ready',     icon: Package,      descKey: 'readyDesc' },
   { status: 'delivered', icon: CheckCircle,  descKey: 'deliveredDesc' },
 ]
+
+const PAY = {
+  stcNumber:   process.env.NEXT_PUBLIC_STC_PAY_NUMBER   ?? '05XXXXXXXX',
+  bankName:    process.env.NEXT_PUBLIC_BANK_NAME        ?? 'Al Rajhi Bank',
+  bankIban:    process.env.NEXT_PUBLIC_BANK_IBAN        ?? 'SA00 0000 0000 0000 0000 0000',
+  bankOwner:   process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME ?? 'Serasa Restaurant',
+  adminWa:     process.env.NEXT_PUBLIC_ADMIN_WA         ?? '966500000000',
+}
+
+function PaymentInfo({ order }: { order: Order }) {
+  const [copied, setCopied] = useState<string | null>(null)
+
+  function copy(text: string, key: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key)
+      setTimeout(() => setCopied(null), 2000)
+    })
+  }
+
+  const waText = encodeURIComponent(
+    `Halo Serasa Restaurant, saya sudah transfer untuk pesanan ${order.order_number ?? order.id.slice(0, 8).toUpperCase()} — Meja ${order.table_number} — ${order.customer_name}`
+  )
+  const waUrl = `https://wa.me/${PAY.adminWa}?text=${waText}`
+
+  return (
+    <div className="card-dark p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="text-xl">💳</span>
+        <h2 className="text-white font-semibold text-sm">Instruksi Pembayaran</h2>
+      </div>
+
+      <p className="text-[#777] text-xs leading-relaxed">
+        Silakan transfer sesuai jumlah pesanan, lalu kirim bukti ke WhatsApp admin.
+      </p>
+
+      {/* STC Pay */}
+      <div className="rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/5 p-4 space-y-2">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-lg">📱</span>
+          <span className="text-[#D4AF37] font-semibold text-sm">STC Pay</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[#888] text-[11px]">Nomor HP</p>
+            <p className="text-white font-bold text-base tracking-wider">{PAY.stcNumber}</p>
+          </div>
+          <button
+            onClick={() => copy(PAY.stcNumber, 'stc')}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#D4AF37]/15 text-[#D4AF37] text-xs font-medium active:scale-95 transition-transform"
+          >
+            <Copy size={12} />
+            {copied === 'stc' ? 'Tersalin!' : 'Salin'}
+          </button>
+        </div>
+      </div>
+
+      {/* Bank Transfer */}
+      <div className="rounded-xl border border-white/8 bg-white/3 p-4 space-y-3">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">🏦</span>
+          <span className="text-white font-semibold text-sm">{PAY.bankName}</span>
+        </div>
+
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[#888] text-[11px]">IBAN</p>
+              <p className="text-white font-mono text-sm truncate">{PAY.bankIban}</p>
+            </div>
+            <button
+              onClick={() => copy(PAY.bankIban.replace(/\s/g, ''), 'iban')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 text-[#888] hover:text-white text-xs font-medium active:scale-95 transition-all flex-shrink-0"
+            >
+              <Copy size={12} />
+              {copied === 'iban' ? 'Tersalin!' : 'Salin'}
+            </button>
+          </div>
+
+          <div>
+            <p className="text-[#888] text-[11px]">Atas Nama</p>
+            <p className="text-white text-sm font-medium">{PAY.bankOwner}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Total */}
+      <div className="flex items-center justify-between px-1">
+        <span className="text-[#888] text-sm">Jumlah Transfer</span>
+        <span className="text-[#D4AF37] font-black text-lg">{order.total_price} SR</span>
+      </div>
+
+      {/* WA Confirmation */}
+      <a
+        href={waUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl font-bold text-sm text-white active:scale-[0.98] transition-transform"
+        style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}
+      >
+        <MessageCircle size={18} />
+        Kirim Bukti Transfer ke Admin
+      </a>
+    </div>
+  )
+}
 
 export default function OrderTrackingPage() {
   const { id } = useParams<{ id: string }>()
@@ -208,6 +313,9 @@ export default function OrderTrackingPage() {
             <span className="font-bold text-gold text-lg">{formatPrice(order.total_price)}</span>
           </div>
         </div>
+
+        {/* Payment info — hanya tampil kalau pilih online */}
+        {order.payment_method === 'online' && <PaymentInfo order={order} />}
 
         {/* Realtime indicator */}
         <div className="flex items-center justify-center gap-2 text-ink-muted text-xs">
