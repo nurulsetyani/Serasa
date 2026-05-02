@@ -12,7 +12,6 @@ import { useLang } from '@/context/LanguageContext'
 import { useCart } from '@/context/CartContext'
 import { getItemName, getItemDescription, TranslationKey } from '@/lib/i18n'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
-import LanguageModal from '@/components/LanguageModal'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 const PRIMARY = '#FF6B35'
@@ -35,7 +34,6 @@ const CATEGORIES = [
   { key: 'drinks',     labelKey: 'drinks' as TranslationKey,     icon: '🥤' },
 ]
 
-const FLAG: Record<Language, string> = { id: '🇮🇩', en: '🇬🇧', ar: '🇸🇦' }
 
 // ─── Toast ─────────────────────────────────────────────────
 type Toast = { id: number; msg: string }
@@ -333,15 +331,12 @@ export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [search, setSearch]                 = useState('')
   const [showSearch, setShowSearch]         = useState(false)
-  const [showLangModal, setShowLangModal]   = useState(false)
   const [cartOpen, setCartOpen]             = useState(false)
   const [toasts, setToasts]                 = useState<Toast[]>([])
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     setTableNumber(p.get('table') ?? '1')
-    const saved = localStorage.getItem('serasa_lang')
-    if (!saved) setShowLangModal(true)
   }, [])
 
   const fetchMenu = useCallback(async () => {
@@ -390,7 +385,6 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-dvh bg-[#FAFAFA]" dir={isRTL ? 'rtl' : 'ltr'}>
-      {showLangModal && <LanguageModal onClose={() => setShowLangModal(false)} />}
       <ToastContainer toasts={toasts} />
 
       {/* ── HEADER ── */}
@@ -410,10 +404,6 @@ export default function MenuPage() {
                 </span>
               </div>
               <div className="flex-1" />
-              <button onClick={() => setShowLangModal(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-base">
-                {FLAG[lang]}
-              </button>
               <button onClick={() => setShowSearch(true)}
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-gray-400">
                 <Search size={14} />
