@@ -23,6 +23,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = createAdminClient()
+
+    // Putus referensi order_items ke menu ini sebelum delete
+    await supabase
+      .from('order_items')
+      .update({ menu_id: null })
+      .eq('menu_id', params.id)
+
     const { error } = await supabase.from('menu').delete().eq('id', params.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
