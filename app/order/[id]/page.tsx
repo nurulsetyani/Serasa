@@ -30,11 +30,11 @@ const MOCK_ORDER: Order = {
   ],
 }
 
-const STATUS_STEPS: { status: OrderStatus; icon: React.ElementType; label: string; descKey: TranslationKey }[] = [
-  { status: 'pending',   icon: Clock,       label: 'Menunggu',      descKey: 'pendingDesc' },
-  { status: 'cooking',   icon: ChefHat,     label: 'Dimasak',       descKey: 'cookingDesc' },
-  { status: 'ready',     icon: Package,     label: 'Siap Diambil',  descKey: 'readyDesc' },
-  { status: 'delivered', icon: CheckCircle, label: 'Selesai',       descKey: 'deliveredDesc' },
+const STATUS_STEPS: { status: OrderStatus; icon: React.ElementType; labelKey: TranslationKey; descKey: TranslationKey }[] = [
+  { status: 'pending',   icon: Clock,       labelKey: 'pending',   descKey: 'pendingDesc' },
+  { status: 'cooking',   icon: ChefHat,     labelKey: 'cooking',   descKey: 'cookingDesc' },
+  { status: 'ready',     icon: Package,     labelKey: 'ready',     descKey: 'readyDesc' },
+  { status: 'delivered', icon: CheckCircle, labelKey: 'delivered', descKey: 'deliveredDesc' },
 ]
 
 const PAY = {
@@ -46,6 +46,7 @@ const PAY = {
 }
 
 function PaymentInfo({ order }: { order: Order }) {
+  const { t } = useLang()
   const [copied, setCopied] = useState<string | null>(null)
 
   function copy(text: string, key: string) {
@@ -64,11 +65,9 @@ function PaymentInfo({ order }: { order: Order }) {
       style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
       <div className="flex items-center gap-2">
         <span className="text-xl">💳</span>
-        <h2 className="text-gray-900 font-semibold text-sm">Instruksi Pembayaran</h2>
+        <h2 className="text-gray-900 font-semibold text-sm">{t('paymentInfo')}</h2>
       </div>
-      <p className="text-gray-400 text-xs leading-relaxed">
-        Silakan transfer sesuai jumlah pesanan, lalu kirim bukti ke WhatsApp admin.
-      </p>
+      <p className="text-gray-400 text-xs leading-relaxed">{t('paymentInfoDesc')}</p>
 
       {/* STC Pay */}
       <div className="rounded-xl p-4" style={{ background: '#FFF3EE', border: `1px solid #FFD5C4` }}>
@@ -78,7 +77,7 @@ function PaymentInfo({ order }: { order: Order }) {
         </div>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-gray-400 text-[11px]">Nomor HP</p>
+            <p className="text-gray-400 text-[11px]">{t('phoneNumber')}</p>
             <p className="text-gray-900 font-bold text-base tracking-wider">{PAY.stcNumber}</p>
           </div>
           <button onClick={() => copy(PAY.stcNumber, 'stc')}
@@ -98,7 +97,7 @@ function PaymentInfo({ order }: { order: Order }) {
         </div>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-gray-400 text-[11px]">No. Rekening</p>
+            <p className="text-gray-400 text-[11px]">{t('accountNumber')}</p>
             <p className="text-gray-900 font-mono text-sm truncate">{PAY.bankIban}</p>
           </div>
           <button onClick={() => copy(PAY.bankIban.replace(/\s/g, ''), 'iban')}
@@ -108,14 +107,14 @@ function PaymentInfo({ order }: { order: Order }) {
           </button>
         </div>
         <div>
-          <p className="text-gray-400 text-[11px]">Atas Nama</p>
+          <p className="text-gray-400 text-[11px]">{t('accountName')}</p>
           <p className="text-gray-900 text-sm font-medium">{PAY.bankOwner}</p>
         </div>
       </div>
 
       {/* Total */}
       <div className="flex items-center justify-between">
-        <span className="text-gray-500 text-sm">Jumlah Transfer</span>
+        <span className="text-gray-500 text-sm">{t('transferAmount')}</span>
         <span className="font-black text-xl" style={{ color: PRIMARY }}>{formatPrice(order.total_price)}</span>
       </div>
 
@@ -124,7 +123,7 @@ function PaymentInfo({ order }: { order: Order }) {
         className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl font-bold text-sm text-white"
         style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}>
         <MessageCircle size={18} />
-        Kirim Bukti Transfer ke Admin
+        {t('sendProof')}
       </a>
     </div>
   )
@@ -227,9 +226,9 @@ export default function OrderTrackingPage() {
                 order.status === 'cooking'   ? PRIMARY :
                 order.status === 'ready'     ? '#10B981' : '#6366F1',
             }}>
-            {order.status === 'pending' ? '⏳ Menunggu' :
-             order.status === 'cooking' ? '🔥 Dimasak' :
-             order.status === 'ready'   ? '✅ Siap' : '✓ Selesai'}
+            {order.status === 'pending' ? `⏳ ${t('pending')}` :
+             order.status === 'cooking' ? `🔥 ${t('cooking')}` :
+             order.status === 'ready'   ? `✅ ${t('ready')}` : `✓ ${t('delivered')}`}
           </span>
         </div>
       </header>
@@ -279,7 +278,7 @@ export default function OrderTrackingPage() {
                   <div className={`pb-6 flex-1 pt-1.5 ${idx === STATUS_STEPS.length - 1 ? 'pb-0' : ''}`}>
                     <p className="font-semibold text-sm"
                       style={{ color: isActive ? PRIMARY : isDone ? '#1F2937' : '#9CA3AF' }}>
-                      {step.label}
+                      {t(step.labelKey)}
                     </p>
                     {isActive && (
                       <p className="text-gray-400 text-xs mt-0.5">{t(step.descKey)}</p>
@@ -326,13 +325,13 @@ export default function OrderTrackingPage() {
           style={{ background: PRIMARY, boxShadow: `0 4px 16px rgba(255,107,53,0.3)` }}
         >
           <Printer size={15} />
-          Download Struk
+          {t('downloadReceipt')}
         </button>
 
         {/* Live indicator */}
         <div className="flex items-center justify-center gap-2 text-gray-400 text-xs">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span>Update otomatis setiap 5 detik</span>
+          <span>{t('liveUpdate')}</span>
         </div>
       </main>
 

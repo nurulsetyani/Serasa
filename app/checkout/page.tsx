@@ -28,10 +28,11 @@ const PAYMENT_METHODS: PaymentOption[] = [
 
 // ─── Success Screen ────────────────────────────────────────
 function SuccessScreen({
-  orderNumber, tableNumber, onTrack,
+  orderNumber, tableNumber, onTrack, lang,
 }: {
-  orderNumber: string; tableNumber: string; onTrack: () => void
+  orderNumber: string; tableNumber: string; onTrack: () => void; lang: import('@/types').Language
 }) {
+  const { t } = useLang()
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -58,14 +59,14 @@ function SuccessScreen({
         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <h1 className="font-black text-gray-900 text-2xl mb-2">Pesanan Diterima!</h1>
-        <p className="text-gray-500 text-sm mb-1">Dapur sedang memproses pesananmu</p>
-        <p className="text-gray-400 text-xs mb-6">Meja {tableNumber}</p>
+        <h1 className="font-black text-gray-900 text-2xl mb-2">{t('orderReceived')}</h1>
+        <p className="text-gray-500 text-sm mb-1">{t('orderProcessing')}</p>
+        <p className="text-gray-400 text-xs mb-6">{t('table')} {tableNumber}</p>
 
         {/* Order number */}
         <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-5 py-3 mb-8"
           style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <span className="text-gray-400 text-sm">No. Pesanan</span>
+          <span className="text-gray-400 text-sm">{t('orderNumber')}</span>
           <span className="font-black text-gray-900 text-base">{orderNumber}</span>
         </div>
 
@@ -75,7 +76,7 @@ function SuccessScreen({
           className="w-full max-w-xs py-4 rounded-2xl text-white font-bold text-base"
           style={{ background: PRIMARY, boxShadow: `0 8px 24px rgba(255,107,53,0.35)` }}
         >
-          Lacak Pesanan
+          {t('trackOrder')}
         </motion.button>
       </motion.div>
     </motion.div>
@@ -138,7 +139,7 @@ export default function CheckoutPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
       clearCart()
-      setSuccessData({ orderId: data.id, orderNumber: data.order_number ?? data.id.slice(0, 8).toUpperCase() })
+      setSuccessData({ orderId: data.id, orderNumber: data.order_number ?? ('ORD-' + data.id.slice(0, 6).toUpperCase()) })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error'))
       setLoading(false); setSubmitted(false)
@@ -151,6 +152,7 @@ export default function CheckoutPage() {
       <SuccessScreen
         orderNumber={successData.orderNumber}
         tableNumber={tableNumber}
+        lang={lang}
         onTrack={() => router.push(`/order/${successData.orderId}?table=${tableNumber}`)}
       />
     )

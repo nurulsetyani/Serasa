@@ -194,9 +194,7 @@ export default function MenuDetailPage() {
 
         {/* Notes */}
         <div className="mb-4">
-          <p className="text-gray-700 font-semibold text-sm mb-2.5">
-            {lang === 'ar' ? 'ملاحظات' : lang === 'id' ? 'Catatan (opsional)' : 'Notes (optional)'}
-          </p>
+          <p className="text-gray-700 font-semibold text-sm mb-2.5">{t('notesOptional')}</p>
           <textarea
             value={itemNotes}
             onChange={e => setNotes(e.target.value)}
@@ -231,7 +229,7 @@ export default function MenuDetailPage() {
               }}
             >
               {added
-                ? <><Check size={18} strokeWidth={2.5} /> Ditambahkan!</>
+                ? <><Check size={18} strokeWidth={2.5} /> {t('thankYou')}</>
                 : <><ShoppingBag size={18} /> {t('addToCart')} — {formatPrice(item.price)}</>
               }
             </motion.button>

@@ -233,8 +233,8 @@ function CartDrawer({
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4">
               <div>
-                <h2 className="font-bold text-gray-900 text-lg">Keranjang</h2>
-                <p className="text-gray-400 text-xs">{items.reduce((s, i) => s + i.qty, 0)} item · Meja {tableNumber}</p>
+                <h2 className="font-bold text-gray-900 text-lg">{t('yourCart')}</h2>
+                <p className="text-gray-400 text-xs">{items.reduce((s, i) => s + i.qty, 0)} {t('items')} · {t('table')} {tableNumber}</p>
               </div>
               <button onClick={onClose}
                 className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
@@ -304,7 +304,7 @@ function CartDrawer({
                 <motion.button whileTap={{ scale: 0.97 }} onClick={handleCheckout}
                   className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-between px-5"
                   style={{ background: PRIMARY, boxShadow: `0 8px 24px rgba(255,107,53,0.35)` }}>
-                  <span>Konfirmasi Pesanan</span>
+                  <span>{t('continueOrder')}</span>
                   <div className="flex items-center gap-1">
                     <span>{formatPrice(total)}</span>
                     <ChevronRight size={18} />
@@ -454,7 +454,7 @@ export default function MenuPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
           <div className="absolute inset-0 p-5 flex flex-col justify-between">
             <span className="self-start text-white text-[9px] font-black px-3 py-1 rounded-full"
-              style={{ background: PRIMARY }}>🔥 BEST SELLER</span>
+              style={{ background: PRIMARY }}>🔥 {t('bestSeller').toUpperCase()}</span>
             <div>
               <h2 className="text-white font-bold text-xl leading-tight">{getItemName(hero, lang)}</h2>
               <div className="flex items-center justify-between mt-2">
@@ -463,7 +463,7 @@ export default function MenuPage() {
                   onClick={e => { e.stopPropagation(); handleAdd(hero) }}
                   className="flex items-center gap-2 text-white text-sm font-bold px-4 py-2 rounded-xl"
                   style={{ background: PRIMARY, boxShadow: '0 4px 12px rgba(255,107,53,0.4)' }}>
-                  <Plus size={14} /> Tambah
+                  <Plus size={14} /> {t('addToCart')}
                 </motion.button>
               </div>
             </div>
@@ -477,7 +477,7 @@ export default function MenuPage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-semibold text-gray-900 text-sm">
               {activeCategory === 'all'
-                ? (lang === 'ar' ? 'القائمة الكاملة' : lang === 'id' ? 'Semua Menu' : 'Full Menu')
+                ? t('fullMenu')
                 : t(CATEGORIES.find(c => c.key === activeCategory)?.labelKey ?? 'all')}
             </h2>
             <span className="text-gray-400 text-xs">{filtered.length} item</span>
@@ -520,8 +520,8 @@ export default function MenuPage() {
                     <ShoppingBag size={17} className="text-white" />
                   </div>
                   <div className="text-left">
-                    <p className="text-white/70 text-[10px]">Keranjang</p>
-                    <p className="text-white font-bold text-sm">{totalItems} item</p>
+                    <p className="text-white/70 text-[10px]">{t('cart')}</p>
+                    <p className="text-white font-bold text-sm">{totalItems} {t('items')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
