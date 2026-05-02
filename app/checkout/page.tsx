@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, MapPin, CheckCircle, UtensilsCrossed, ShoppingBag, Banknote, Smartphone, QrCode, ChefHat, Clock } from 'lucide-react'
+import { ArrowLeft, User, MapPin, CheckCircle, UtensilsCrossed, ShoppingBag, Banknote, Smartphone, QrCode } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
@@ -67,29 +67,6 @@ function SuccessScreen({
           style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <span className="text-gray-400 text-sm">No. Pesanan</span>
           <span className="font-black text-gray-900 text-base">{orderNumber}</span>
-        </div>
-
-        {/* Status steps */}
-        <div className="flex items-center gap-3 mb-10">
-          {[
-            { icon: CheckCircle, label: 'Diterima', done: true },
-            { icon: ChefHat,     label: 'Dimasak',  done: false },
-            { icon: Clock,       label: 'Siap',     done: false },
-          ].map((step, i) => {
-            const Icon = step.icon
-            return (
-              <div key={i} className="flex items-center gap-3">
-                <div className="flex flex-col items-center gap-1">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${step.done ? 'text-white' : 'bg-gray-100 text-gray-300'}`}
-                    style={step.done ? { background: PRIMARY } : {}}>
-                    <Icon size={16} />
-                  </div>
-                  <span className="text-[10px] text-gray-400">{step.label}</span>
-                </div>
-                {i < 2 && <div className="w-8 h-px bg-gray-200 mb-4" />}
-              </div>
-            )
-          })}
         </div>
 
         <motion.button
