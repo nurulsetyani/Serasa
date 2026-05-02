@@ -99,7 +99,7 @@ function PaymentInfo({ order }: { order: Order }) {
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[#888] text-[11px]">IBAN</p>
+              <p className="text-[#888] text-[11px]">No. Rekening</p>
               <p className="text-white font-mono text-sm truncate">{PAY.bankIban}</p>
             </div>
             <button
