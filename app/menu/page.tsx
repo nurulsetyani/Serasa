@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Search, X, Clock, Star, ChevronRight, Utensils } from 'lucide-react'
+import { Search, X, Clock, Minus, Plus, ShoppingCart, ChevronRight, Flame, Star } from 'lucide-react'
 import { MenuItem, Language } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { MOCK_MENU, IS_MOCK_MODE } from '@/lib/mock-data'
@@ -35,100 +35,192 @@ const CATEGORIES = [
 
 const FLAG: Record<Language, string> = { id: '🇮🇩', en: '🇬🇧', ar: '🇸🇦' }
 
-function MenuListCard({
-  item, lang, tableNumber, onAdd, qty, idx,
-}: { item: MenuItem; lang: Language; tableNumber: string; onAdd: () => void; qty: number; idx: number }) {
-  const router = useRouter()
-  const { t } = useLang()
-  const [flash, setFlash] = useState(false)
-  const name = getItemName(item, lang)
-  const desc = getItemDescription(item, lang)
-
-  function handleAdd(e: React.MouseEvent) {
-    e.stopPropagation()
-    setFlash(true)
-    setTimeout(() => setFlash(false), 600)
-    onAdd()
-  }
-
+// ── Skeleton Card ──────────────────────────────────────────
+function SkeletonCard() {
   return (
-    <div
-      className="flex bg-[#1A1A1A] rounded-2xl overflow-hidden border border-white/5 cursor-pointer group"
-      style={{
-        opacity: 0,
-        animation: `menuCardIn 0.45s cubic-bezier(0.16,1,0.3,1) ${idx * 60}ms forwards`,
-      }}
-      onClick={() => router.push(`/menu/${item.id}?table=${tableNumber}`)}
-    >
-      <div className="relative w-[96px] flex-shrink-0 overflow-hidden">
-        <Image
-          src={item.image || `https://placehold.co/200x200/222/D4AF37?text=${encodeURIComponent(name[0] ?? '?')}`}
-          alt={name}
-          fill
-          className="object-cover group-hover:scale-110 transition-transform duration-500"
-          sizes="96px"
-        />
-        <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-r from-transparent to-[#1A1A1A]" />
-        {item.is_best_seller && (
-          <div className="absolute top-1.5 left-1.5 bg-[#D4AF37] text-[#0D0D0D] text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
-            ⭐
-          </div>
-        )}
-      </div>
-
-      <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-        <div>
-          <h3 className="font-semibold text-white text-[13px] leading-snug line-clamp-1 group-hover:text-[#D4AF37] transition-colors duration-200">
-            {name}
-          </h3>
-          {desc && (
-            <p className="text-[#555] text-[11px] mt-0.5 line-clamp-1 leading-relaxed">{desc}</p>
-          )}
-          <div className="flex items-center gap-2 mt-1">
-            <span className="flex items-center gap-0.5 text-[#444] text-[10px]">
-              <Clock size={9} />{item.cook_time}{t('minutes')}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mt-2.5">
-          <span className="text-[#D4AF37] font-black text-sm">{formatPrice(item.price)}</span>
-          <button
-            onClick={handleAdd}
-            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-base transition-all duration-200 ${
-              flash
-                ? 'bg-green-400 text-white scale-125'
-                : qty > 0
-                  ? 'bg-[#D4AF37] text-[#0D0D0D] shadow-[0_2px_14px_rgba(212,175,55,0.45)]'
-                  : 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20 hover:bg-[#D4AF37]/20 active:scale-90'
-            }`}
-          >
-            {flash ? '✓' : qty > 0 ? qty : '+'}
-          </button>
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="h-36 bg-gray-100 animate-pulse" />
+      <div className="p-3 space-y-2">
+        <div className="h-4 bg-gray-100 rounded-full animate-pulse w-3/4" />
+        <div className="h-3 bg-gray-100 rounded-full animate-pulse w-full" />
+        <div className="h-3 bg-gray-100 rounded-full animate-pulse w-2/3" />
+        <div className="flex items-center justify-between pt-1">
+          <div className="h-4 bg-gray-100 rounded-full animate-pulse w-16" />
+          <div className="w-8 h-8 bg-gray-100 rounded-full animate-pulse" />
         </div>
       </div>
     </div>
   )
 }
 
+// ── Food Card ──────────────────────────────────────────────
+function FoodCard({
+  item, lang, tableNumber, onAdd, onDecrease, qty, idx,
+}: {
+  item: MenuItem; lang: Language; tableNumber: string
+  onAdd: () => void; onDecrease: () => void; qty: number; idx: number
+}) {
+  const router = useRouter()
+  const name = getItemName(item, lang)
+  const desc = getItemDescription(item, lang)
+  const [imgError, setImgError] = useState(false)
+
+  return (
+    <div
+      className="bg-white rounded-2xl shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md active:scale-[0.98] cursor-pointer"
+      style={{
+        opacity: 0,
+        animation: `cardIn 0.4s cubic-bezier(0.16,1,0.3,1) ${idx * 50}ms forwards`,
+      }}
+      onClick={() => router.push(`/menu/${item.id}?table=${tableNumber}`)}
+    >
+      {/* Image */}
+      <div className="relative h-36 bg-gray-100 overflow-hidden">
+        {!imgError ? (
+          <Image
+            src={item.image || `https://placehold.co/400x300/FFF7ED/F97316?text=${encodeURIComponent(name)}`}
+            alt={name}
+            fill
+            className="object-cover transition-transform duration-500 hover:scale-105"
+            sizes="(max-width: 768px) 50vw, 33vw"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-4xl bg-orange-50">🍽️</div>
+        )}
+
+        {/* Gradient overlay bottom */}
+        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
+
+        {/* Badges */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
+          {item.is_best_seller && (
+            <span className="flex items-center gap-0.5 bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+              <Star size={8} fill="white" /> Best Seller
+            </span>
+          )}
+        </div>
+
+        {/* Cook time */}
+        <div className="absolute bottom-2 right-2 flex items-center gap-0.5 bg-black/40 backdrop-blur-sm text-white text-[9px] px-1.5 py-0.5 rounded-full">
+          <Clock size={8} />
+          {item.cook_time}m
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-3">
+        <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-1">
+          {name}
+        </h3>
+        {desc && (
+          <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
+            {desc}
+          </p>
+        )}
+
+        {/* Price + Add */}
+        <div className="flex items-center justify-between mt-3" onClick={e => e.stopPropagation()}>
+          <span className="text-orange-500 font-bold text-sm">{formatPrice(item.price)}</span>
+
+          {qty === 0 ? (
+            <button
+              onClick={e => { e.stopPropagation(); onAdd() }}
+              className="w-8 h-8 bg-orange-500 hover:bg-orange-600 active:scale-90 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-sm transition-all duration-150"
+            >
+              +
+            </button>
+          ) : (
+            <div
+              className="flex items-center gap-2"
+              style={{ animation: 'stepperIn 0.2s cubic-bezier(0.16,1,0.3,1)' }}
+            >
+              <button
+                onClick={e => { e.stopPropagation(); onDecrease() }}
+                className="w-7 h-7 border-2 border-orange-500 text-orange-500 rounded-full flex items-center justify-center active:scale-90 transition-transform hover:bg-orange-50"
+              >
+                <Minus size={12} strokeWidth={2.5} />
+              </button>
+              <span className="text-gray-900 font-bold text-sm w-4 text-center">{qty}</span>
+              <button
+                onClick={e => { e.stopPropagation(); onAdd() }}
+                className="w-7 h-7 bg-orange-500 hover:bg-orange-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all"
+              >
+                <Plus size={12} strokeWidth={2.5} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Hero Banner ────────────────────────────────────────────
+function HeroBanner({
+  item, lang, tableNumber, onAdd, qty,
+}: {
+  item: MenuItem; lang: Language; tableNumber: string; onAdd: () => void; qty: number
+}) {
+  const router = useRouter()
+  const name = getItemName(item, lang)
+
+  return (
+    <div
+      className="relative h-48 rounded-2xl overflow-hidden shadow-md cursor-pointer mx-4 mt-4"
+      onClick={() => router.push(`/menu/${item.id}?table=${tableNumber}`)}
+    >
+      <Image
+        src={item.image || `https://placehold.co/800x400/FFF7ED/F97316?text=${encodeURIComponent(name)}`}
+        alt={name}
+        fill
+        className="object-cover"
+        priority
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
+
+      <div className="absolute inset-0 p-5 flex flex-col justify-between">
+        <span className="self-start bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-full">
+          🔥 Best Seller
+        </span>
+        <div>
+          <p className="text-orange-300 text-[10px] font-semibold tracking-widest uppercase mb-1">
+            Featured Today
+          </p>
+          <h2 className="text-white font-bold text-xl leading-tight">{name}</h2>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-orange-400 font-black text-lg">{formatPrice(item.price)}</span>
+            <button
+              onClick={e => { e.stopPropagation(); onAdd() }}
+              className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md active:scale-95 transition-all"
+            >
+              <Plus size={14} /> Tambah
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main Page ──────────────────────────────────────────────
 export default function MenuPage() {
   const router = useRouter()
   const { lang, t, isRTL } = useLang()
-  const { items: cartItems, addItem, totalItems } = useCart()
+  const { items: cartItems, addItem, updateQty, totalItems } = useCart()
 
-  const [tableNumber, setTableNumber] = useState('1')
-  const [menu, setMenu] = useState<MenuItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const [tableNumber, setTableNumber]     = useState('1')
+  const [menu, setMenu]                   = useState<MenuItem[]>([])
+  const [loading, setLoading]             = useState(true)
   const [activeCategory, setActiveCategory] = useState('all')
-  const [search, setSearch] = useState('')
-  const [showSearch, setShowSearch] = useState(false)
+  const [search, setSearch]               = useState('')
+  const [showSearch, setShowSearch]       = useState(false)
   const [showLangModal, setShowLangModal] = useState(false)
-  const [cartBounce, setCartBounce] = useState(false)
+  const [cartBounce, setCartBounce]       = useState(false)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     setTableNumber(p.get('table') ?? '1')
-    // Show lang modal only if no language saved
     const saved = localStorage.getItem('serasa_lang')
     if (!saved) setShowLangModal(true)
   }, [])
@@ -136,7 +228,7 @@ export default function MenuPage() {
   const fetchMenu = useCallback(async () => {
     setLoading(true)
     if (IS_MOCK_MODE) {
-      await new Promise(r => setTimeout(r, 300))
+      await new Promise(r => setTimeout(r, 400))
       setMenu(MOCK_MENU)
       setLoading(false)
       return
@@ -157,7 +249,12 @@ export default function MenuPage() {
   function handleAdd(item: MenuItem) {
     addItem(item)
     setCartBounce(true)
-    setTimeout(() => setCartBounce(false), 400)
+    setTimeout(() => setCartBounce(false), 350)
+  }
+
+  function handleDecrease(item: MenuItem) {
+    const current = cartItems.find(i => i.id === item.id)?.qty ?? 0
+    updateQty(item.id, current - 1)
   }
 
   const filtered = menu.filter(item => {
@@ -169,79 +266,74 @@ export default function MenuPage() {
   const hero = menu.find(i => i.is_best_seller) ?? menu[0]
   const total = calculateCartTotal(cartItems)
 
-  const tableWelcome: Record<Language, string> = {
-    id: 'Selamat datang! Silakan pilih menu',
-    en: 'Welcome! Browse our menu',
-    ar: 'أهلاً! تصفح قائمتنا',
-  }
-
   return (
-    <div className="min-h-dvh bg-[#0D0D0D]" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh bg-gray-50" dir={isRTL ? 'rtl' : 'ltr'}>
       {showLangModal && <LanguageModal onClose={() => setShowLangModal(false)} />}
 
-      {/* Ambient glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-20 right-0 w-96 h-96 rounded-full bg-[#D4AF37]/5 blur-[120px]" />
-        <div className="absolute bottom-40 -left-20 w-64 h-64 rounded-full bg-[#C44B1E]/4 blur-[80px]" />
-      </div>
-
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-40 bg-[#0D0D0D]/93 backdrop-blur-xl border-b border-[#D4AF37]/12">
+      <header className="sticky top-0 z-40 bg-white shadow-sm">
         <div className="flex items-center gap-3 px-4 py-3">
           {!showSearch ? (
             <>
+              {/* Logo */}
               <div className="relative h-8 w-[90px] flex-shrink-0">
                 <Image src="/logo.png" alt="Serasa" fill className="object-contain object-left" sizes="90px" />
               </div>
-              <div className="h-4 w-px bg-[#D4AF37]/15 mx-0.5" />
 
-              <button
-                onClick={() => setShowLangModal(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1A1A1A] border border-[#D4AF37]/12 hover:border-[#D4AF37]/35 transition-all active:scale-95"
-              >
-                <span className="text-base leading-none">{FLAG[lang]}</span>
-                <span className="text-[#555] text-[10px] font-semibold uppercase">{lang}</span>
-              </button>
+              {/* Table badge */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 border border-orange-100 rounded-full">
+                <span className="text-orange-500 text-[10px] font-bold">
+                  {t('table')} {tableNumber}
+                </span>
+              </div>
 
               <div className="flex-1" />
 
+              {/* Language */}
+              <button
+                onClick={() => setShowLangModal(true)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-base hover:bg-gray-100 active:scale-95 transition-all"
+              >
+                {FLAG[lang]}
+              </button>
+
+              {/* Search */}
               <button
                 onClick={() => setShowSearch(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A1A1A] border border-[#D4AF37]/12 text-[#777] hover:text-[#D4AF37] hover:border-[#D4AF37]/35 transition-all"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 active:scale-95 transition-all"
               >
                 <Search size={14} />
               </button>
             </>
           ) : (
-            <div className="flex-1 flex items-center gap-2 bg-[#1A1A1A] rounded-full px-4 py-2 border border-[#D4AF37]/25">
-              <Search size={13} className="text-[#888] flex-shrink-0" />
+            <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-200">
+              <Search size={14} className="text-gray-400 flex-shrink-0" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={t('search')}
-                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-[#555]"
+                className="flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
                 autoFocus
               />
               <button onClick={() => { setShowSearch(false); setSearch('') }}
-                className="text-[#666] hover:text-white transition-colors">
+                className="text-gray-400 hover:text-gray-600 transition-colors">
                 <X size={14} />
               </button>
             </div>
           )}
         </div>
 
-        {/* Category tabs */}
+        {/* Category Tabs */}
         <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
-          {CATEGORIES.map((cat, i) => (
+          {CATEGORIES.map(cat => (
             <button
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
-              style={{ animationDelay: `${i * 40}ms` }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 flex-shrink-0 ${
                 activeCategory === cat.key
-                  ? 'bg-[#D4AF37] text-[#0D0D0D] shadow-[0_2px_14px_rgba(212,175,55,0.35)]'
-                  : 'bg-[#1A1A1A] text-[#666] border border-[#D4AF37]/10 hover:border-[#D4AF37]/35 hover:text-white'
+                  ? 'bg-orange-500 text-white shadow-sm shadow-orange-200'
+                  : 'bg-white text-gray-500 border border-gray-200 hover:border-orange-200 hover:text-orange-500'
               }`}
             >
               <span>{cat.icon}</span>
@@ -251,142 +343,103 @@ export default function MenuPage() {
         </div>
       </header>
 
-      {/* ── TABLE BANNER ── */}
-      {!showSearch && (
-        <div className="mx-4 mt-4 animate-fade-up">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1A1A0A] via-[#1E1A08] to-[#1A1A0A] border border-[#D4AF37]/25 px-4 py-3.5 flex items-center justify-between">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#D4AF37]/5 to-transparent translate-x-[-100%] animate-[shimmer_3s_ease_infinite]" />
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
-                <Utensils size={18} className="text-[#D4AF37]" />
-              </div>
-              <div>
-                <p className="text-[#D4AF37] font-black text-xl leading-none tracking-tight">
-                  {t('table')} {tableNumber}
-                </p>
-                <p className="text-[#777] text-[11px] mt-0.5">{tableWelcome[lang]}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── HERO BANNER ── */}
       {hero && !search && activeCategory === 'all' && (
-        <div className="px-4 pt-3">
-          <div
-            className="relative h-52 rounded-3xl overflow-hidden cursor-pointer group shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
-            onClick={() => router.push(`/menu/${hero.id}?table=${tableNumber}`)}
-          >
-            <Image
-              src={hero.image || `https://placehold.co/800x450/1a1a1a/D4AF37?text=${encodeURIComponent(getItemName(hero, lang))}`}
-              alt={getItemName(hero, lang)}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-700"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-[#0D0D0D]/20 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0D0D0D]/75 via-transparent to-transparent" />
-
-            <span className="absolute top-4 left-4 bg-[#D4AF37] text-[#0D0D0D] text-[10px] font-black px-3 py-1 rounded-full tracking-wide">
-              🔥 {t('bestSeller').toUpperCase()}
-            </span>
-
-            <div className="absolute bottom-0 left-0 p-5">
-              <p className="text-[#D4AF37]/70 text-[10px] font-semibold tracking-[3px] uppercase mb-1">Featured</p>
-              <h2 className="font-display text-white text-2xl font-bold leading-tight">
-                {getItemName(hero, lang)}
-              </h2>
-              <div className="flex items-center gap-3 mt-2">
-                <span className="text-[#D4AF37] font-black text-lg">{formatPrice(hero.price)}</span>
-                <span className="flex items-center gap-0.5">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={10} className="text-[#D4AF37] fill-[#D4AF37]" />)}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={e => { e.stopPropagation(); handleAdd(hero) }}
-              className="absolute bottom-5 right-5 w-11 h-11 rounded-full bg-[#D4AF37] text-[#0D0D0D] flex items-center justify-center font-black text-xl shadow-[0_4px_20px_rgba(212,175,55,0.55)] active:scale-90 transition-transform"
-            >
-              +
-            </button>
-            <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              <ChevronRight size={13} className="text-white" />
-            </div>
-          </div>
-        </div>
+        <HeroBanner
+          item={hero}
+          lang={lang}
+          tableNumber={tableNumber}
+          onAdd={() => handleAdd(hero)}
+          qty={cartItems.find(i => i.id === hero.id)?.qty ?? 0}
+        />
       )}
 
-      {/* ── MENU LIST ── */}
-      <main id="menu-list" className="px-4 pt-4 pb-36 space-y-2.5">
+      {/* ── MENU GRID ── */}
+      <main className="px-4 pt-4 pb-36">
         {!search && (
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-white font-semibold text-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-gray-900 font-semibold text-sm">
               {activeCategory === 'all'
                 ? (lang === 'ar' ? 'القائمة الكاملة' : lang === 'id' ? 'Semua Menu' : 'Full Menu')
                 : t(CATEGORIES.find(c => c.key === activeCategory)?.labelKey ?? 'all')}
-            </span>
-            <span className="text-[#444] text-xs">{filtered.length} item</span>
+            </h2>
+            <span className="text-gray-400 text-xs">{filtered.length} item</span>
           </div>
         )}
 
         {loading ? (
-          [...Array(5)].map((_, i) => (
-            <div key={i} className="h-[96px] rounded-2xl skeleton" style={{ animationDelay: `${i * 80}ms` }} />
-          ))
+          <div className="grid grid-cols-2 gap-3">
+            {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span className="text-5xl mb-4 animate-bounce">🍽️</span>
-            <p className="text-[#555] text-sm">{t('noItems')}</p>
+            <span className="text-5xl mb-4">🍽️</span>
+            <p className="text-gray-400 text-sm">{t('noItems')}</p>
           </div>
         ) : (
-          filtered.map((item, idx) => (
-            <MenuListCard
-              key={item.id}
-              item={item}
-              lang={lang}
-              tableNumber={tableNumber}
-              onAdd={() => handleAdd(item)}
-              qty={cartItems.find(i => i.id === item.id)?.qty ?? 0}
-              idx={idx}
-            />
-          ))
+          <div className="grid grid-cols-2 gap-3">
+            {filtered.map((item, idx) => (
+              <FoodCard
+                key={item.id}
+                item={item}
+                lang={lang}
+                tableNumber={tableNumber}
+                onAdd={() => handleAdd(item)}
+                onDecrease={() => handleDecrease(item)}
+                qty={cartItems.find(i => i.id === item.id)?.qty ?? 0}
+                idx={idx}
+              />
+            ))}
+          </div>
         )}
       </main>
 
-      {/* ── CART BUTTON ── */}
+      {/* ── FLOATING CART ── */}
       {totalItems > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 safe-bottom z-40">
+        <div className="fixed bottom-0 left-0 right-0 px-4 pb-5 safe-bottom z-40">
           <button
             onClick={() => router.push(`/cart?table=${tableNumber}`)}
-            style={{ animation: cartBounce ? 'cartBounce 0.4s cubic-bezier(0.36,0.07,0.19,0.97)' : undefined }}
-            className="w-full bg-[#D4AF37] text-[#0D0D0D] rounded-2xl py-4 flex items-center justify-between px-5 font-bold shadow-[0_8px_40px_rgba(212,175,55,0.45)] active:scale-[0.97] transition-transform"
+            className="w-full bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 overflow-hidden"
+            style={{
+              animation: cartBounce ? 'cartPop 0.35s cubic-bezier(0.36,0.07,0.19,0.97)' : 'cartSlideUp 0.4s cubic-bezier(0.16,1,0.3,1)',
+            }}
           >
-            <div className="flex items-center gap-2.5">
-              <span className="bg-[#0D0D0D]/20 rounded-full w-7 h-7 flex items-center justify-center text-sm font-black">
-                {totalItems}
-              </span>
-              <span className="font-bold text-sm">{t('cart')}</span>
+            <div className="flex items-center justify-between px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 rounded-xl w-8 h-8 flex items-center justify-center">
+                  <ShoppingCart size={16} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="text-white/80 text-[10px] leading-none">{t('cart')}</p>
+                  <p className="text-white font-bold text-sm leading-tight">{totalItems} item</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-black text-base">{formatPrice(total)}</span>
+                <ChevronRight size={16} className="text-white/70" />
+              </div>
             </div>
-            <span className="font-black text-base">{formatPrice(total)}</span>
           </button>
         </div>
       )}
 
       <style>{`
-        @keyframes menuCardIn {
-          from { opacity: 0; transform: translateY(18px) scale(0.97); }
+        @keyframes cardIn {
+          from { opacity: 0; transform: translateY(16px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
-        @keyframes cartBounce {
-          0%,100% { transform: scale(1); }
-          30%      { transform: scale(1.04); }
-          60%      { transform: scale(0.97); }
+        @keyframes stepperIn {
+          from { opacity: 0; transform: scale(0.8); }
+          to   { opacity: 1; transform: scale(1); }
         }
-        @keyframes shimmer {
-          from { transform: translateX(-100%); }
-          to   { transform: translateX(200%); }
+        @keyframes cartSlideUp {
+          from { opacity: 0; transform: translateY(100%); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes cartPop {
+          0%,100% { transform: scale(1); }
+          40%     { transform: scale(1.03); }
+          70%     { transform: scale(0.98); }
         }
       `}</style>
     </div>
