@@ -18,7 +18,7 @@ import { formatPrice, calculateCartTotal } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
-const PRIMARY  = '#FF6B35'
+const PRIMARY  = '#F0A030'
 const GOLD     = '#D4AF37'
 
 const CATEGORIES = [
@@ -143,7 +143,7 @@ function FoodCard({
                 whileTap={{ scale: 0.82 }}
                 onClick={e => { e.stopPropagation(); onAdd() }}
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg"
-                style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(255,107,53,0.45)` }}>
+                style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(240,160,48,0.45)` }}>
                 +
               </motion.button>
             ) : (
@@ -232,7 +232,7 @@ function HeroCard({
             whileTap={{ scale: 0.9 }}
             onClick={e => { e.stopPropagation(); onAdd() }}
             className="flex items-center gap-1.5 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex-shrink-0"
-            style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(255,107,53,0.4)` }}>
+            style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(240,160,48,0.4)` }}>
             <Plus size={14} />
             {qty > 0 ? `+${qty}` : 'Tambah'}
           </motion.button>
@@ -376,7 +376,7 @@ function CartSheet({
                   className="w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-between px-5"
                   style={{
                     background: `linear-gradient(135deg, ${PRIMARY} 0%, #FF8C5A 100%)`,
-                    boxShadow: `0 8px 28px rgba(255,107,53,0.38)`,
+                    boxShadow: `0 8px 28px rgba(240,160,48,0.38)`,
                   }}>
                   <span>{t('checkout')}</span>
                   <div className="flex items-center gap-1 bg-white/20 rounded-xl px-3 py-1.5">
@@ -415,7 +415,7 @@ function FloatingCartBar({ totalItems, total, onOpen, cartPop }: {
             className="w-full relative overflow-hidden rounded-2xl"
             style={{
               background: `linear-gradient(135deg, ${PRIMARY} 0%, #FF8C5A 60%, ${GOLD} 100%)`,
-              boxShadow: `0 8px 32px rgba(255,107,53,0.42), 0 2px 8px rgba(0,0,0,0.12)`,
+              boxShadow: `0 8px 32px rgba(240,160,48,0.42), 0 2px 8px rgba(0,0,0,0.12)`,
             }}
           >
             {/* shimmer */}
@@ -572,7 +572,7 @@ export default function MenuPage() {
               onClick={() => setActiveCategory(cat.key)}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all flex-shrink-0"
               style={activeCategory === cat.key
-                ? { background: '#FFF3EE', color: PRIMARY, border: `1.5px solid #FFD5C4`, boxShadow: `0 2px 8px rgba(255,107,53,0.15)` }
+                ? { background: '#FFF3EE', color: PRIMARY, border: `1.5px solid #FFD5C4`, boxShadow: `0 2px 8px rgba(240,160,48,0.15)` }
                 : { background: '#FFFFFF', color: '#9CA3AF', border: '1.5px solid #F0ECE8' }}>
               <span>{cat.icon}</span>
               <span>{t(cat.labelKey)}</span>

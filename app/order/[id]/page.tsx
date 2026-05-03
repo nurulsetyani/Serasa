@@ -2,39 +2,40 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Home, Clock, ChefHat, CheckCircle, Package, Copy, MessageCircle, Printer } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Clock, ChefHat, Package, CheckCircle, Copy, Printer, MessageCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 import { useLang } from '@/context/LanguageContext'
-import { formatPrice, getStatusStep, formatTime } from '@/lib/utils'
+import { formatPrice, getStatusStep } from '@/lib/utils'
 import ReviewModal from '@/components/ReviewModal'
 import { TranslationKey } from '@/lib/i18n'
 
-const PRIMARY = '#FF6B35'
+const PRIMARY = '#F0A030'
 
 const MOCK_ORDER: Order = {
   id: 'mock-preview-order',
   restaurant_id: '550e8400-e29b-41d4-a716-446655440000',
-  table_number: '5',
-  customer_name: 'Preview User',
-  status: 'cooking',
-  total_price: 82,
-  order_number: 'ORD-DEMO1',
+  table_number: '5', customer_name: 'Preview',
+  status: 'cooking', total_price: 82,
+  order_number: 'SV-930686',
   created_at: new Date().toISOString(),
   order_items: [
-    { id: 'oi-1', order_id: 'mock-preview-order', menu_id: 'mock-1', name: 'Mie Goreng Ayam', price: 25, qty: 1 },
-    { id: 'oi-2', order_id: 'mock-preview-order', menu_id: 'mock-5', name: 'Rendang Sapi', price: 35, qty: 1 },
-    { id: 'oi-3', order_id: 'mock-preview-order', menu_id: 'mock-9', name: 'Es Cendol', price: 12, qty: 1 },
+    { id: 'oi-1', order_id: 'mock-preview-order', menu_id: 'm1', name: 'Mie Goreng Ayam', price: 25, qty: 2 },
+    { id: 'oi-2', order_id: 'mock-preview-order', menu_id: 'm9', name: 'Es Cendol', price: 12, qty: 1 },
   ],
 }
 
-const STATUS_STEPS: { status: OrderStatus; icon: React.ElementType; labelKey: TranslationKey; descKey: TranslationKey }[] = [
-  { status: 'pending',   icon: Clock,       labelKey: 'pending',   descKey: 'pendingDesc' },
-  { status: 'cooking',   icon: ChefHat,     labelKey: 'cooking',   descKey: 'cookingDesc' },
-  { status: 'ready',     icon: Package,     labelKey: 'ready',     descKey: 'readyDesc' },
-  { status: 'delivered', icon: CheckCircle, labelKey: 'delivered', descKey: 'deliveredDesc' },
+// Cook times from menu (approximate)
+const EST_MINS: Record<OrderStatus, number> = {
+  pending: 20, cooking: 12, ready: 0, delivered: 0,
+}
+
+const STEPS: { status: OrderStatus; labelKey: TranslationKey; icon: React.ElementType }[] = [
+  { status: 'pending',   labelKey: 'pending',   icon: CheckCircle },
+  { status: 'cooking',   labelKey: 'cooking',   icon: ChefHat },
+  { status: 'ready',     labelKey: 'ready',     icon: Package },
 ]
 
 const PAY = {
@@ -45,112 +46,85 @@ const PAY = {
   adminWa:   process.env.NEXT_PUBLIC_ADMIN_WA          ?? '966500000000',
 }
 
-function PaymentInfo({ order }: { order: Order }) {
+function PaymentCard({ order }: { order: Order }) {
   const { t } = useLang()
   const [copied, setCopied] = useState<string | null>(null)
-
   function copy(text: string, key: string) {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(key)
-      setTimeout(() => setCopied(null), 2000)
-    })
+    navigator.clipboard.writeText(text).then(() => { setCopied(key); setTimeout(() => setCopied(null), 2000) })
   }
-
-  const waText = encodeURIComponent(
-    `Halo Serasa Restaurant, saya sudah bayar untuk pesanan ${order.order_number ?? order.id.slice(0, 8).toUpperCase()} — Meja ${order.table_number} — ${order.customer_name}`
-  )
+  const waText = encodeURIComponent(`Halo Serasa, saya sudah transfer untuk ${order.order_number ?? order.id.slice(0,8)} - Meja ${order.table_number}`)
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4"
-      style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-      <div className="flex items-center gap-2">
-        <span className="text-xl">💳</span>
-        <h2 className="text-gray-900 font-semibold text-sm">{t('paymentInfo')}</h2>
-      </div>
-      <p className="text-gray-400 text-xs leading-relaxed">{t('paymentInfoDesc')}</p>
+    <div className="bg-white rounded-2xl p-5 space-y-4"
+      style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #F0EAE0' }}>
+      <p className="font-black text-gray-900 text-sm">{t('paymentInfo')}</p>
+      <p className="text-gray-400 text-xs">{t('paymentInfoDesc')}</p>
 
       {/* STC Pay */}
-      <div className="rounded-xl p-4" style={{ background: '#FFF3EE', border: `1px solid #FFD5C4` }}>
-        <div className="flex items-center gap-2 mb-3">
-          <span>📱</span>
-          <span className="font-semibold text-sm" style={{ color: PRIMARY }}>STC Pay</span>
+      <div className="rounded-xl p-4 flex items-center justify-between" style={{ background: '#FFF8EE' }}>
+        <div>
+          <p className="text-[10px] font-bold tracking-widest uppercase mb-1" style={{ color: '#9A8A7A' }}>STC Pay</p>
+          <p className="font-black text-gray-900 text-base tracking-wider">{PAY.stcNumber}</p>
         </div>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-gray-400 text-[11px]">{t('phoneNumber')}</p>
-            <p className="text-gray-900 font-bold text-base tracking-wider">{PAY.stcNumber}</p>
-          </div>
-          <button onClick={() => copy(PAY.stcNumber, 'stc')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium active:scale-95 transition-transform text-white"
-            style={{ background: PRIMARY }}>
-            <Copy size={12} />
-            {copied === 'stc' ? 'Tersalin!' : 'Salin'}
-          </button>
-        </div>
+        <button onClick={() => copy(PAY.stcNumber, 'stc')}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-xs font-bold"
+          style={{ background: PRIMARY }}>
+          <Copy size={12} /> {copied === 'stc' ? '✓' : t('accountNumber').slice(0,5)}
+        </button>
       </div>
 
       {/* Bank */}
-      <div className="rounded-xl p-4 bg-gray-50 border border-gray-200 space-y-3">
-        <div className="flex items-center gap-2">
-          <span>🏦</span>
-          <span className="text-gray-900 font-semibold text-sm">{PAY.bankName}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-gray-400 text-[11px]">{t('accountNumber')}</p>
-            <p className="text-gray-900 font-mono text-sm truncate">{PAY.bankIban}</p>
+      <div className="rounded-xl p-4 space-y-2 bg-gray-50">
+        <p className="text-xs font-bold text-gray-500">{PAY.bankName}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] text-gray-400">{t('accountNumber')}</p>
+            <p className="font-mono font-bold text-sm text-gray-900">{PAY.bankIban}</p>
           </div>
-          <button onClick={() => copy(PAY.bankIban.replace(/\s/g, ''), 'iban')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-600 text-xs font-medium active:scale-95 flex-shrink-0">
+          <button onClick={() => copy(PAY.bankIban.replace(/\s/g,''), 'iban')}
+            className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500">
             <Copy size={12} />
-            {copied === 'iban' ? 'Tersalin!' : 'Salin'}
           </button>
         </div>
-        <div>
-          <p className="text-gray-400 text-[11px]">{t('accountName')}</p>
-          <p className="text-gray-900 text-sm font-medium">{PAY.bankOwner}</p>
-        </div>
+        <p className="text-[11px] text-gray-400">{t('accountName')}: <strong className="text-gray-700">{PAY.bankOwner}</strong></p>
       </div>
 
-      {/* Total */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <span className="text-gray-500 text-sm">{t('transferAmount')}</span>
         <span className="font-black text-xl" style={{ color: PRIMARY }}>{formatPrice(order.total_price)}</span>
       </div>
 
-      {/* WA button */}
       <a href={`https://wa.me/${PAY.adminWa}?text=${waText}`} target="_blank" rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl font-bold text-sm text-white"
-        style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}>
-        <MessageCircle size={18} />
-        {t('sendProof')}
+        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full text-white font-bold text-sm"
+        style={{ background: '#25D366' }}>
+        <MessageCircle size={16} /> {t('sendProof')}
       </a>
     </div>
   )
 }
 
 export default function OrderTrackingPage() {
-  const { id } = useParams<{ id: string }>()
-  const router = useRouter()
+  const { id }   = useParams<{ id: string }>()
+  const router   = useRouter()
   const { t, isRTL } = useLang()
 
-  const [tableNumber, setTableNumber] = useState('1')
-  const [order, setOrder]             = useState<Order | null>(null)
-  const [loading, setLoading]         = useState(true)
-  const [showReview, setShowReview]   = useState(false)
+  const [table, setTable]           = useState('1')
+  const [order, setOrder]           = useState<Order | null>(null)
+  const [loading, setLoading]       = useState(true)
+  const [showReview, setShowReview] = useState(false)
   const [reviewShown, setReviewShown] = useState(false)
+  const [copied, setCopied]         = useState(false)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
-    setTableNumber(p.get('table') ?? '1')
+    setTable(p.get('table') ?? '1')
   }, [])
 
   useEffect(() => {
     async function fetchOrder() {
       if (IS_MOCK_MODE || id === 'mock-preview-order') {
         setOrder({ ...MOCK_ORDER, table_number: new URLSearchParams(window.location.search).get('table') ?? '5' })
-        setLoading(false)
-        return
+        setLoading(false); return
       }
       const res = await window.fetch(`/api/order/${id}`)
       if (res.ok) setOrder(await res.json())
@@ -160,8 +134,7 @@ export default function OrderTrackingPage() {
 
     if (IS_MOCK_MODE || id === 'mock-preview-order') return
 
-    const channel = supabase
-      .channel(`order-${id}`)
+    const channel = supabase.channel(`order-${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` },
         payload => setOrder(prev => prev ? { ...prev, ...payload.new } : null))
       .subscribe()
@@ -180,150 +153,195 @@ export default function OrderTrackingPage() {
     }
   }, [order?.status, reviewShown])
 
-  // ── Loading ──────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-dvh bg-[#FAFAFA] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-orange-500 rounded-full animate-spin" />
+      <div className="min-h-dvh bg-[#FAFAF8] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin"
+          style={{ borderTopColor: PRIMARY }} />
       </div>
     )
   }
 
-  // ── Not found ────────────────────────────────────────────
   if (!order) {
     return (
-      <div className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center p-8 text-center">
+      <div className="min-h-dvh bg-[#FAFAF8] flex flex-col items-center justify-center p-8 text-center">
         <p className="text-gray-400 mb-4">{t('error')}</p>
-        <button onClick={() => router.push(`/menu?table=${tableNumber}`)}
-          className="px-6 py-3 rounded-2xl text-white font-bold text-sm"
-          style={{ background: PRIMARY }}>
-          {t('backToMenu')}
-        </button>
+        <button onClick={() => router.push(`/menu?table=${table}`)}
+          className="px-6 py-3 rounded-full text-white font-bold"
+          style={{ background: PRIMARY }}>{t('backToMenu')}</button>
       </div>
     )
   }
 
   const currentStep = getStatusStep(order.status)
+  const estMins = EST_MINS[order.status]
 
   return (
-    <div className="min-h-dvh bg-[#FAFAFA] flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh bg-[#FAFAF8] pb-10" dir={isRTL ? 'rtl' : 'ltr'}>
 
-      {/* ── HEADER ── */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-100"
-        style={{ boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
-        <div className="flex items-center justify-between px-4 py-4">
-          <div>
-            <h1 className="font-bold text-gray-900 text-base">{t('trackOrder')}</h1>
-            <p className="text-gray-400 text-xs mt-0.5">
-              {t('table')} {order.table_number} · {order.customer_name}
-            </p>
+      {/* ── TOP CONTENT ── */}
+      <div className="px-6 pt-12 pb-6 text-center">
+        <motion.div
+          initial={{ scale: 0.7, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+          style={{ background: `${PRIMARY}18` }}
+        >
+          <span className="text-3xl">🍛</span>
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="font-black text-gray-900 mb-1"
+          style={{ fontSize: 'clamp(26px, 8vw, 32px)', letterSpacing: '-0.025em' }}
+        >
+          {t('orderReceived')}
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}
+          className="text-gray-500 text-sm leading-relaxed"
+        >
+          {t('orderProcessing')}
+        </motion.p>
+      </div>
+
+      <div className="px-5 space-y-4">
+
+        {/* ORDER ID + TABLE card */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          className="bg-white rounded-2xl overflow-hidden"
+          style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #F0EAE0' }}
+        >
+          <div className="flex">
+            <div className="flex-1 p-5">
+              <p className="text-[10px] font-black tracking-[2px] text-gray-400 uppercase mb-2">
+                {t('orderNumber')}
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-gray-900 text-xl tracking-tight">
+                  {order.order_number ?? order.id.slice(0, 10).toUpperCase()}
+                </span>
+                <button onClick={() => {
+                  navigator.clipboard.writeText(order.order_number ?? order.id)
+                  setCopied(true); setTimeout(() => setCopied(false), 1500)
+                }}>
+                  <Copy size={14} style={{ color: copied ? '#22C55E' : '#C0B8B0' }} />
+                </button>
+              </div>
+            </div>
+            <div className="w-px bg-gray-100 my-4" />
+            <div className="p-5 text-right">
+              <p className="text-[10px] font-black tracking-[2px] text-gray-400 uppercase mb-2">
+                TABLE
+              </p>
+              <span className="font-black text-gray-900 text-xl">#{order.table_number}</span>
+            </div>
           </div>
-          {/* Status pill */}
-          <span className="text-xs font-bold px-3 py-1.5 rounded-full text-white"
-            style={{
-              background:
-                order.status === 'pending'   ? '#F59E0B' :
-                order.status === 'cooking'   ? PRIMARY :
-                order.status === 'ready'     ? '#10B981' : '#6366F1',
-            }}>
-            {order.status === 'pending' ? `⏳ ${t('pending')}` :
-             order.status === 'cooking' ? `🔥 ${t('cooking')}` :
-             order.status === 'ready'   ? `✅ ${t('ready')}` : `✓ ${t('delivered')}`}
-          </span>
-        </div>
-      </header>
+        </motion.div>
 
-      <main className="flex-1 px-4 py-5 space-y-4 pb-28">
-
-        {/* Order number */}
-        {order.order_number && (
-          <div className="flex items-center justify-between bg-white rounded-2xl px-5 py-3 border border-gray-100"
-            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-            <span className="text-gray-400 text-sm">No. Pesanan</span>
-            <span className="font-black text-gray-900">{order.order_number}</span>
-          </div>
+        {/* ESTIMATED TIME */}
+        {estMins > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            className="bg-white rounded-2xl p-5 flex items-center gap-4"
+            style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #F0EAE0' }}
+          >
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${PRIMARY}15` }}>
+              <Clock size={26} style={{ color: PRIMARY }} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black tracking-[2px] text-gray-400 uppercase mb-1">
+                ESTIMATED TIME
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="font-black text-3xl" style={{ color: PRIMARY }}>{estMins}</span>
+                <span className="font-bold text-gray-500 text-sm">mins</span>
+                <span className="text-[10px] font-black tracking-[2px] text-gray-400 uppercase">READY</span>
+              </div>
+            </div>
+          </motion.div>
         )}
 
-        {/* ── STATUS TIMELINE ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5"
-          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <h2 className="text-gray-900 font-semibold text-sm mb-5">{t('orderStatus')}</h2>
-
-          <div className="space-y-0">
-            {STATUS_STEPS.map((step, idx) => {
-              const isDone   = idx <= currentStep
-              const isActive = idx === currentStep
-              const Icon     = step.icon
-
+        {/* HORIZONTAL PROGRESS STEPPER */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          className="bg-white rounded-2xl p-6"
+          style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #F0EAE0' }}
+        >
+          <div className="flex items-start">
+            {STEPS.map((step, idx) => {
+              const Icon = step.icon
+              const done = idx <= currentStep
+              const isLast = idx === STEPS.length - 1
               return (
-                <div key={step.status} className="flex gap-4">
-                  <div className="flex flex-col items-center">
+                <div key={step.status} className="flex-1 flex flex-col items-center">
+                  <div className="flex items-center w-full">
+                    {/* Left connector */}
+                    {idx > 0 && (
+                      <div className="flex-1 h-0.5 mb-1"
+                        style={{ background: idx <= currentStep ? PRIMARY : '#E8E0D8' }} />
+                    )}
+                    {/* Circle */}
                     <motion.div
-                      animate={isActive ? { scale: [1, 1.08, 1] } : {}}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                      className="w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all duration-500"
+                      animate={done ? { scale: [1, 1.15, 1] } : {}}
+                      transition={{ duration: 0.4 }}
+                      className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
                       style={{
-                        borderColor: isDone ? PRIMARY : '#E5E7EB',
-                        background:  isActive ? '#FFF3EE' : isDone ? PRIMARY : '#F9FAFB',
-                      }}>
-                      <Icon size={15}
-                        style={{ color: isActive ? PRIMARY : isDone ? 'white' : '#D1D5DB' }} />
+                        background: done ? PRIMARY : '#F0EAE4',
+                        boxShadow: done ? `0 4px 14px rgba(240,160,48,0.35)` : 'none',
+                      }}
+                    >
+                      {done
+                        ? <CheckCircle size={20} className="text-white" strokeWidth={2.5} />
+                        : <Icon size={18} style={{ color: '#C0B0A0' }} />
+                      }
                     </motion.div>
-                    {idx < STATUS_STEPS.length - 1 && (
-                      <div className="w-0.5 h-8 mt-1 transition-colors duration-500 rounded-full"
-                        style={{ background: isDone && idx < currentStep ? PRIMARY : '#E5E7EB' }} />
+                    {/* Right connector */}
+                    {!isLast && (
+                      <div className="flex-1 h-0.5 mb-1"
+                        style={{ background: idx < currentStep ? PRIMARY : '#E8E0D8' }} />
                     )}
                   </div>
-
-                  <div className={`pb-6 flex-1 pt-1.5 ${idx === STATUS_STEPS.length - 1 ? 'pb-0' : ''}`}>
-                    <p className="font-semibold text-sm"
-                      style={{ color: isActive ? PRIMARY : isDone ? '#1F2937' : '#9CA3AF' }}>
-                      {t(step.labelKey)}
-                    </p>
-                    {isActive && (
-                      <p className="text-gray-400 text-xs mt-0.5">{t(step.descKey)}</p>
-                    )}
-                  </div>
+                  <p className="text-[10px] font-black tracking-[1px] uppercase mt-2 text-center"
+                    style={{ color: done ? PRIMARY : '#C0B0A0' }}>
+                    {t(step.labelKey)}
+                  </p>
                 </div>
               )
             })}
           </div>
-        </div>
+        </motion.div>
 
-        {/* ── ORDER ITEMS ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3"
-          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <div className="flex justify-between items-center">
-            <h2 className="text-gray-900 font-semibold text-sm">{t('orderItems')}</h2>
-            <span className="text-gray-400 text-xs">{formatTime(order.created_at)}</span>
-          </div>
-          <div className="space-y-2.5">
-            {order.order_items?.map(item => (
-              <div key={item.id} className="flex justify-between text-sm py-2 border-b border-gray-50 last:border-0">
-                <span className="text-gray-600">{item.name} × {item.qty}</span>
-                <span className="text-gray-900 font-medium">{formatPrice(item.price * item.qty)}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between pt-2 border-t border-gray-100">
-            <span className="font-bold text-gray-900">{t('total')}</span>
-            <span className="font-black text-xl" style={{ color: PRIMARY }}>
-              {formatPrice(order.total_price)}
-            </span>
-          </div>
-        </div>
-
-        {/* Payment info — hanya transfer bank */}
-        {order.payment_method === 'online' && (
-          <PaymentInfo order={order} />
-        )}
-
-        {/* Download Struk */}
-        <button
-          onClick={() => window.open(`/receipt/${id}?download=1`, '_blank')}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white text-sm font-semibold transition-opacity hover:opacity-90 active:scale-[0.98]"
-          style={{ background: PRIMARY, boxShadow: `0 4px 16px rgba(255,107,53,0.3)` }}
+        {/* Order items */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
+          className="bg-white rounded-2xl p-5 space-y-3"
+          style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #F0EAE0' }}
         >
+          <p className="text-[10px] font-black tracking-[2px] text-gray-400 uppercase">{t('orderItems')}</p>
+          {order.order_items?.map(item => (
+            <div key={item.id} className="flex justify-between text-sm">
+              <span className="text-gray-600">{item.name} × {item.qty}</span>
+              <span className="font-bold text-gray-900">{formatPrice(item.price * item.qty)}</span>
+            </div>
+          ))}
+          <div className="border-t border-gray-100 pt-3 flex justify-between">
+            <span className="font-bold text-gray-900">{t('total')}</span>
+            <span className="font-black text-xl" style={{ color: PRIMARY }}>{formatPrice(order.total_price)}</span>
+          </div>
+        </motion.div>
+
+        {/* Payment info for transfer/qris */}
+        {order.payment_method === 'online' && <PaymentCard order={order} />}
+
+        {/* Download struk */}
+        <button onClick={() => window.open(`/receipt/${id}?download=1`, '_blank')}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full text-sm font-bold border-2 transition-all"
+          style={{ borderColor: '#E8E0D8', color: '#9A8A7A' }}>
           <Printer size={15} />
           {t('downloadReceipt')}
         </button>
@@ -333,17 +351,30 @@ export default function OrderTrackingPage() {
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
           <span>{t('liveUpdate')}</span>
         </div>
-      </main>
+      </div>
 
-      {/* ── BOTTOM ACTION ── */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 safe-bottom bg-white border-t border-gray-100">
-        <button
-          onClick={() => router.push(`/menu?table=${tableNumber}`)}
-          className="w-full py-3.5 rounded-2xl border-2 font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
-          style={{ borderColor: PRIMARY, color: PRIMARY }}
+      {/* ── BOTTOM ACTIONS ── */}
+      <div className="px-5 mt-6 space-y-3">
+        {/* ORDER AGAIN */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => router.push(`/menu?table=${table}`)}
+          className="w-full py-[18px] rounded-full text-white font-black text-[15px] tracking-wider flex items-center justify-center gap-2"
+          style={{
+            background: PRIMARY,
+            boxShadow: `0 8px 28px rgba(240,160,48,0.4)`,
+            letterSpacing: '0.05em',
+          }}
         >
-          <Home size={16} />
-          {t('backToMenu')}
+          ORDER AGAIN <span className="text-lg">→</span>
+        </motion.button>
+
+        {/* Back to menu */}
+        <button onClick={() => router.push(`/menu?table=${table}`)}
+          className="w-full flex items-center justify-center gap-2 py-3 text-sm font-bold"
+          style={{ color: '#9A8A7A' }}>
+          <span className="text-base">🍴</span>
+          <span className="tracking-[2px] uppercase text-[11px]">{t('backToMenu')}</span>
         </button>
       </div>
 

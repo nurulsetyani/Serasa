@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Clock, Star, Minus, Plus, ShoppingBag, Check } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { X, Minus, Plus, MessageSquare } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { MenuItem } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { MOCK_MENU, IS_MOCK_MODE } from '@/lib/mock-data'
@@ -13,20 +13,19 @@ import { useCart } from '@/context/CartContext'
 import { getItemName, getItemDescription } from '@/lib/i18n'
 import { formatPrice } from '@/lib/utils'
 
-const PRIMARY = '#FF6B35'
+const PRIMARY = '#F0A030'
 
 export default function MenuDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const router = useRouter()
+  const { id }    = useParams<{ id: string }>()
+  const router    = useRouter()
   const { lang, t, isRTL } = useLang()
   const { items: cartItems, addItem, updateQty } = useCart()
 
-  const [item, setItem]         = useState<MenuItem | null>(null)
-  const [loading, setLoading]   = useState(true)
-  const [tableNumber, setTable] = useState('1')
-  const [imgError, setImgError] = useState(false)
-  const [added, setAdded]       = useState(false)
-  const [itemNotes, setNotes]   = useState('')
+  const [item, setItem]     = useState<MenuItem | null>(null)
+  const [loading, setLoad]  = useState(true)
+  const [table, setTable]   = useState('1')
+  const [notes, setNotes]   = useState('')
+  const [added, setAdded]   = useState(false)
 
   const cartItem = item ? cartItems.find(i => i.id === item.id) : null
   const qty = cartItem?.qty ?? 0
@@ -37,237 +36,205 @@ export default function MenuDetailPage() {
   }, [])
 
   useEffect(() => {
-    async function fetchItem() {
-      setLoading(true)
-      if (IS_MOCK_MODE) {
-        setItem(MOCK_MENU.find(m => m.id === id) ?? null)
-        setLoading(false)
-        return
-      }
+    async function load() {
+      setLoad(true)
+      if (IS_MOCK_MODE) { setItem(MOCK_MENU.find(m => m.id === id) ?? null); setLoad(false); return }
       const { data } = await supabase.from('menu').select('*').eq('id', id).single()
       setItem(data as MenuItem ?? null)
-      setLoading(false)
+      setLoad(false)
     }
-    fetchItem()
+    load()
   }, [id])
 
   function handleAdd() {
     if (!item) return
-    addItem(item, itemNotes.trim() || undefined)
+    addItem(item, notes.trim() || undefined)
     setAdded(true)
-    setTimeout(() => setAdded(false), 1200)
+    setTimeout(() => { setAdded(false); router.back() }, 900)
   }
 
-  // ── Loading ──────────────────────────────────────────────
+  const name = item ? getItemName(item, lang) : ''
+  const desc = item ? getItemDescription(item, lang) : ''
+  const subtotal = item ? formatPrice(item.price * Math.max(qty, 1)) : '0 SR'
+
+  const notePlaceholder: Record<string, string> = {
+    id: 'Tambah catatan... (tanpa bawang, tidak pedas...)',
+    en: 'Add notes... (no onion, less spicy...)',
+    ar: 'أضف ملاحظات... (بدون بصل، أقل حرارة...)',
+  }
+
   if (loading) {
     return (
-      <div className="min-h-dvh bg-[#FAFAFA] flex flex-col">
-        {/* skeleton header image */}
-        <div className="h-72 bg-gray-200 animate-pulse" />
-        <div className="bg-white rounded-t-3xl -mt-6 px-5 pt-6 space-y-4">
-          <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto" />
-          <div className="h-7 bg-gray-100 rounded-xl animate-pulse w-3/4" />
-          <div className="h-4 bg-gray-100 rounded-full animate-pulse w-1/3" />
-          <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+      <div className="min-h-dvh bg-black/40 flex items-end">
+        <div className="w-full bg-white rounded-t-[28px] h-[80dvh] animate-pulse" />
+      </div>
+    )
+  }
+
+  if (!item) {
+    return (
+      <div className="min-h-dvh bg-[#FAFAF8] flex items-center justify-center p-8 text-center">
+        <div>
+          <p className="text-gray-400 text-sm mb-4">Menu tidak ditemukan</p>
+          <button onClick={() => router.back()}
+            className="px-6 py-3 rounded-full text-white font-bold text-sm"
+            style={{ background: PRIMARY }}>Kembali</button>
         </div>
       </div>
     )
-  }
-
-  // ── Not found ────────────────────────────────────────────
-  if (!item) {
-    return (
-      <div className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center p-8 text-center">
-        <span className="text-5xl mb-4">🍽️</span>
-        <p className="text-gray-400 text-sm mb-6">Menu tidak ditemukan</p>
-        <button onClick={() => router.back()}
-          className="px-6 py-3 rounded-2xl text-white font-bold text-sm"
-          style={{ background: PRIMARY }}>
-          Kembali
-        </button>
-      </div>
-    )
-  }
-
-  const name = getItemName(item, lang)
-  const desc = getItemDescription(item, lang)
-  const notesPlaceholder: Record<string, string> = {
-    id: 'cth: tanpa bawang, tidak pedas...',
-    en: 'e.g. no onions, less spicy...',
-    ar: 'مثال: بدون بصل، قليل الحرارة...',
   }
 
   return (
-    <div className="min-h-dvh bg-[#FAFAFA]" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh bg-black/50 flex flex-col justify-end" dir={isRTL ? 'rtl' : 'ltr'}>
 
-      {/* ── HERO IMAGE ── */}
-      <div className="relative h-72 bg-gray-100 overflow-hidden">
-        {!imgError ? (
-          <Image
-            src={item.image || `https://placehold.co/800x600/FFF3EE/FF6B35?text=${encodeURIComponent(name)}`}
-            alt={name} fill className="object-cover" priority sizes="100vw"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-orange-50 flex items-center justify-center text-6xl">🍽️</div>
-        )}
+      {/* Backdrop — tap to close */}
+      <div className="absolute inset-0" onClick={() => router.back()} />
 
-        {/* gradient bottom */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-
-        {/* Back button */}
-        <div className="absolute top-4 left-4 safe-top">
-          <button onClick={() => router.back()}
-            className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md"
-            style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}>
-            <ArrowLeft size={18} className={`text-gray-700 ${isRTL ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
-
-        {/* Best seller badge */}
-        {item.is_best_seller && (
-          <div className="absolute top-4 right-4">
-            <span className="flex items-center gap-1 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-md"
-              style={{ background: PRIMARY }}>
-              <Star size={9} fill="white" /> TERLARIS
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── CONTENT PANEL ── */}
+      {/* Bottom sheet */}
       <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="relative -mt-6 bg-white rounded-t-3xl px-5 pt-5 pb-40"
-        style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.06)' }}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+        className="relative z-10 bg-white rounded-t-[28px] overflow-hidden max-h-[92dvh] flex flex-col"
+        style={{ boxShadow: '0 -8px 40px rgba(0,0,0,0.18)' }}
       >
-        {/* Handle bar */}
-        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-
-        {/* Name + Price */}
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <h1 className="font-bold text-gray-900 text-2xl leading-tight flex-1">{name}</h1>
-          <span className="font-black text-2xl flex-shrink-0" style={{ color: PRIMARY }}>
-            {formatPrice(item.price)}
-          </span>
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3.5 flex-shrink-0">
+          <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
 
-        {/* Meta */}
-        <div className="flex items-center gap-4 mb-5">
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} size={12}
-                className={i < 4 ? 'fill-amber-400 text-amber-400' : 'text-gray-200 fill-gray-200'} />
-            ))}
-            <span className="text-gray-400 text-xs ml-1">4.8</span>
-          </div>
-          <div className="flex items-center gap-1 text-gray-400 text-xs">
-            <Clock size={12} />
-            <span>{item.cook_time} {t('minutes')}</span>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="h-px bg-gray-100 mb-5" />
-
-        {/* Description */}
-        {desc && (
-          <div className="mb-5">
-            <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-          </div>
-        )}
-
-        {/* Badges */}
-        <div className="flex gap-2 flex-wrap mb-6">
-          {['Halal ✓', 'No MSG', 'Fresh Daily'].map(b => (
-            <span key={b} className="text-[11px] font-medium px-3 py-1.5 rounded-full border"
-              style={{ background: '#FFF3EE', borderColor: '#FFD5C4', color: PRIMARY }}>
-              {b}
-            </span>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div className="h-px bg-gray-100 mb-5" />
-
-        {/* Notes */}
-        <div className="mb-4">
-          <p className="text-gray-700 font-semibold text-sm mb-2.5">{t('notesOptional')}</p>
-          <textarea
-            value={itemNotes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder={notesPlaceholder[lang] ?? notesPlaceholder.en}
-            rows={3}
-            dir={isRTL ? 'rtl' : 'ltr'}
-            className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 outline-none resize-none transition-colors"
-            style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.03)' }}
-            onFocus={e => e.currentTarget.style.borderColor = PRIMARY}
-            onBlur={e => e.currentTarget.style.borderColor = '#E5E7EB'}
+        {/* Food image */}
+        <div className="relative mx-4 mt-3 rounded-2xl overflow-hidden bg-amber-50 flex-shrink-0"
+          style={{ height: '240px' }}>
+          <Image
+            src={item.image || '/hero-food.png'}
+            alt={name} fill className="object-cover"
+            priority sizes="100vw"
           />
+          {/* Very light warm overlay */}
+          <div className="absolute inset-0"
+            style={{ background: 'linear-gradient(to top, rgba(255,248,235,0.2), transparent 50%)' }} />
+
+          {/* X button */}
+          <button
+            onClick={() => router.back()}
+            className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center"
+            style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}>
+            <X size={18} className="text-gray-700" />
+          </button>
+
+          {/* Best seller badge */}
+          {item.is_best_seller && (
+            <div className="absolute bottom-3 left-3">
+              <span className="flex items-center gap-1.5 text-white text-[11px] font-black px-4 py-2 rounded-full tracking-wider"
+                style={{ background: PRIMARY }}>
+                ⚡ BEST SELLER
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-5 pt-4 pb-2">
+
+          {/* Name + price */}
+          <div className="flex items-start justify-between gap-3 mb-1">
+            <h1 className="font-black text-gray-900 text-xl leading-tight flex-1">{name}</h1>
+            <span className="font-black text-xl flex-shrink-0" style={{ color: PRIMARY }}>
+              {formatPrice(item.price)}
+            </span>
+          </div>
+
+          {desc && (
+            <p className="text-gray-400 text-sm leading-relaxed mb-4">{desc}</p>
+          )}
+
+          {/* Notes */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <MessageSquare size={14} style={{ color: PRIMARY }} />
+              <span className="text-[11px] font-black tracking-[2px] uppercase"
+                style={{ color: '#8A7A6A' }}>
+                {t('notes')}
+              </span>
+            </div>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder={notePlaceholder[lang] ?? notePlaceholder.en}
+              rows={2}
+              dir={isRTL ? 'rtl' : 'ltr'}
+              className="w-full rounded-2xl px-4 py-3 text-sm text-gray-700 outline-none resize-none"
+              style={{
+                background: '#F5F2EE',
+                border: '1.5px solid transparent',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={e => (e.currentTarget.style.borderColor = PRIMARY)}
+              onBlur={e => (e.currentTarget.style.borderColor = 'transparent')}
+            />
+          </div>
+        </div>
+
+        {/* Sticky bottom — qty + CTA */}
+        <div className="px-5 pt-3 pb-6 safe-bottom flex-shrink-0"
+          style={{ borderTop: '1px solid #F0ECE6' }}>
+
+          {/* Qty row */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4 bg-[#F5F2EE] rounded-full px-2 py-1.5">
+              <motion.button whileTap={{ scale: 0.82 }}
+                onClick={() => qty > 0 ? updateQty(item.id, qty - 1) : null}
+                className="w-10 h-10 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center"
+                style={{ color: '#555' }}>
+                <Minus size={16} strokeWidth={2.5} />
+              </motion.button>
+              <span className="font-black text-gray-900 text-xl w-6 text-center">{Math.max(qty, 1)}</span>
+              <motion.button whileTap={{ scale: 0.82 }}
+                onClick={() => addItem(item)}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white"
+                style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(240,160,48,0.4)` }}>
+                <Plus size={16} strokeWidth={2.5} />
+              </motion.button>
+            </div>
+
+            <div className="text-right">
+              <p className="text-[10px] font-bold tracking-[2px] uppercase" style={{ color: '#9A8A7A' }}>
+                SUBTOTAL
+              </p>
+              <p className="font-black text-2xl leading-tight" style={{ color: '#1A1208' }}>
+                {item.price * Math.max(qty, 1)} <span className="text-sm font-bold text-gray-400">SR</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Add to cart */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleAdd}
+            disabled={added}
+            className="w-full rounded-full py-[18px] font-black text-white text-[16px] tracking-wide flex items-center justify-center gap-3"
+            style={{
+              background: added ? '#22C55E' : PRIMARY,
+              boxShadow: added
+                ? '0 6px 20px rgba(34,197,94,0.35)'
+                : `0 6px 24px rgba(240,160,48,0.42)`,
+              transition: 'background 0.3s',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {added ? (
+              <>✓ DITAMBAHKAN!</>
+            ) : (
+              <>
+                ADD TO CART
+                <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                <span>{item.price * Math.max(qty, 1)} SAR</span>
+              </>
+            )}
+          </motion.button>
         </div>
       </motion.div>
-
-      {/* ── STICKY BOTTOM ── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5 py-4 safe-bottom"
-        style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
-
-        <AnimatePresence mode="wait">
-          {qty === 0 ? (
-            <motion.button
-              key="add"
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleAdd}
-              className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 text-white transition-all"
-              style={{
-                background: added ? '#10B981' : PRIMARY,
-                boxShadow: added
-                  ? '0 4px 20px rgba(16,185,129,0.35)'
-                  : `0 4px 24px rgba(255,107,53,0.35)`,
-              }}
-            >
-              {added
-                ? <><Check size={18} strokeWidth={2.5} /> {t('thankYou')}</>
-                : <><ShoppingBag size={18} /> {t('addToCart')} — {formatPrice(item.price)}</>
-              }
-            </motion.button>
-          ) : (
-            <motion.div
-              key="stepper"
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-              className="flex items-center gap-3"
-            >
-              {/* Qty control */}
-              <div className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3 border border-gray-200">
-                <motion.button whileTap={{ scale: 0.8 }}
-                  onClick={() => updateQty(item.id, qty - 1)}
-                  className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
-                  style={{ borderColor: PRIMARY, color: PRIMARY }}>
-                  <Minus size={14} strokeWidth={2.5} />
-                </motion.button>
-                <span className="text-gray-900 font-black text-xl w-6 text-center">{qty}</span>
-                <motion.button whileTap={{ scale: 0.8 }}
-                  onClick={() => addItem(item)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white"
-                  style={{ background: PRIMARY }}>
-                  <Plus size={14} strokeWidth={2.5} />
-                </motion.button>
-              </div>
-
-              {/* Go to cart */}
-              <motion.button whileTap={{ scale: 0.97 }}
-                onClick={() => router.push(`/cart?table=${tableNumber}`)}
-                className="flex-1 py-3.5 rounded-2xl text-white font-bold flex items-center justify-center gap-2"
-                style={{ background: PRIMARY, boxShadow: `0 4px 16px rgba(255,107,53,0.3)` }}>
-                <ShoppingBag size={16} />
-                {t('cart')} · {formatPrice(item.price * qty)}
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
     </div>
   )
 }
