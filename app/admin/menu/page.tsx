@@ -17,7 +17,7 @@ const C = {
   card:   '#171A21',
   cardHv: '#1C1F26',
   border: '#23262F',
-  accent: '#F5B041',
+  accent: '#F0A030',
   text:   '#FFFFFF',
   muted:  '#A1A1AA',
   danger: '#EF4444',

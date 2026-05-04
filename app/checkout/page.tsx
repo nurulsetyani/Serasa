@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, MapPin, CheckCircle, UtensilsCrossed, ShoppingBag, Banknote, Smartphone, QrCode } from 'lucide-react'
-import { motion } from 'framer-motion'
+import {
+  ArrowLeft, UtensilsCrossed, ShoppingBag,
+  Banknote, Smartphone, QrCode, CheckCircle, ChevronRight,
+} from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
@@ -11,304 +14,295 @@ import { getItemName } from '@/lib/i18n'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 import { OrderType, PaymentMethod } from '@/types'
 
-const PRIMARY = '#FF6B35'
+const P = '#F0A030'   // primary orange
 
-type OrderTypeOption   = { value: OrderType;     icon: React.ElementType; labelKey: 'dineIn' | 'takeAway' }
-type PaymentOption     = { value: PaymentMethod;  icon: React.ElementType; labelKey: 'cash' | 'online' | 'qris' }
+type OTOpt = { value: OrderType;    icon: React.ElementType; labelKey: 'dineIn' | 'takeAway' }
+type PMOpt = { value: PaymentMethod; icon: React.ElementType; labelKey: 'cash' | 'online' | 'qris' }
 
-const ORDER_TYPES: OrderTypeOption[] = [
+const ORDER_TYPES: OTOpt[] = [
   { value: 'dine_in',   icon: UtensilsCrossed, labelKey: 'dineIn' },
   { value: 'take_away', icon: ShoppingBag,     labelKey: 'takeAway' },
 ]
-const PAYMENT_METHODS: PaymentOption[] = [
-  { value: 'cash',   icon: Banknote,    labelKey: 'cash' },
-  { value: 'online', icon: Smartphone,  labelKey: 'online' },
-  { value: 'qris',   icon: QrCode,      labelKey: 'qris' },
+const PAYMENT_METHODS: PMOpt[] = [
+  { value: 'cash',   icon: Banknote,   labelKey: 'cash' },
+  { value: 'online', icon: Smartphone, labelKey: 'online' },
+  { value: 'qris',   icon: QrCode,     labelKey: 'qris' },
 ]
 
-// ─── Success Screen ────────────────────────────────────────
-function SuccessScreen({
-  orderNumber, tableNumber, onTrack, lang,
-}: {
-  orderNumber: string; tableNumber: string; onTrack: () => void; lang: import('@/types').Language
+// ── Success Screen ─────────────────────────────────────────
+function SuccessScreen({ orderNumber, tableNumber, lang, onTrack }: {
+  orderNumber: string; tableNumber: string; lang: string; onTrack: () => void
 }) {
   const { t } = useLang()
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center px-6 text-center"
+      className="min-h-dvh bg-[#FAFAF8] flex flex-col items-center justify-center px-6 text-center"
     >
-      {/* Circle check */}
+      {/* Animated check */}
       <motion.div
         initial={{ scale: 0 }} animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
-        className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
-        style={{ background: `${PRIMARY}15` }}
+        transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.1 }}
+        className="relative mb-6"
       >
-        <motion.div
-          initial={{ scale: 0 }} animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 18, delay: 0.25 }}
-          className="w-16 h-16 rounded-full flex items-center justify-center"
-          style={{ background: PRIMARY }}
-        >
-          <CheckCircle size={32} className="text-white" strokeWidth={2.5} />
-        </motion.div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <h1 className="font-black text-gray-900 text-2xl mb-2">{t('orderReceived')}</h1>
-        <p className="text-gray-500 text-sm mb-1">{t('orderProcessing')}</p>
-        <p className="text-gray-400 text-xs mb-6">{t('table')} {tableNumber}</p>
-
-        {/* Order number */}
-        <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-5 py-3 mb-8"
-          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <span className="text-gray-400 text-sm">{t('orderNumber')}</span>
-          <span className="font-black text-gray-900 text-base">{orderNumber}</span>
+        <div className="w-28 h-28 rounded-full flex items-center justify-center"
+          style={{ background: `${P}15` }}>
+          <motion.div
+            initial={{ scale: 0 }} animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 16, delay: 0.25 }}
+            className="w-20 h-20 rounded-full flex items-center justify-center"
+            style={{ background: P }}>
+            <CheckCircle size={40} className="text-white" strokeWidth={2} />
+          </motion.div>
         </div>
-
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={onTrack}
-          className="w-full max-w-xs py-4 rounded-2xl text-white font-bold text-base"
-          style={{ background: PRIMARY, boxShadow: `0 8px 24px rgba(255,107,53,0.35)` }}
-        >
-          {t('trackOrder')}
-        </motion.button>
       </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }} className="space-y-2 mb-8">
+        <h1 className="font-black text-gray-900 text-[28px] leading-tight"
+          style={{ letterSpacing: '-0.02em' }}>
+          {t('orderReceived')}
+        </h1>
+        <p className="text-gray-500 text-sm">{t('orderProcessing')}</p>
+        <p className="text-gray-400 text-xs">{t('table')} #{tableNumber}</p>
+      </motion.div>
+
+      {/* Order number card */}
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.45 }}
+        className="bg-white rounded-2xl px-6 py-4 mb-8 flex items-center gap-3"
+        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.07)', border: `1.5px solid ${P}30` }}>
+        <div>
+          <p className="text-[10px] font-black tracking-[2px] uppercase mb-1"
+            style={{ color: '#9A8A7A' }}>{t('orderNumber')}</p>
+          <p className="font-black text-2xl" style={{ color: '#1A1208' }}>{orderNumber}</p>
+        </div>
+      </motion.div>
+
+      <motion.button
+        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.55 }}
+        whileTap={{ scale: 0.97 }} onClick={onTrack}
+        className="w-full rounded-full py-[18px] text-white font-black text-[16px] flex items-center justify-center gap-2"
+        style={{ background: P, boxShadow: `0 8px 24px rgba(240,160,48,0.4)`, letterSpacing: '0.02em' }}>
+        {t('trackOrder')} <ChevronRight size={18} strokeWidth={3} />
+      </motion.button>
     </motion.div>
   )
 }
 
-// ─── Checkout Page ─────────────────────────────────────────
+// ── Checkout Page ──────────────────────────────────────────
 export default function CheckoutPage() {
   const router = useRouter()
-  const [tableNumber, setTableNumber]   = useState('1')
-  const { lang, t, isRTL }             = useLang()
-  const { items, clearCart }            = useCart()
+  const { lang, t, isRTL } = useLang()
+  const { items, clearCart } = useCart()
 
-  const [customerName, setCustomerName]   = useState('')
-  const [orderType, setOrderType]         = useState<OrderType>('dine_in')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
-  const [loading, setLoading]             = useState(false)
-  const [submitted, setSubmitted]         = useState(false)
-  const [error, setError]                 = useState('')
-  const [successData, setSuccessData]     = useState<{ orderId: string; orderNumber: string } | null>(null)
+  const [table, setTable]               = useState('1')
+  const [name, setName]                 = useState('')
+  const [orderType, setOrderType]       = useState<OrderType>('dine_in')
+  const [payment, setPayment]           = useState<PaymentMethod>('cash')
+  const [loading, setLoading]           = useState(false)
+  const [submitted, setSubmitted]       = useState(false)
+  const [error, setError]               = useState('')
+  const [success, setSuccess]           = useState<{ orderId: string; orderNumber: string } | null>(null)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
-    setTableNumber(p.get('table') ?? '1')
+    setTable(p.get('table') ?? '1')
   }, [])
 
   const total = calculateCartTotal(items)
 
   async function handleSubmit() {
-    if (submitted || loading || !customerName.trim() || !items.length) return
+    if (submitted || loading || !name.trim() || !items.length) return
     setSubmitted(true); setLoading(true); setError('')
-
     try {
       if (IS_MOCK_MODE) {
-        await new Promise(r => setTimeout(r, 1200))
+        await new Promise(r => setTimeout(r, 1100))
         clearCart()
-        setSuccessData({ orderId: 'mock-preview-order', orderNumber: 'ORD-DEMO1' })
-        setLoading(false)
-        return
+        setSuccess({ orderId: 'mock-preview-order', orderNumber: 'SV-DEMO1' })
+        setLoading(false); return
       }
-
       const res = await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer_name: customerName.trim(),
-          table_number: tableNumber,
-          order_type: orderType,
-          payment_method: paymentMethod,
-          total_price: total,
-          items: items.map(i => ({
-            menu_id: i.id,
-            name: getItemName(i, 'en'),
-            price: i.price,
-            qty: i.qty,
-            notes: i.itemNotes ?? null,
-          })),
+          customer_name: name.trim(), table_number: table,
+          order_type: orderType, payment_method: payment, total_price: total,
+          items: items.map(i => ({ menu_id: i.id, name: getItemName(i, 'en'), price: i.price, qty: i.qty, notes: i.itemNotes ?? null })),
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
       clearCart()
-      setSuccessData({ orderId: data.id, orderNumber: data.order_number ?? ('ORD-' + data.id.slice(0, 6).toUpperCase()) })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('error'))
+      setSuccess({ orderId: data.id, orderNumber: data.order_number ?? `SV-${data.id.slice(0,6).toUpperCase()}` })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('error'))
       setLoading(false); setSubmitted(false)
     }
   }
 
-  // Show success screen
-  if (successData) {
+  if (success) {
     return (
       <SuccessScreen
-        orderNumber={successData.orderNumber}
-        tableNumber={tableNumber}
-        lang={lang}
-        onTrack={() => router.push(`/order/${successData.orderId}?table=${tableNumber}`)}
+        orderNumber={success.orderNumber} tableNumber={table} lang={lang}
+        onTrack={() => router.push(`/order/${success.orderId}?table=${table}`)}
       />
     )
   }
 
   return (
-    <div className="min-h-dvh bg-[#FAFAFA] flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh bg-[#FAFAF8] flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
 
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-100"
-        style={{ boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
+      <header className="sticky top-0 z-40 bg-white"
+        style={{ boxShadow: '0 1px 12px rgba(0,0,0,0.07)' }}>
         <div className="flex items-center gap-3 px-4 py-4">
           <button onClick={() => router.back()}
-            className="p-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-500">
-            <ArrowLeft size={18} className={isRTL ? 'rotate-180' : ''} />
+            className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+            <ArrowLeft size={17} className={`text-gray-600 ${isRTL ? 'rotate-180' : ''}`} />
           </button>
-          <h1 className="font-bold text-gray-900 text-base">{t('checkoutTitle')}</h1>
+          <h1 className="font-black text-gray-900 text-base">{t('checkoutTitle')}</h1>
         </div>
       </header>
 
-      <div className="flex-1 px-4 py-5 space-y-4 pb-36">
+      <div className="flex-1 px-4 py-5 space-y-3 pb-36">
 
-        {/* Table */}
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-gray-100"
-          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: `${PRIMARY}15` }}>
-            <MapPin size={18} style={{ color: PRIMARY }} />
+        {/* Table card */}
+        <div className="bg-white rounded-2xl px-5 py-4 flex items-center gap-3"
+          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: `${P}15` }}>
+            <span className="text-lg">🪑</span>
           </div>
           <div>
-            <p className="text-gray-400 text-xs">{t('tableNumber')}</p>
-            <p className="text-gray-900 font-bold">{tableNumber}</p>
+            <p className="text-[10px] font-black tracking-[2px] uppercase mb-0.5" style={{ color: '#9A8A7A' }}>
+              {t('tableNumber')}
+            </p>
+            <p className="font-black text-gray-900 text-base">#{table}</p>
           </div>
         </div>
 
         {/* Name */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-semibold text-gray-600">
-            <User size={14} /> {t('yourName')} <span className="text-red-400">*</span>
-          </label>
+        <div className="bg-white rounded-2xl px-5 py-4"
+          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
+          <p className="text-[10px] font-black tracking-[2px] uppercase mb-3" style={{ color: '#9A8A7A' }}>
+            {t('yourName')} <span style={{ color: P }}>*</span>
+          </p>
           <input
-            type="text" value={customerName} onChange={e => setCustomerName(e.target.value)}
-            placeholder={t('namePlaceholder')} required
-            className="w-full px-4 py-3.5 text-sm bg-white border border-gray-200 rounded-2xl text-gray-900 outline-none placeholder:text-gray-300 focus:border-orange-300 transition-colors"
-            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+            type="text" value={name} onChange={e => setName(e.target.value)}
+            placeholder={t('namePlaceholder')}
+            className="w-full text-base font-semibold text-gray-900 outline-none bg-transparent placeholder:text-gray-300 placeholder:font-normal"
           />
+          <div className="h-px mt-3" style={{ background: name ? P : '#E8E0D8', transition: 'background 0.2s' }} />
         </div>
 
         {/* Order type */}
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-gray-600">{t('orderType')}</p>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white rounded-2xl px-5 py-4"
+          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
+          <p className="text-[10px] font-black tracking-[2px] uppercase mb-3" style={{ color: '#9A8A7A' }}>
+            {t('orderType')}
+          </p>
+          <div className="flex gap-2 p-1 bg-gray-100 rounded-full">
             {ORDER_TYPES.map(({ value, icon: Icon, labelKey }) => (
-              <motion.button key={value} whileTap={{ scale: 0.96 }}
+              <motion.button key={value} whileTap={{ scale: 0.95 }}
                 onClick={() => setOrderType(value)}
-                className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 transition-all"
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full text-sm font-black transition-all"
                 style={{
-                  background: orderType === value ? `${PRIMARY}08` : 'white',
-                  borderColor: orderType === value ? PRIMARY : '#E5E7EB',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  background: orderType === value ? P : 'transparent',
+                  color: orderType === value ? 'white' : '#9A8A7A',
+                  boxShadow: orderType === value ? `0 4px 12px rgba(240,160,48,0.35)` : 'none',
                 }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: orderType === value ? `${PRIMARY}15` : '#F9FAFB' }}>
-                  <Icon size={20} style={{ color: orderType === value ? PRIMARY : '#9CA3AF' }} />
-                </div>
-                <span className="text-sm font-semibold"
-                  style={{ color: orderType === value ? PRIMARY : '#6B7280' }}>
-                  {t(labelKey)}
-                </span>
-                {orderType === value && (
-                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full flex items-center justify-center"
-                    style={{ background: PRIMARY }}>
-                    <CheckCircle size={10} className="text-white" />
-                  </div>
-                )}
+                <Icon size={14} />
+                {t(labelKey)}
               </motion.button>
             ))}
           </div>
         </div>
 
         {/* Payment */}
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-gray-600">{t('paymentMethod')}</p>
-          <div className="grid grid-cols-3 gap-2.5">
-            {PAYMENT_METHODS.map(({ value, icon: Icon, labelKey }) => (
-              <motion.button key={value} whileTap={{ scale: 0.96 }}
-                onClick={() => setPaymentMethod(value)}
-                className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 transition-all"
-                style={{
-                  background: paymentMethod === value ? `${PRIMARY}08` : 'white',
-                  borderColor: paymentMethod === value ? PRIMARY : '#E5E7EB',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: paymentMethod === value ? `${PRIMARY}15` : '#F9FAFB' }}>
-                  <Icon size={20} style={{ color: paymentMethod === value ? PRIMARY : '#9CA3AF' }} />
-                </div>
-                <span className="text-sm font-semibold"
-                  style={{ color: paymentMethod === value ? PRIMARY : '#6B7280' }}>
-                  {t(labelKey)}
-                </span>
-                {paymentMethod === value && (
-                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full flex items-center justify-center"
-                    style={{ background: PRIMARY }}>
-                    <CheckCircle size={10} className="text-white" />
+        <div className="bg-white rounded-2xl px-5 py-4"
+          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
+          <p className="text-[10px] font-black tracking-[2px] uppercase mb-3" style={{ color: '#9A8A7A' }}>
+            {t('paymentMethod')}
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {PAYMENT_METHODS.map(({ value, icon: Icon, labelKey }) => {
+              const active = payment === value
+              return (
+                <motion.button key={value} whileTap={{ scale: 0.94 }}
+                  onClick={() => setPayment(value)}
+                  className="relative flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all"
+                  style={{
+                    background: active ? `${P}10` : '#FAFAF8',
+                    borderColor: active ? P : '#EEEAE4',
+                  }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                    style={{ background: active ? `${P}20` : '#F0EAE4' }}>
+                    <Icon size={18} style={{ color: active ? P : '#A09080' }} />
                   </div>
-                )}
-              </motion.button>
-            ))}
+                  <span className="text-[11px] font-black" style={{ color: active ? P : '#9A8A7A' }}>
+                    {t(labelKey)}
+                  </span>
+                  {active && (
+                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center"
+                      style={{ background: P }}>
+                      <span className="text-white text-[8px] font-black">✓</span>
+                    </div>
+                  )}
+                </motion.button>
+              )
+            })}
           </div>
         </div>
 
         {/* Order summary */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3"
-          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-          <h3 className="font-semibold text-gray-900 text-sm">{t('orderSummary')}</h3>
-          <div className="space-y-2.5">
+        <div className="bg-white rounded-2xl px-5 py-4"
+          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
+          <p className="text-[10px] font-black tracking-[2px] uppercase mb-3" style={{ color: '#9A8A7A' }}>
+            {t('orderSummary')}
+          </p>
+          <div className="space-y-2.5 mb-3">
             {items.map(item => (
               <div key={item.id} className="flex justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <span className="text-gray-600 text-sm">{getItemName(item, lang)} × {item.qty}</span>
-                  {item.itemNotes && (
-                    <p className="text-gray-400 text-[11px] italic mt-0.5">📝 {item.itemNotes}</p>
-                  )}
-                </div>
-                <span className="text-gray-900 text-sm font-medium flex-shrink-0">
+                <span className="text-gray-600 text-sm flex-1 min-w-0 line-clamp-1">
+                  {getItemName(item, lang)} × {item.qty}
+                </span>
+                <span className="text-gray-900 font-bold text-sm flex-shrink-0">
                   {formatPrice(item.price * item.qty)}
                 </span>
               </div>
             ))}
           </div>
-          <div className="border-t border-gray-100 pt-3 flex justify-between font-bold">
-            <span className="text-gray-900">{t('total')}</span>
-            <span className="text-lg" style={{ color: PRIMARY }}>{formatPrice(total)}</span>
+          <div className="border-t border-gray-100 pt-3 flex justify-between">
+            <span className="font-black text-gray-900">{t('total')}</span>
+            <span className="font-black text-xl" style={{ color: P }}>{formatPrice(total)}</span>
           </div>
         </div>
 
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-50 border border-red-100 text-red-500 text-sm text-center">
+          <div className="px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-red-500 text-sm text-center">
             {error}
           </div>
         )}
       </div>
 
       {/* Submit */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 safe-bottom bg-white border-t border-gray-100">
+      <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 safe-bottom bg-[#FAFAF8] pt-3"
+        style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}>
         <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={handleSubmit}
-          disabled={loading || submitted || !customerName.trim() || !items.length}
-          className="w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-center gap-2 disabled:opacity-50"
-          style={{ background: PRIMARY, boxShadow: `0 8px 24px rgba(255,107,53,0.35)` }}
-        >
+          whileTap={{ scale: 0.97 }} onClick={handleSubmit}
+          disabled={loading || submitted || !name.trim() || !items.length}
+          className="w-full py-[18px] rounded-full text-white font-black text-[16px] flex items-center justify-center gap-2 disabled:opacity-40"
+          style={{
+            background: P,
+            boxShadow: `0 8px 28px rgba(240,160,48,0.42)`,
+            letterSpacing: '0.03em',
+          }}>
           {loading
-            ? <><span className="animate-spin text-lg">⟳</span> {t('processing')}</>
-            : <><CheckCircle size={18} /> {t('placeOrder')}</>}
+            ? <><span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />{t('processing')}</>
+            : <>{t('placeOrder')} · {formatPrice(total)}</>
+          }
         </motion.button>
       </div>
     </div>

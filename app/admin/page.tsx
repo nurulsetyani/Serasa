@@ -20,11 +20,11 @@ const C = {
   bg:       '#0F1115',
   card:     '#171A21',
   border:   '#23262F',
-  accent:   '#F5B041',
+  accent:   '#F0A030',
   text:     '#FFFFFF',
   muted:    '#A1A1AA',
   success:  '#22C55E',
-  warning:  '#F59E0B',
+  warning:  '#F0A030',
   danger:   '#EF4444',
   sidebar:  '#13161C',
 }
