@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, UtensilsCrossed, ShoppingBag,
-  Banknote, Smartphone, QrCode, CheckCircle, ChevronRight,
+  Banknote, Smartphone, QrCode,
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
@@ -14,7 +14,7 @@ import { getItemName } from '@/lib/i18n'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 import { OrderType, PaymentMethod } from '@/types'
 
-const P = '#F0A030'   // primary orange
+const P = '#FF6B35'
 
 type OTOpt = { value: OrderType;    icon: React.ElementType; labelKey: 'dineIn' | 'takeAway' }
 type PMOpt = { value: PaymentMethod; icon: React.ElementType; labelKey: 'cash' | 'online' | 'qris' }
@@ -29,68 +29,6 @@ const PAYMENT_METHODS: PMOpt[] = [
   { value: 'qris',   icon: QrCode,     labelKey: 'qris' },
 ]
 
-// ── Success Screen ─────────────────────────────────────────
-function SuccessScreen({ orderNumber, tableNumber, lang, onTrack }: {
-  orderNumber: string; tableNumber: string; lang: string; onTrack: () => void
-}) {
-  const { t } = useLang()
-  return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="min-h-dvh bg-[#FAFAF8] flex flex-col items-center justify-center px-6 text-center"
-    >
-      {/* Animated check */}
-      <motion.div
-        initial={{ scale: 0 }} animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.1 }}
-        className="relative mb-6"
-      >
-        <div className="w-28 h-28 rounded-full flex items-center justify-center"
-          style={{ background: `${P}15` }}>
-          <motion.div
-            initial={{ scale: 0 }} animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 16, delay: 0.25 }}
-            className="w-20 h-20 rounded-full flex items-center justify-center"
-            style={{ background: P }}>
-            <CheckCircle size={40} className="text-white" strokeWidth={2} />
-          </motion.div>
-        </div>
-      </motion.div>
-
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }} className="space-y-2 mb-8">
-        <h1 className="font-black text-gray-900 text-[28px] leading-tight"
-          style={{ letterSpacing: '-0.02em' }}>
-          {t('orderReceived')}
-        </h1>
-        <p className="text-gray-500 text-sm">{t('orderProcessing')}</p>
-        <p className="text-gray-400 text-xs">{t('table')} #{tableNumber}</p>
-      </motion.div>
-
-      {/* Order number card */}
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.45 }}
-        className="bg-white rounded-2xl px-6 py-4 mb-8 flex items-center gap-3"
-        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.07)', border: `1.5px solid ${P}30` }}>
-        <div>
-          <p className="text-[10px] font-black tracking-[2px] uppercase mb-1"
-            style={{ color: '#9A8A7A' }}>{t('orderNumber')}</p>
-          <p className="font-black text-2xl" style={{ color: '#1A1208' }}>{orderNumber}</p>
-        </div>
-      </motion.div>
-
-      <motion.button
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.55 }}
-        whileTap={{ scale: 0.97 }} onClick={onTrack}
-        className="w-full rounded-full py-[18px] text-white font-black text-[16px] flex items-center justify-center gap-2"
-        style={{ background: P, boxShadow: `0 8px 24px rgba(240,160,48,0.4)`, letterSpacing: '0.02em' }}>
-        {t('trackOrder')} <ChevronRight size={18} strokeWidth={3} />
-      </motion.button>
-    </motion.div>
-  )
-}
-
 // ── Checkout Page ──────────────────────────────────────────
 export default function CheckoutPage() {
   const router = useRouter()
@@ -104,7 +42,6 @@ export default function CheckoutPage() {
   const [loading, setLoading]           = useState(false)
   const [submitted, setSubmitted]       = useState(false)
   const [error, setError]               = useState('')
-  const [success, setSuccess]           = useState<{ orderId: string; orderNumber: string } | null>(null)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -120,8 +57,8 @@ export default function CheckoutPage() {
       if (IS_MOCK_MODE) {
         await new Promise(r => setTimeout(r, 1100))
         clearCart()
-        setSuccess({ orderId: 'mock-preview-order', orderNumber: 'SV-DEMO1' })
-        setLoading(false); return
+        router.push(`/order/mock-preview-order?table=${table}&new=1`)
+        return
       }
       const res = await fetch('/api/order', {
         method: 'POST',
@@ -135,20 +72,11 @@ export default function CheckoutPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
       clearCart()
-      setSuccess({ orderId: data.id, orderNumber: data.order_number ?? `SV-${data.id.slice(0,6).toUpperCase()}` })
+      router.push(`/order/${data.id}?table=${table}&new=1`)
     } catch (e) {
       setError(e instanceof Error ? e.message : t('error'))
       setLoading(false); setSubmitted(false)
     }
-  }
-
-  if (success) {
-    return (
-      <SuccessScreen
-        orderNumber={success.orderNumber} tableNumber={table} lang={lang}
-        onTrack={() => router.push(`/order/${success.orderId}?table=${table}`)}
-      />
-    )
   }
 
   return (
@@ -211,7 +139,7 @@ export default function CheckoutPage() {
                 style={{
                   background: orderType === value ? P : 'transparent',
                   color: orderType === value ? 'white' : '#9A8A7A',
-                  boxShadow: orderType === value ? `0 4px 12px rgba(240,160,48,0.35)` : 'none',
+                  boxShadow: orderType === value ? `0 4px 12px rgba(255,107,53,0.35)` : 'none',
                 }}>
                 <Icon size={14} />
                 {t(labelKey)}
@@ -296,7 +224,7 @@ export default function CheckoutPage() {
           className="w-full py-[18px] rounded-full text-white font-black text-[16px] flex items-center justify-center gap-2 disabled:opacity-40"
           style={{
             background: P,
-            boxShadow: `0 8px 28px rgba(240,160,48,0.42)`,
+            boxShadow: `0 8px 28px rgba(255,107,53,0.42)`,
             letterSpacing: '0.03em',
           }}>
           {loading

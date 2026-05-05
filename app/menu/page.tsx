@@ -18,7 +18,7 @@ import { formatPrice, calculateCartTotal } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
-const PRIMARY  = '#F0A030'
+const PRIMARY  = '#FF6B35'
 const GOLD     = '#D4AF37'
 
 const CATEGORIES = [
@@ -143,7 +143,7 @@ function FoodCard({
                 whileTap={{ scale: 0.82 }}
                 onClick={e => { e.stopPropagation(); onAdd() }}
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg"
-                style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(240,160,48,0.45)` }}>
+                style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(255,107,53,0.45)` }}>
                 +
               </motion.button>
             ) : (
@@ -232,7 +232,7 @@ function HeroCard({
             whileTap={{ scale: 0.9 }}
             onClick={e => { e.stopPropagation(); onAdd() }}
             className="flex items-center gap-1.5 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex-shrink-0"
-            style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(240,160,48,0.4)` }}>
+            style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(255,107,53,0.4)` }}>
             <Plus size={14} />
             {qty > 0 ? `+${qty}` : 'Tambah'}
           </motion.button>
@@ -376,7 +376,7 @@ function CartSheet({
                   className="w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-between px-5"
                   style={{
                     background: `linear-gradient(135deg, ${PRIMARY} 0%, #FF8C5A 100%)`,
-                    boxShadow: `0 8px 28px rgba(240,160,48,0.38)`,
+                    boxShadow: `0 8px 28px rgba(255,107,53,0.38)`,
                   }}>
                   <span>{t('checkout')}</span>
                   <div className="flex items-center gap-1 bg-white/20 rounded-xl px-3 py-1.5">
@@ -415,7 +415,7 @@ function FloatingCartBar({ totalItems, total, onOpen, cartPop }: {
             className="w-full relative overflow-hidden rounded-2xl"
             style={{
               background: `linear-gradient(135deg, ${PRIMARY} 0%, #FF8C5A 60%, ${GOLD} 100%)`,
-              boxShadow: `0 8px 32px rgba(240,160,48,0.42), 0 2px 8px rgba(0,0,0,0.12)`,
+              boxShadow: `0 8px 32px rgba(255,107,53,0.42), 0 2px 8px rgba(0,0,0,0.12)`,
             }}
           >
             {/* shimmer */}
@@ -526,29 +526,46 @@ export default function MenuPage() {
       <header className="sticky top-0 z-40 bg-white"
         style={{ boxShadow: '0 1px 16px rgba(0,0,0,0.07)' }}>
 
-        <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex items-center gap-2 px-4 py-3">
           {!showSearch ? (
             <>
               {/* Logo */}
-              <div className="relative h-9 w-[88px] flex-shrink-0">
-                <Image src="/logo.png" alt="Serasa" fill className="object-contain object-left" sizes="88px" priority />
+              <div className="relative h-8 w-[80px] flex-shrink-0">
+                <Image src="/logo.png" alt="Serasa" fill className="object-contain object-left" sizes="80px" priority />
               </div>
 
-              {/* Table badge — center */}
-              <div className="flex-1 flex justify-center">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                  style={{ background: '#FFF3EE', border: `1px solid #FFD5C4` }}>
-                  <Utensils size={11} style={{ color: PRIMARY }} />
-                  <span className="text-[11px] font-bold" style={{ color: PRIMARY }}>
-                    {t('table')} {tableNumber}
-                  </span>
-                </div>
+              {/* Table number — next to logo, #FF6B35 */}
+              <div className="flex items-center px-2.5 py-1.5 rounded-full flex-shrink-0"
+                style={{ background: `${PRIMARY}15`, border: `1px solid ${PRIMARY}30` }}>
+                <span className="text-[11px] font-black" style={{ color: PRIMARY }}>
+                  #{tableNumber}
+                </span>
+              </div>
+
+              <div className="flex-1" />
+
+              {/* 3 Language flags */}
+              <div className="flex gap-1 flex-shrink-0">
+                {(['en','id','ar'] as Language[]).map(l => (
+                  <button key={l} onClick={() => {
+                    try { localStorage.setItem('serasa_lang', l) } catch {}
+                    window.location.reload()
+                  }}
+                    className="text-base leading-none w-7 h-7 rounded-full flex items-center justify-center transition-all"
+                    style={{
+                      background: lang === l ? `${PRIMARY}20` : 'transparent',
+                      border: lang === l ? `1.5px solid ${PRIMARY}` : '1.5px solid transparent',
+                      fontSize: 16,
+                    }}>
+                    {l === 'id' ? '🇮🇩' : l === 'en' ? '🇬🇧' : '🇸🇦'}
+                  </button>
+                ))}
               </div>
 
               {/* Search button */}
               <button onClick={() => setShowSearch(true)}
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-gray-400 flex-shrink-0">
-                <Search size={15} />
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-gray-400 flex-shrink-0">
+                <Search size={14} />
               </button>
             </>
           ) : (
@@ -572,7 +589,7 @@ export default function MenuPage() {
               onClick={() => setActiveCategory(cat.key)}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all flex-shrink-0"
               style={activeCategory === cat.key
-                ? { background: '#FFF3EE', color: PRIMARY, border: `1.5px solid #FFD5C4`, boxShadow: `0 2px 8px rgba(240,160,48,0.15)` }
+                ? { background: PRIMARY, color: '#FFFFFF', border: `1.5px solid ${PRIMARY}`, boxShadow: `0 2px 10px rgba(255,107,53,0.35)` }
                 : { background: '#FFFFFF', color: '#9CA3AF', border: '1.5px solid #F0ECE8' }}>
               <span>{cat.icon}</span>
               <span>{t(cat.labelKey)}</span>

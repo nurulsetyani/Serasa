@@ -12,7 +12,7 @@ import { formatPrice, getStatusStep } from '@/lib/utils'
 import ReviewModal from '@/components/ReviewModal'
 import { TranslationKey } from '@/lib/i18n'
 
-const PRIMARY = '#F0A030'
+const PRIMARY = '#FF6B35'
 
 const MOCK_ORDER: Order = {
   id: 'mock-preview-order',
@@ -108,16 +108,18 @@ export default function OrderTrackingPage() {
   const router   = useRouter()
   const { t, isRTL } = useLang()
 
-  const [table, setTable]           = useState('1')
-  const [order, setOrder]           = useState<Order | null>(null)
-  const [loading, setLoading]       = useState(true)
-  const [showReview, setShowReview] = useState(false)
+  const [table, setTable]             = useState('1')
+  const [isNew, setIsNew]             = useState(false)
+  const [order, setOrder]             = useState<Order | null>(null)
+  const [loading, setLoading]         = useState(true)
+  const [showReview, setShowReview]   = useState(false)
   const [reviewShown, setReviewShown] = useState(false)
-  const [copied, setCopied]         = useState(false)
+  const [copied, setCopied]           = useState(false)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     setTable(p.get('table') ?? '1')
+    setIsNew(p.get('new') === '1')
   }, [])
 
   useEffect(() => {
@@ -178,6 +180,38 @@ export default function OrderTrackingPage() {
 
   return (
     <div className="min-h-dvh bg-[#FAFAF8] pb-10" dir={isRTL ? 'rtl' : 'ltr'}>
+
+      {/* ── "PESANAN DITERIMA" BANNER — di header, hanya saat ?new=1 ── */}
+      <AnimatePresence>
+        {isNew && (
+          <motion.div
+            initial={{ y: -60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            className="sticky top-0 z-50"
+          >
+            <div className="flex items-center justify-between px-5 py-4"
+              style={{ background: PRIMARY }}>
+              <div className="flex items-center gap-3">
+                <motion.div
+                  initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 18, delay: 0.2 }}
+                  className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle size={20} className="text-white" strokeWidth={2.5} />
+                </motion.div>
+                <div>
+                  <p className="text-white font-black text-[15px] leading-tight">{t('orderReceived')}</p>
+                  <p className="text-white/70 text-[11px]">{t('orderProcessing')}</p>
+                </div>
+              </div>
+              <button onClick={() => setIsNew(false)}
+                className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-white/80">
+                ✕
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── TOP CONTENT ── */}
       <div className="px-6 pt-12 pb-6 text-center">
@@ -292,7 +326,7 @@ export default function OrderTrackingPage() {
                       className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
                       style={{
                         background: done ? PRIMARY : '#F0EAE4',
-                        boxShadow: done ? `0 4px 14px rgba(240,160,48,0.35)` : 'none',
+                        boxShadow: done ? `0 4px 14px rgba(255,107,53,0.35)` : 'none',
                       }}
                     >
                       {done
@@ -362,7 +396,7 @@ export default function OrderTrackingPage() {
           className="w-full py-[18px] rounded-full text-white font-black text-[15px] tracking-wider flex items-center justify-center gap-2"
           style={{
             background: PRIMARY,
-            boxShadow: `0 8px 28px rgba(240,160,48,0.4)`,
+            boxShadow: `0 8px 28px rgba(255,107,53,0.4)`,
             letterSpacing: '0.05em',
           }}
         >
