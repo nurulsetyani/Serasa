@@ -126,10 +126,18 @@ function FoodCard({
           </div>
         )}
 
-        {/* Cook time */}
-        <div className="absolute bottom-2 left-2 flex items-center gap-0.5 text-[9px] font-medium px-2 py-0.5 rounded-full bg-white/80 backdrop-blur-sm"
-          style={{ color: '#8A7A70', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
-          <Clock size={8} /> {item.cook_time}m
+        {/* Cook time + calories */}
+        <div className="absolute bottom-2 left-2 flex items-center gap-1">
+          <div className="flex items-center gap-0.5 text-[9px] font-medium px-2 py-0.5 rounded-full bg-white/80 backdrop-blur-sm"
+            style={{ color: '#8A7A70', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
+            <Clock size={8} /> {item.cook_time}m
+          </div>
+          {item.calories && (
+            <div className="flex items-center gap-0.5 text-[9px] font-medium px-2 py-0.5 rounded-full bg-white/80 backdrop-blur-sm"
+              style={{ color: '#8A7A70', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
+              🔥 {item.calories}
+            </div>
+          )}
         </div>
 
         {/* Add / Stepper button — floating on image */}

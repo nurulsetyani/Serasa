@@ -9,7 +9,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
-import { formatPrice, calculateCartTotal } from '@/lib/utils'
+import { formatPrice, calculateCartTotal, discountedPrice } from '@/lib/utils'
 import { getItemName } from '@/lib/i18n'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 import { OrderType, PaymentMethod } from '@/types'
@@ -67,7 +67,14 @@ function EditableOrderSummary({ lang, P, t, items, total, onAdd, onUpdate }: {
                   <div key={item.id} className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-gray-900 font-semibold text-sm line-clamp-1">{name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: P }}>{formatPrice(item.price)}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <p className="text-xs font-bold" style={{ color: P }}>
+                          {formatPrice(discountedPrice(item.price, item.discount_percent))}
+                        </p>
+                        {(item.discount_percent ?? 0) > 0 && (
+                          <span className="text-[9px] text-gray-400 line-through">{formatPrice(item.price)}</span>
+                        )}
+                      </div>
                     </div>
                     {/* Inline stepper */}
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -84,16 +91,37 @@ function EditableOrderSummary({ lang, P, t, items, total, onAdd, onUpdate }: {
                         <Plus size={11} />
                       </motion.button>
                     </div>
-                    <span className="text-gray-900 font-bold text-sm w-16 text-right flex-shrink-0">
-                      {formatPrice(item.price * item.qty)}
+                    <span className="font-bold text-sm w-16 text-right flex-shrink-0" style={{ color: P }}>
+                      {formatPrice(discountedPrice(item.price, item.discount_percent) * item.qty)}
                     </span>
                   </div>
                 )
               })}
-              <div className="border-t border-gray-100 pt-3 flex justify-between">
-                <span className="font-black text-gray-900">{t('total')}</span>
-                <span className="font-black text-xl" style={{ color: P }}>{formatPrice(total)}</span>
-              </div>
+              {/* Discount breakdown */}
+              {(() => {
+                const originalTotal = items.reduce((s, i) => s + i.price * i.qty, 0)
+                const savings = originalTotal - total
+                return (
+                  <div className="border-t border-gray-100 pt-3 space-y-1.5">
+                    {savings > 0 && (
+                      <>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">{t('subtotal')}</span>
+                          <span className="text-gray-500">{formatPrice(originalTotal)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="font-semibold" style={{ color: '#22C55E' }}>🏷 {t('discount')}</span>
+                          <span className="font-black" style={{ color: '#22C55E' }}>-{formatPrice(savings)}</span>
+                        </div>
+                      </>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="font-black text-gray-900">{t('total')}</span>
+                      <span className="font-black text-xl" style={{ color: P }}>{formatPrice(total)}</span>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           </motion.div>
         )}
