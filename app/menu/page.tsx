@@ -14,7 +14,7 @@ import { MOCK_MENU, IS_MOCK_MODE } from '@/lib/mock-data'
 import { useLang } from '@/context/LanguageContext'
 import { useCart } from '@/context/CartContext'
 import { getItemName, getItemDescription, TranslationKey } from '@/lib/i18n'
-import { formatPrice, calculateCartTotal } from '@/lib/utils'
+import { formatPrice, calculateCartTotal, discountedPrice } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
@@ -46,8 +46,8 @@ function ToastStack({ toasts }: { toasts: Toast[] }) {
   return (
     <div className="fixed top-4 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none px-4">
       <AnimatePresence>
-        {toasts.map(t => (
-          <motion.div key={t.id}
+        {toasts.map(toast => (
+          <motion.div key={toast.id}
             initial={{ opacity: 0, y: -12, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.94 }}
@@ -57,7 +57,7 @@ function ToastStack({ toasts }: { toasts: Toast[] }) {
             <span className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
               <Check size={11} strokeWidth={3} />
             </span>
-            <span className="line-clamp-1">{t.name} ditambahkan</span>
+            <span className="line-clamp-1">✓ {toast.name}</span>
           </motion.div>
         ))}
       </AnimatePresence>
@@ -174,7 +174,19 @@ function FoodCard({
       <div className="p-3">
         <h3 className="font-bold text-gray-900 text-[13px] leading-snug line-clamp-1 mb-0.5">{name}</h3>
         {desc && <p className="text-gray-400 text-[11px] line-clamp-2 leading-relaxed mb-2">{desc}</p>}
-        <p className="font-black text-sm" style={{ color: PRIMARY }}>{formatPrice(item.price)}</p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <p className="font-black text-sm" style={{ color: PRIMARY }}>
+            {formatPrice(discountedPrice(item.price, item.discount_percent))}
+          </p>
+          {(item.discount_percent ?? 0) > 0 && (
+            <>
+              <span className="text-[10px] text-gray-400 line-through">{formatPrice(item.price)}</span>
+              <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full bg-red-500">
+                -{item.discount_percent}%
+              </span>
+            </>
+          )}
+        </div>
       </div>
     </motion.div>
   )
@@ -217,7 +229,7 @@ function HeroCard({
         <div>
           <span className="inline-flex items-center gap-1 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-md"
             style={{ background: PRIMARY }}>
-            🔥 BEST SELLER
+            🔥 {lang === 'ar' ? 'الأكثر مبيعاً' : lang === 'id' ? 'TERLARIS' : 'BEST SELLER'}
           </span>
         </div>
 
@@ -373,7 +385,7 @@ function CartSheet({
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => { onClose(); setTimeout(() => router.push(`/checkout?table=${tableNumber}`), 200) }}
-                  className="w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-between px-5"
+                  className="w-full py-4 rounded-full text-white font-black text-base flex items-center justify-between px-5"
                   style={{
                     background: `linear-gradient(135deg, ${PRIMARY} 0%, #FF8C5A 100%)`,
                     boxShadow: `0 8px 28px rgba(255,107,53,0.38)`,
@@ -412,7 +424,7 @@ function FloatingCartBar({ totalItems, total, onOpen, cartPop }: {
             animate={cartPop ? { scale: [1, 1.04, 0.97, 1] } : {}}
             transition={{ duration: 0.35 }}
             onClick={onOpen}
-            className="w-full relative overflow-hidden rounded-2xl"
+            className="w-full relative overflow-hidden rounded-full"
             style={{
               background: `linear-gradient(135deg, ${PRIMARY} 0%, #FF8C5A 60%, ${GOLD} 100%)`,
               boxShadow: `0 8px 32px rgba(255,107,53,0.42), 0 2px 8px rgba(0,0,0,0.12)`,

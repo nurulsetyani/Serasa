@@ -215,15 +215,39 @@ export default function OrderTrackingPage() {
 
       {/* ── TOP CONTENT ── */}
       <div className="px-6 pt-12 pb-6 text-center">
-        <motion.div
-          initial={{ scale: 0.7, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
-          style={{ background: `${PRIMARY}18` }}
-        >
-          <span className="text-3xl">🍛</span>
-        </motion.div>
+        {/* Animated checkmark — replaces emoji */}
+        <div className="relative w-24 h-24 mx-auto mb-5 flex items-center justify-center">
+          {/* Outer ring pulse */}
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+            className="absolute inset-0 rounded-full"
+            style={{ background: `${PRIMARY}14` }}
+          />
+          <motion.div
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+            className="absolute inset-0 rounded-full"
+            style={{ background: `${PRIMARY}09` }}
+          />
+          {/* Inner circle */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 18, delay: 0.15 }}
+            className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{ background: PRIMARY, boxShadow: `0 6px 24px rgba(255,107,53,0.45)` }}
+          >
+            <motion.div
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ delay: 0.35, duration: 0.4, ease: 'easeOut' }}
+            >
+              <CheckCircle size={32} className="text-white" strokeWidth={2.5} />
+            </motion.div>
+          </motion.div>
+        </div>
 
         <motion.h1
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}

@@ -4,6 +4,11 @@ export function formatPrice(price: number): string {
   return `${price.toLocaleString()} SR`
 }
 
+export function discountedPrice(price: number, discountPercent?: number): number {
+  if (!discountPercent || discountPercent <= 0) return price
+  return Math.round(price * (1 - discountPercent / 100))
+}
+
 export function calculateCartTotal(items: CartItem[]): number {
   return items.reduce((sum, item) => sum + item.price * item.qty, 0)
 }

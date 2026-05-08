@@ -13,7 +13,7 @@ import { useCart } from '@/context/CartContext'
 import { getItemName, getItemDescription } from '@/lib/i18n'
 import { formatPrice } from '@/lib/utils'
 
-const PRIMARY = '#F0A030'
+const PRIMARY = '#FF6B35'
 
 export default function MenuDetailPage() {
   const { id }    = useParams<{ id: string }>()
@@ -75,10 +75,10 @@ export default function MenuDetailPage() {
     return (
       <div className="min-h-dvh bg-[#FAFAF8] flex items-center justify-center p-8 text-center">
         <div>
-          <p className="text-gray-400 text-sm mb-4">Menu tidak ditemukan</p>
+          <p className="text-gray-400 text-sm mb-4">{t('noItems')}</p>
           <button onClick={() => router.back()}
             className="px-6 py-3 rounded-full text-white font-bold text-sm"
-            style={{ background: PRIMARY }}>Kembali</button>
+            style={{ background: PRIMARY }}>{t('backToMenu')}</button>
         </div>
       </div>
     )
@@ -128,7 +128,7 @@ export default function MenuDetailPage() {
             <div className="absolute bottom-3 left-3">
               <span className="flex items-center gap-1.5 text-white text-[11px] font-black px-4 py-2 rounded-full tracking-wider"
                 style={{ background: PRIMARY }}>
-                ⚡ BEST SELLER
+                ⚡ {t('bestSeller').toUpperCase()}
               </span>
             </div>
           )}
@@ -193,7 +193,7 @@ export default function MenuDetailPage() {
               <motion.button whileTap={{ scale: 0.82 }}
                 onClick={() => addItem(item)}
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white"
-                style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(240,160,48,0.4)` }}>
+                style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(255,107,53,0.4)` }}>
                 <Plus size={16} strokeWidth={2.5} />
               </motion.button>
             </div>
@@ -218,16 +218,16 @@ export default function MenuDetailPage() {
               background: added ? '#22C55E' : PRIMARY,
               boxShadow: added
                 ? '0 6px 20px rgba(34,197,94,0.35)'
-                : `0 6px 24px rgba(240,160,48,0.42)`,
+                : `0 6px 24px rgba(255,107,53,0.42)`,
               transition: 'background 0.3s',
               letterSpacing: '0.04em',
             }}
           >
             {added ? (
-              <>✓ DITAMBAHKAN!</>
+              <>✓ {t('thankYou')}</>
             ) : (
               <>
-                ADD TO CART
+                {t('addToCart')}
                 <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
                 <span>{item.price * Math.max(qty, 1)} SAR</span>
               </>

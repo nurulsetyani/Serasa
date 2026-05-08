@@ -60,6 +60,9 @@ CREATE TABLE orders (
   updated_at     TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ── Migration untuk menu discount (run if table already exists) ──────
+-- ALTER TABLE menu ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0;
+
 -- ── Migration (run if table already exists) ───────────────
 -- ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number   TEXT;
 -- ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type     TEXT NOT NULL DEFAULT 'dine_in' CHECK (order_type IN ('dine_in','take_away'));

@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, UtensilsCrossed, ShoppingBag,
-  Banknote, Smartphone, QrCode,
+  Banknote, Smartphone, QrCode, Minus, Plus, Trash2, ChevronDown, ChevronUp,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal } from '@/lib/utils'
@@ -29,11 +29,84 @@ const PAYMENT_METHODS: PMOpt[] = [
   { value: 'qris',   icon: QrCode,     labelKey: 'qris' },
 ]
 
+// ── Editable Order Summary ────────────────────────────────
+import type { CartItem, MenuItem } from '@/types'
+
+import type { TranslationKey } from '@/lib/i18n'
+
+function EditableOrderSummary({ lang, P, t, items, total, onAdd, onUpdate }: {
+  lang: string; P: string; t: (k: TranslationKey) => string
+  items: CartItem[]; total: number
+  onAdd: (item: MenuItem) => void
+  onUpdate: (id: string, qty: number) => void
+}) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden"
+      style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
+      {/* Header — tap to collapse */}
+      <button onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-4">
+        <p className="text-[10px] font-black tracking-[2px] uppercase" style={{ color: '#9A8A7A' }}>
+          {t('orderSummary')} <span className="normal-case font-medium">({items.reduce((s,i)=>s+i.qty,0)} item)</span>
+        </p>
+        {open ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-4 space-y-3">
+              {items.map(item => {
+                const name = getItemName(item as unknown as Parameters<typeof getItemName>[0], lang as 'id'|'en'|'ar')
+                return (
+                  <div key={item.id} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-900 font-semibold text-sm line-clamp-1">{name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: P }}>{formatPrice(item.price)}</p>
+                    </div>
+                    {/* Inline stepper */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <motion.button whileTap={{ scale: 0.8 }}
+                        onClick={() => onUpdate(item.id, item.qty - 1)}
+                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center">
+                        {item.qty === 1 ? <Trash2 size={11} className="text-red-400" /> : <Minus size={11} className="text-gray-500" />}
+                      </motion.button>
+                      <span className="font-black text-gray-900 text-sm w-4 text-center">{item.qty}</span>
+                      <motion.button whileTap={{ scale: 0.8 }}
+                        onClick={() => onAdd(item as unknown as MenuItem)}
+                        className="w-7 h-7 rounded-full text-white flex items-center justify-center"
+                        style={{ background: P }}>
+                        <Plus size={11} />
+                      </motion.button>
+                    </div>
+                    <span className="text-gray-900 font-bold text-sm w-16 text-right flex-shrink-0">
+                      {formatPrice(item.price * item.qty)}
+                    </span>
+                  </div>
+                )
+              })}
+              <div className="border-t border-gray-100 pt-3 flex justify-between">
+                <span className="font-black text-gray-900">{t('total')}</span>
+                <span className="font-black text-xl" style={{ color: P }}>{formatPrice(total)}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ── Checkout Page ──────────────────────────────────────────
 export default function CheckoutPage() {
   const router = useRouter()
   const { lang, t, isRTL } = useLang()
-  const { items, clearCart } = useCart()
+  const { items, clearCart, addItem, updateQty } = useCart()
 
   const [table, setTable]               = useState('1')
   const [name, setName]                 = useState('')
@@ -184,29 +257,10 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Order summary */}
-        <div className="bg-white rounded-2xl px-5 py-4"
-          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
-          <p className="text-[10px] font-black tracking-[2px] uppercase mb-3" style={{ color: '#9A8A7A' }}>
-            {t('orderSummary')}
-          </p>
-          <div className="space-y-2.5 mb-3">
-            {items.map(item => (
-              <div key={item.id} className="flex justify-between gap-2">
-                <span className="text-gray-600 text-sm flex-1 min-w-0 line-clamp-1">
-                  {getItemName(item, lang)} × {item.qty}
-                </span>
-                <span className="text-gray-900 font-bold text-sm flex-shrink-0">
-                  {formatPrice(item.price * item.qty)}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-gray-100 pt-3 flex justify-between">
-            <span className="font-black text-gray-900">{t('total')}</span>
-            <span className="font-black text-xl" style={{ color: P }}>{formatPrice(total)}</span>
-          </div>
-        </div>
+        {/* Order summary — EDITABLE */}
+        <EditableOrderSummary lang={lang} P={P} t={t}
+          items={items} total={total}
+          onAdd={addItem} onUpdate={updateQty} />
 
         {error && (
           <div className="px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-red-500 text-sm text-center">

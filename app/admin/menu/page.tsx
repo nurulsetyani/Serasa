@@ -45,7 +45,7 @@ const CATEGORIES = [
 const EMPTY_FORM = {
   name_id: '', name_en: '', name_ar: '',
   description_id: '', description_en: '', description_ar: '',
-  price: '', cook_time: '15', calories: '', category: 'signature',
+  price: '', cook_time: '15', calories: '', discount_percent: '0', category: 'signature',
   image: '', is_best_seller: false, is_available: true,
 }
 
@@ -233,6 +233,7 @@ export default function MenuManagerPage() {
       description_id: item.description_id ?? '', description_en: item.description_en ?? '', description_ar: item.description_ar ?? '',
       price: String(item.price), cook_time: String(item.cook_time),
       calories: item.calories ? String(item.calories) : '',
+      discount_percent: item.discount_percent ? String(item.discount_percent) : '0',
       category: item.category, image: item.image ?? '',
       is_best_seller: item.is_best_seller, is_available: item.is_available ?? true,
     })
@@ -264,6 +265,7 @@ export default function MenuManagerPage() {
       description_id: form.description_id.trim() || null, description_en: form.description_en.trim() || null, description_ar: form.description_ar.trim() || null,
       price: parseFloat(form.price), cook_time: parseInt(form.cook_time) || 15,
       calories: form.calories ? parseInt(form.calories) : null,
+      discount_percent: parseInt(form.discount_percent as string) || 0,
       category: form.category, image: form.image.trim() || null,
       is_best_seller: form.is_best_seller, is_available: form.is_available,
     }
@@ -496,6 +498,7 @@ export default function MenuManagerPage() {
                   { label: 'Harga (SR)', key: 'price', placeholder: '0', req: true },
                   { label: 'Waktu (mnt)', key: 'cook_time', placeholder: '15', req: false },
                   { label: 'Kalori', key: 'calories', placeholder: 'kcal', req: false },
+                  { label: 'Diskon (%)', key: 'discount_percent', placeholder: '0', req: false },
                 ].map(f => (
                   <div key={f.key}>
                     <label className="block text-[11px] mb-1.5" style={{ color: C.muted }}>

@@ -16,6 +16,7 @@ export interface MenuItem {
   description_en?: string
   description_ar?: string
   price: number
+  discount_percent?: number   // 0-100, contoh: 20 = diskon 20%
   cook_time: number
   calories?: number
   image: string

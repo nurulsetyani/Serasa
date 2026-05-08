@@ -403,9 +403,20 @@ function OrderCard({
           <span className="text-xs" style={{ color: C.muted }}>
             {order.order_items?.length ?? 0} item
           </span>
-          <span className="text-sm font-bold" style={{ color: C.text }}>
-            {formatPrice(order.total_price)}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Print invoice */}
+            <button
+              onClick={() => window.open(`/receipt/${order.id}?download=1`, '_blank')}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold border transition-colors hover:bg-white/5"
+              style={{ borderColor: C.border, color: C.muted }}
+              title="Print Invoice"
+            >
+              <Printer size={11} /> Invoice
+            </button>
+            <span className="text-sm font-bold" style={{ color: C.text }}>
+              {formatPrice(order.total_price)}
+            </span>
+          </div>
         </div>
         {next && cfg.btnLabel && (
           <button
