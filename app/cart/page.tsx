@@ -7,10 +7,10 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/context/CartContext'
 import { useLang } from '@/context/LanguageContext'
-import { formatPrice, calculateCartTotal } from '@/lib/utils'
+import { formatPrice, calculateCartTotal, discountedPrice } from '@/lib/utils'
 import { getItemName } from '@/lib/i18n'
 
-const P = '#F0A030'
+const P = '#FF6B35'
 
 export default function CartPage() {
   const router = useRouter()
@@ -38,7 +38,7 @@ export default function CartPage() {
         <motion.button whileTap={{ scale: 0.97 }}
           onClick={() => router.push(`/menu?table=${table}`)}
           className="px-8 py-4 rounded-full text-white font-black"
-          style={{ background: P, boxShadow: `0 8px 24px rgba(240,160,48,0.4)` }}>
+          style={{ background: P, boxShadow: `0 8px 24px rgba(255,107,53,0.4)` }}>
           {t('continueShopping')}
         </motion.button>
       </div>
@@ -79,7 +79,10 @@ export default function CartPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900 text-sm line-clamp-1">{name}</p>
-                  <p className="font-black text-sm mt-0.5" style={{ color: P }}>{formatPrice(item.price)}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="font-black text-sm" style={{ color: P }}>{formatPrice(discountedPrice(item.price, item.discount_percent))}</p>
+                    {(item.discount_percent ?? 0) > 0 && <span className="text-[9px] text-gray-400 line-through">{formatPrice(item.price)}</span>}
+                  </div>
                   {item.itemNotes && <p className="text-gray-400 text-[11px] mt-0.5 italic">{item.itemNotes}</p>}
                 </div>
                 {/* Controls */}
@@ -113,7 +116,7 @@ export default function CartPage() {
         <motion.button whileTap={{ scale: 0.97 }}
           onClick={() => router.push(`/checkout?table=${table}`)}
           className="w-full py-[18px] rounded-full text-white font-black text-[16px] flex items-center justify-between px-6"
-          style={{ background: P, boxShadow: `0 8px 28px rgba(240,160,48,0.42)` }}>
+          style={{ background: P, boxShadow: `0 8px 28px rgba(255,107,53,0.42)` }}>
           <span>{t('checkout')}</span>
           <div className="flex items-center gap-1 bg-white/20 rounded-xl px-3 py-1.5">
             <span className="text-sm font-bold">{formatPrice(total)}</span>

@@ -424,7 +424,7 @@ export default function OrderTrackingPage() {
             letterSpacing: '0.05em',
           }}
         >
-          ORDER AGAIN <span className="text-lg">→</span>
+          {t('orderAgain')} <span className="text-lg">→</span>
         </motion.button>
 
         {/* Back to menu */}

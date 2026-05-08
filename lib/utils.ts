@@ -10,7 +10,10 @@ export function discountedPrice(price: number, discountPercent?: number): number
 }
 
 export function calculateCartTotal(items: CartItem[]): number {
-  return items.reduce((sum, item) => sum + item.price * item.qty, 0)
+  return items.reduce((sum, item) => {
+    const price = discountedPrice(item.price, item.discount_percent)
+    return sum + price * item.qty
+  }, 0)
 }
 
 export function calculateEstimatedTime(items: CartItem[], queueCount = 0): number {

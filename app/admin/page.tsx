@@ -354,7 +354,9 @@ function OrderCard({
                   style={{ background: C.accent, color: '#000' }}>NEW</span>
               )}
             </div>
-            <p className="text-xs" style={{ color: C.muted }}>Meja {order.table_number} · {formatTime(order.created_at)}</p>
+            <p className="text-xs" style={{ color: C.muted }}>
+              Meja {order.table_number} · {new Date(order.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short' })} {formatTime(order.created_at)}
+            </p>
           </div>
         </div>
         <StatusBadge status={order.status} />
@@ -406,12 +408,12 @@ function OrderCard({
           <div className="flex items-center gap-2">
             {/* Print invoice */}
             <button
-              onClick={() => window.open(`/receipt/${order.id}?download=1`, '_blank')}
+              onClick={() => window.open(`/receipt/${order.id}?print=1`, '_blank')}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold border transition-colors hover:bg-white/5"
               style={{ borderColor: C.border, color: C.muted }}
-              title="Print Invoice"
+              title="Cetak Invoice"
             >
-              <Printer size={11} /> Invoice
+              <Printer size={11} /> Print
             </button>
             <span className="text-sm font-bold" style={{ color: C.text }}>
               {formatPrice(order.total_price)}
@@ -496,13 +498,24 @@ export default function AdminPage() {
     setUpdating(null)
   }
 
-  const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
+  // Date filter
+  const [dateFilter, setDateFilter] = useState<'today'|'week'|'month'|'all'>('today')
+  const now = new Date()
+  const dateFiltered = orders.filter(o => {
+    const d = new Date(o.created_at)
+    if (dateFilter === 'today') return d.toDateString() === now.toDateString()
+    if (dateFilter === 'week')  return (now.getTime() - d.getTime()) < 7 * 86400000
+    if (dateFilter === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    return true
+  })
+
+  const filtered = (filter === 'all' ? dateFiltered : dateFiltered.filter(o => o.status === filter))
   const counts = {
-    all: orders.length,
-    pending: orders.filter(o => o.status === 'pending').length,
-    cooking: orders.filter(o => o.status === 'cooking').length,
-    ready: orders.filter(o => o.status === 'ready').length,
-    delivered: orders.filter(o => o.status === 'delivered').length,
+    all: dateFiltered.length,
+    pending: dateFiltered.filter(o => o.status === 'pending').length,
+    cooking: dateFiltered.filter(o => o.status === 'cooking').length,
+    ready: dateFiltered.filter(o => o.status === 'ready').length,
+    delivered: dateFiltered.filter(o => o.status === 'delivered').length,
   }
   const todayRevenue = orders
     .filter(o => o.status === 'delivered' && new Date(o.created_at).toDateString() === new Date().toDateString())
@@ -585,7 +598,20 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Filter tabs */}
+          {/* Date filter */}
+          <div className="flex gap-1.5 px-4 lg:px-6 py-2 overflow-x-auto scrollbar-hide border-t" style={{ borderColor: C.border }}>
+            {([['today','Hari Ini'],['week','7 Hari'],['month','Bulan Ini'],['all','Semua']] as const).map(([val, label]) => (
+              <button key={val} onClick={() => setDateFilter(val)}
+                className="px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all"
+                style={dateFilter === val
+                  ? { background: C.accent, color: '#000' }
+                  : { background: 'transparent', color: C.muted, border: `1px solid ${C.border}` }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Status filter tabs */}
           <div className="flex gap-2 px-4 lg:px-6 py-2.5 overflow-x-auto scrollbar-hide border-t" style={{ borderColor: C.border }}>
             {[
               { value: 'all',       label: 'Semua' },

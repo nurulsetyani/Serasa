@@ -68,6 +68,7 @@ const translations = {
     close: 'Tutup', confirm: 'Konfirmasi', cancel: 'Batal', save: 'Simpan',
     backToMenu: 'Kembali ke Menu', viewOrder: 'Lihat Pesanan',
     orderNumber: 'No. Pesanan', at: 'di', items: 'item',
+    orderAgain: 'Pesan Lagi',
     // Upsell
     addDrink: 'Tambah minuman?', addDrinkSub: 'Lengkapi pesananmu dengan minuman segar',
     noThanks: 'Tidak, terima kasih',
@@ -127,6 +128,7 @@ const translations = {
     close: 'Close', confirm: 'Confirm', cancel: 'Cancel', save: 'Save',
     backToMenu: 'Back to Menu', viewOrder: 'View Order',
     orderNumber: 'Order No.', at: 'at', items: 'items',
+    orderAgain: 'Order Again',
     addDrink: 'Add a drink?', addDrinkSub: 'Complete your order with a refreshing drink',
     noThanks: 'No, thanks',
   },
@@ -185,6 +187,7 @@ const translations = {
     close: 'إغلاق', confirm: 'تأكيد', cancel: 'إلغاء', save: 'حفظ',
     backToMenu: 'العودة للقائمة', viewOrder: 'عرض الطلب',
     orderNumber: 'رقم الطلب', at: 'في', items: 'عناصر',
+    orderAgain: 'اطلب مجدداً',
     addDrink: 'إضافة مشروب؟', addDrinkSub: 'أكمل طلبك بمشروب منعش',
     noThanks: 'لا، شكراً',
   },
