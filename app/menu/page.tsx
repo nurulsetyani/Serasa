@@ -262,6 +262,129 @@ function HeroCard({
   )
 }
 
+// ─── Featured Slideshow ───────────────────────────────────
+function FeaturedSlideshow({
+  items, lang, tableNumber, onAdd, cartItems,
+}: {
+  items: MenuItem[]; lang: Language; tableNumber: string
+  onAdd: (item: MenuItem) => void; cartItems: { id: string; qty: number }[]
+}) {
+  const router = useRouter()
+  const [idx, setIdx]     = useState(0)
+  const [dir, setDir]     = useState(1)
+  const [paused, setPaused] = useState(false)
+
+  useEffect(() => {
+    if (paused || items.length < 2) return
+    const id = setInterval(() => {
+      setDir(1)
+      setIdx(i => (i + 1) % items.length)
+    }, 3500)
+    return () => clearInterval(id)
+  }, [items.length, paused])
+
+  function goTo(next: number) {
+    setDir(next > idx ? 1 : -1)
+    setIdx(next)
+    setPaused(true)
+    setTimeout(() => setPaused(false), 5000)
+  }
+
+  if (!items.length) return null
+  const item = items[idx]
+  const name = getItemName(item, lang)
+  const finalPrice = discountedPrice(item.price, item.discount_percent)
+  const hasDiscount = (item.discount_percent ?? 0) > 0
+  const inCart = cartItems.find(c => c.id === item.id)?.qty ?? 0
+
+  return (
+    <div className="mx-4 mt-4">
+      {/* Slide container */}
+      <div className="relative h-52 rounded-3xl overflow-hidden cursor-pointer"
+        style={{ boxShadow: '0 6px 28px rgba(0,0,0,0.13)' }}
+        onClick={() => router.push(`/menu/${item.id}?table=${tableNumber}`)}>
+
+        <AnimatePresence initial={false} custom={dir}>
+          <motion.div key={item.id}
+            custom={dir}
+            variants={{
+              enter:  (d: number) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
+              center: { x: 0, opacity: 1 },
+              exit:   (d: number) => ({ x: d > 0 ? '-100%' : '100%', opacity: 0 }),
+            }}
+            initial="enter" animate="center" exit="exit"
+            transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+            className="absolute inset-0"
+          >
+            <Image
+              src={item.image || '/hero-food.png'} alt={name} fill
+              className="object-cover" sizes="100vw" priority={idx === 0}
+            />
+            {/* Gradient */}
+            <div className="absolute inset-0"
+              style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 55%, transparent 100%)' }} />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Badges */}
+        <div className="absolute top-3.5 left-4 flex gap-2 z-10">
+          {item.is_best_seller && (
+            <span className="flex items-center gap-1 text-white text-[10px] font-black px-2.5 py-1 rounded-full"
+              style={{ background: PRIMARY }}>
+              🔥 {lang === 'ar' ? 'الأكثر مبيعاً' : lang === 'id' ? 'TERLARIS' : 'BEST SELLER'}
+            </span>
+          )}
+          {hasDiscount && (
+            <span className="text-white text-[10px] font-black px-2.5 py-1 rounded-full"
+              style={{ background: '#EF4444' }}>
+              -{item.discount_percent}%
+            </span>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="absolute bottom-0 left-0 p-4 z-10">
+          <p className="text-white/70 text-[10px] tracking-widest uppercase mb-1">
+            {lang === 'ar' ? 'مميز' : lang === 'id' ? 'Unggulan' : 'Featured'}
+          </p>
+          <p className="text-white font-black text-xl leading-tight line-clamp-1 mb-2">{name}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-white font-black text-base">{formatPrice(finalPrice)}</span>
+            {hasDiscount && (
+              <span className="text-white/55 text-xs line-through">{formatPrice(item.price)}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Add button */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={e => { e.stopPropagation(); onAdd(item) }}
+          className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 text-white text-sm font-black px-3.5 py-2.5 rounded-full"
+          style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(255,107,53,0.45)` }}>
+          <Plus size={14} />
+          {inCart > 0 ? `+${inCart}` : (lang === 'ar' ? 'أضف' : lang === 'id' ? 'Tambah' : 'Add')}
+        </motion.button>
+      </div>
+
+      {/* Dots */}
+      {items.length > 1 && (
+        <div className="flex justify-center gap-1.5 mt-2.5">
+          {items.map((_, i) => (
+            <button key={i} onClick={() => goTo(i)}
+              className="rounded-full transition-all duration-300"
+              style={{
+                width: i === idx ? 20 : 6,
+                height: 6,
+                background: i === idx ? PRIMARY : '#D1CAC4',
+              }} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Cart Bottom Sheet ────────────────────────────────────
 function CartSheet({
   isOpen, onClose, tableNumber,
@@ -550,12 +673,24 @@ export default function MenuPage() {
     updateQty(item.id, (cartItems.find(i => i.id === item.id)?.qty ?? 1) - 1)
   }
 
-  const filtered = menu.filter(item => {
-    const matchCat = activeCategory === 'all' || item.category === activeCategory
-    return matchCat && (!search || getItemName(item, lang).toLowerCase().includes(search.toLowerCase()))
-  })
+  const filtered = menu
+    .filter(item => {
+      const matchCat = activeCategory === 'all' || item.category === activeCategory
+      return matchCat && (!search || getItemName(item, lang).toLowerCase().includes(search.toLowerCase()))
+    })
+    // Promo & best seller tampil paling atas
+    .sort((a, b) => {
+      const aScore = ((a.discount_percent ?? 0) > 0 ? 2 : 0) + (a.is_best_seller ? 1 : 0)
+      const bScore = ((b.discount_percent ?? 0) > 0 ? 2 : 0) + (b.is_best_seller ? 1 : 0)
+      return bScore - aScore
+    })
 
-  const hero = menu.find(i => i.is_best_seller) ?? menu[0]
+  // Featured items for slideshow: diskon dulu, lalu best seller
+  const featured = [
+    ...menu.filter(i => (i.discount_percent ?? 0) > 0),
+    ...menu.filter(i => i.is_best_seller && !((i.discount_percent ?? 0) > 0)),
+  ].slice(0, 6)
+
   const total = calculateCartTotal(cartItems)
 
   return (
@@ -638,11 +773,13 @@ export default function MenuPage() {
         </div>
       </header>
 
-      {/* ═══════ HERO ══════════════════════════════════════ */}
-      {hero && !search && activeCategory === 'all' && (
-        <HeroCard item={hero} lang={lang} tableNumber={tableNumber}
-          onAdd={() => handleAdd(hero)}
-          qty={cartItems.find(i => i.id === hero.id)?.qty ?? 0} />
+      {/* ═══════ FEATURED SLIDESHOW ════════════════════════ */}
+      {!search && activeCategory === 'all' && featured.length > 0 && (
+        <FeaturedSlideshow
+          items={featured} lang={lang} tableNumber={tableNumber}
+          onAdd={handleAdd}
+          cartItems={cartItems.map(i => ({ id: i.id, qty: i.qty }))}
+        />
       )}
 
       {/* ═══════ GRID LABEL ════════════════════════════════ */}
