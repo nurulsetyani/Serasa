@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
   Search, X, Clock, Minus, Plus, ShoppingBag,
-  Star, ChevronRight, Trash2, Utensils, Check,
+  Star, ChevronRight, Trash2, Check, Moon, Sun,
 } from 'lucide-react'
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
 import { MenuItem, Language } from '@/types'
@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { MOCK_MENU, IS_MOCK_MODE } from '@/lib/mock-data'
 import { useLang } from '@/context/LanguageContext'
 import { useCart } from '@/context/CartContext'
+import { useTheme } from '@/context/ThemeContext'
 import { getItemName, getItemDescription, TranslationKey } from '@/lib/i18n'
 import { formatPrice, calculateCartTotal, discountedPrice } from '@/lib/utils'
 
@@ -93,14 +94,19 @@ function FoodCard({
   const router = useRouter()
   const name = getItemName(item, lang)
   const desc = getItemDescription(item, lang)
+  const hasDiscount = (item.discount_percent ?? 0) > 0
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.38, delay: idx * 0.045, ease: [0.16, 1, 0.3, 1] }}
-      className="bg-white rounded-2xl overflow-hidden cursor-pointer"
-      style={{ boxShadow: '0 2px 14px rgba(0,0,0,0.07)', border: '1px solid #F5F0EC' }}
+      className="rounded-2xl overflow-hidden cursor-pointer"
+      style={{
+        background: 'var(--t-card)',
+        boxShadow: `0 2px 14px var(--t-shadow)`,
+        border: '1px solid var(--t-border)',
+      }}
       onClick={() => router.push(`/menu/${item.id}?table=${tableNumber}`)}
     >
       {/* Image zone */}
@@ -116,14 +122,35 @@ function FoodCard({
         <div className="absolute inset-0"
           style={{ background: 'linear-gradient(to top, rgba(255,245,235,0.35) 0%, transparent 50%)' }} />
 
+        {/* Discount ribbon — diagonal corner */}
+        {hasDiscount && (
+          <div className="absolute top-0 right-0 overflow-hidden w-16 h-16 pointer-events-none">
+            <div className="absolute top-2.5 -right-4 w-20 text-center py-1 font-black text-white text-[9px] tracking-wide rotate-45 shadow-md"
+              style={{ background: 'linear-gradient(135deg,#EF4444,#DC2626)' }}>
+              -{item.discount_percent}%
+            </div>
+          </div>
+        )}
+
         {/* Best seller badge */}
-        {item.is_best_seller && (
+        {item.is_best_seller && !hasDiscount && (
           <div className="absolute top-2 left-2">
             <span className="flex items-center gap-0.5 text-white text-[9px] font-black px-2 py-1 rounded-full shadow-md"
               style={{ background: PRIMARY }}>
-              <Star size={8} fill="white" /> TERLARIS
+              <Star size={8} fill="white" /> {lang === 'ar' ? 'الأكثر مبيعاً' : lang === 'id' ? 'TERLARIS' : 'BEST SELLER'}
             </span>
           </div>
+        )}
+
+        {/* Promo banner — bottom of image for discounted items */}
+        {hasDiscount && (
+          <motion.div
+            animate={{ opacity: [0.9, 1, 0.9] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute bottom-0 left-0 right-0 py-1 text-center text-[10px] font-black text-white tracking-wider"
+            style={{ background: 'linear-gradient(90deg,#EF4444,#FF6B35,#EF4444)', backgroundSize: '200% 100%' }}>
+            🏷 {lang === 'ar' ? 'عرض خاص!' : lang === 'id' ? 'PROMO SPESIAL!' : 'SPECIAL DEAL!'}
+          </motion.div>
         )}
 
         {/* Cook time + calories */}
@@ -180,8 +207,10 @@ function FoodCard({
 
       {/* Content */}
       <div className="p-3">
-        <h3 className="font-bold text-gray-900 text-[13px] leading-snug line-clamp-1 mb-0.5">{name}</h3>
-        {desc && <p className="text-gray-400 text-[11px] line-clamp-2 leading-relaxed mb-2">{desc}</p>}
+        <h3 className="font-bold text-[13px] leading-snug line-clamp-1 mb-0.5"
+          style={{ color: 'var(--t-text)' }}>{name}</h3>
+        {desc && <p className="text-[11px] line-clamp-2 leading-relaxed mb-2"
+          style={{ color: 'var(--t-muted)' }}>{desc}</p>}
         <div className="flex items-center gap-1.5 flex-wrap">
           <p className="font-black text-sm" style={{ color: PRIMARY }}>
             {formatPrice(discountedPrice(item.price, item.discount_percent))}
@@ -194,68 +223,6 @@ function FoodCard({
               </span>
             </>
           )}
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ─── Hero Card ────────────────────────────────────────────
-function HeroCard({
-  item, lang, tableNumber, onAdd, qty,
-}: {
-  item: MenuItem; lang: Language; tableNumber: string; onAdd: () => void; qty: number
-}) {
-  const router = useRouter()
-  const name = getItemName(item, lang)
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="mx-4 mt-4 rounded-3xl overflow-hidden cursor-pointer relative"
-      style={{ boxShadow: '0 6px 32px rgba(0,0,0,0.12)', border: '1px solid #F0EDE8' }}
-      onClick={() => router.push(`/menu/${item.id}?table=${tableNumber}`)}
-    >
-      {/* Image */}
-      <div className="relative h-52 bg-amber-50">
-        <Image
-          src={item.image || '/hero-food.png'}
-          alt={name} fill priority
-          className="object-cover"
-          sizes="100vw"
-        />
-        {/* Very light warm gradient - not dark */}
-        <div className="absolute inset-0"
-          style={{ background: 'linear-gradient(to right, rgba(255,250,245,0.6) 0%, rgba(255,250,245,0.1) 50%, transparent 100%)' }} />
-      </div>
-
-      {/* Content overlay — left side */}
-      <div className="absolute inset-0 p-5 flex flex-col justify-between">
-        {/* Badge */}
-        <div>
-          <span className="inline-flex items-center gap-1 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-md"
-            style={{ background: PRIMARY }}>
-            🔥 {lang === 'ar' ? 'الأكثر مبيعاً' : lang === 'id' ? 'TERLARIS' : 'BEST SELLER'}
-          </span>
-        </div>
-
-        {/* Info at bottom */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl px-4 py-3.5 flex items-center justify-between gap-3"
-          style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-          <div className="flex-1 min-w-0">
-            <p className="font-black text-gray-900 text-base leading-tight line-clamp-1">{name}</p>
-            <p className="font-bold text-sm mt-0.5" style={{ color: PRIMARY }}>{formatPrice(item.price)}</p>
-          </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={e => { e.stopPropagation(); onAdd() }}
-            className="flex items-center gap-1.5 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex-shrink-0"
-            style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(255,107,53,0.4)` }}>
-            <Plus size={14} />
-            {qty > 0 ? `+${qty}` : 'Tambah'}
-          </motion.button>
         </div>
       </div>
     </motion.div>
@@ -618,8 +585,8 @@ function FloatingCartBar({ totalItems, total, onOpen, cartPop }: {
 
 // ─── Menu Page ────────────────────────────────────────────
 export default function MenuPage() {
-  const router = useRouter()
   const { lang, t, isRTL } = useLang()
+  const { isDark, toggle: toggleTheme } = useTheme()
   const { items: cartItems, addItem, updateQty, totalItems } = useCart()
 
   const [tableNumber, setTableNumber]         = useState('1')
@@ -694,12 +661,12 @@ export default function MenuPage() {
   const total = calculateCartTotal(cartItems)
 
   return (
-    <div className="min-h-dvh bg-[#FAFAFA]" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh" style={{ background: 'var(--t-bg)' }} dir={isRTL ? 'rtl' : 'ltr'}>
       <ToastStack toasts={toasts} />
 
       {/* ═══════ HEADER ════════════════════════════════════ */}
-      <header className="sticky top-0 z-40 bg-white"
-        style={{ boxShadow: '0 1px 16px rgba(0,0,0,0.07)' }}>
+      <header className="sticky top-0 z-40"
+        style={{ background: 'var(--t-header)', boxShadow: `0 1px 16px var(--t-shadow)` }}>
 
         <div className="flex items-center gap-2 px-4 py-3">
           {!showSearch ? (
@@ -737,9 +704,31 @@ export default function MenuPage() {
                 ))}
               </div>
 
+              {/* Dark / Light toggle */}
+              <motion.button
+                whileTap={{ scale: 0.88 }}
+                onClick={toggleTheme}
+                className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
+                style={{
+                  background: isDark ? 'rgba(255,255,255,0.1)' : '#F5F0EC',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : '#E8E0D8'}`,
+                }}
+                title={isDark ? 'Light mode' : 'Dark mode'}
+              >
+                {isDark
+                  ? <Sun size={14} style={{ color: '#F5B841' }} />
+                  : <Moon size={14} style={{ color: '#8A7A6A' }} />
+                }
+              </motion.button>
+
               {/* Search button */}
               <button onClick={() => setShowSearch(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-gray-400 flex-shrink-0">
+                className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0"
+                style={{
+                  background: isDark ? 'rgba(255,255,255,0.08)' : '#F5F0EC',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E8E0D8'}`,
+                  color: isDark ? '#C0B0A0' : '#8A7A6A',
+                }}>
                 <Search size={14} />
               </button>
             </>
@@ -765,7 +754,7 @@ export default function MenuPage() {
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all flex-shrink-0"
               style={activeCategory === cat.key
                 ? { background: PRIMARY, color: '#FFFFFF', border: `1.5px solid ${PRIMARY}`, boxShadow: `0 2px 10px rgba(255,107,53,0.35)` }
-                : { background: '#FFFFFF', color: '#9CA3AF', border: '1.5px solid #F0ECE8' }}>
+                : { background: 'var(--t-card)', color: 'var(--t-muted)', border: '1.5px solid var(--t-border)' }}>
               <span>{cat.icon}</span>
               <span>{t(cat.labelKey)}</span>
             </motion.button>
@@ -784,12 +773,12 @@ export default function MenuPage() {
 
       {/* ═══════ GRID LABEL ════════════════════════════════ */}
       <div className="flex items-center justify-between px-4 mt-5 mb-3">
-        <h2 className="font-black text-gray-900 text-sm">
+        <h2 className="font-black text-sm" style={{ color: 'var(--t-text)' }}>
           {activeCategory === 'all' ? t('fullMenu')
             : t(CATEGORIES.find(c => c.key === activeCategory)?.labelKey ?? 'all')}
         </h2>
         {!search && (
-          <span className="text-gray-400 text-xs">{filtered.length} {t('items')}</span>
+          <span className="text-xs" style={{ color: 'var(--t-muted)' }}>{filtered.length} {t('items')}</span>
         )}
       </div>
 

@@ -3,6 +3,7 @@ import { Playfair_Display, DM_Sans, Noto_Naskh_Arabic } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/context/CartContext'
 import { LanguageProvider } from '@/context/LanguageContext'
+import { ThemeProvider } from '@/context/ThemeContext'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -40,11 +41,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <body className={`${playfair.variable} ${dmSans.variable} ${notoNaskhArabic.variable}`}>
-        <LanguageProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <CartProvider>
+              {children}
+            </CartProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
