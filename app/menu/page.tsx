@@ -375,11 +375,31 @@ function CartSheet({
             {/* Footer */}
             {items.length > 0 && (
               <div className="px-5 pb-6 safe-bottom border-t border-gray-100 pt-4 flex-shrink-0 space-y-3">
-                {/* Summary */}
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500 text-sm font-medium">{t('total')}</span>
-                  <span className="font-black text-xl text-gray-900">{formatPrice(total)}</span>
-                </div>
+                {/* Price breakdown */}
+                {(() => {
+                  const originalTotal = items.reduce((s, i) => s + i.price * i.qty, 0)
+                  const savings = originalTotal - total
+                  return (
+                    <div className="space-y-1.5">
+                      {savings > 0 && (
+                        <>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">{t('subtotal')}</span>
+                            <span className="text-gray-500 line-through">{formatPrice(originalTotal)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="font-semibold" style={{ color: '#22C55E' }}>🏷 {t('discount')}</span>
+                            <span className="font-black" style={{ color: '#22C55E' }}>-{formatPrice(savings)}</span>
+                          </div>
+                        </>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-sm font-medium">{t('total')}</span>
+                        <span className="font-black text-xl text-gray-900">{formatPrice(total)}</span>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* Checkout CTA */}
                 <motion.button

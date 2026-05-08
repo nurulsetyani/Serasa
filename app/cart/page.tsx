@@ -109,10 +109,34 @@ export default function CartPage() {
       {/* Bottom */}
       <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 safe-bottom bg-[#FAFAF8] pt-3"
         style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}>
-        <div className="flex justify-between items-center mb-4">
-          <span className="font-black text-gray-900">{t('total')}</span>
-          <span className="font-black text-2xl" style={{ color: P }}>{formatPrice(total)}</span>
-        </div>
+
+        {/* Price breakdown */}
+        {(() => {
+          const originalTotal = items.reduce((s, i) => s + i.price * i.qty, 0)
+          const savings = originalTotal - total
+          return (
+            <div className="bg-white rounded-2xl px-4 py-3 mb-3 space-y-2"
+              style={{ border: '1px solid #F0EAE0' }}>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">{t('subtotal')}</span>
+                <span className="text-gray-700 font-semibold">{formatPrice(originalTotal)}</span>
+              </div>
+              {savings > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-1 font-semibold" style={{ color: '#22C55E' }}>
+                    🏷 {t('discount')}
+                  </span>
+                  <span className="font-black" style={{ color: '#22C55E' }}>-{formatPrice(savings)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-gray-100 pt-2">
+                <span className="font-black text-gray-900">{t('total')}</span>
+                <span className="font-black text-xl" style={{ color: P }}>{formatPrice(total)}</span>
+              </div>
+            </div>
+          )
+        })()}
+
         <motion.button whileTap={{ scale: 0.97 }}
           onClick={() => router.push(`/checkout?table=${table}`)}
           className="w-full py-[18px] rounded-full text-white font-black text-[16px] flex items-center justify-between px-6"
