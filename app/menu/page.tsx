@@ -122,36 +122,24 @@ function FoodCard({
         <div className="absolute inset-0"
           style={{ background: 'linear-gradient(to top, rgba(255,245,235,0.35) 0%, transparent 50%)' }} />
 
-        {/* Discount ribbon — diagonal corner */}
-        {hasDiscount && (
-          <div className="absolute top-0 right-0 overflow-hidden w-16 h-16 pointer-events-none">
-            <div className="absolute top-2.5 -right-4 w-20 text-center py-1 font-black text-white text-[9px] tracking-wide rotate-45 shadow-md"
-              style={{ background: 'linear-gradient(135deg,#EF4444,#DC2626)' }}>
-              -{item.discount_percent}%
-            </div>
-          </div>
-        )}
-
-        {/* Best seller badge */}
-        {item.is_best_seller && !hasDiscount && (
-          <div className="absolute top-2 left-2">
-            <span className="flex items-center gap-0.5 text-white text-[9px] font-black px-2 py-1 rounded-full shadow-md"
+        {/* Top badges */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
+          {hasDiscount && (
+            <motion.span
+              animate={{ scale: [1, 1.06, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              className="flex items-center gap-1 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg"
+              style={{ background: 'linear-gradient(135deg,#EF4444,#FF6B35)' }}>
+              🏷 -{item.discount_percent}% {lang === 'ar' ? 'خصم' : lang === 'id' ? 'DISKON' : 'OFF'}
+            </motion.span>
+          )}
+          {item.is_best_seller && (
+            <span className="flex items-center gap-0.5 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-md"
               style={{ background: PRIMARY }}>
-              <Star size={8} fill="white" /> {lang === 'ar' ? 'الأكثر مبيعاً' : lang === 'id' ? 'TERLARIS' : 'BEST SELLER'}
+              <Star size={7} fill="white" /> {lang === 'ar' ? 'الأكثر مبيعاً' : lang === 'id' ? 'TERLARIS' : 'BEST'}
             </span>
-          </div>
-        )}
-
-        {/* Promo banner — bottom of image for discounted items */}
-        {hasDiscount && (
-          <motion.div
-            animate={{ opacity: [0.9, 1, 0.9] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute bottom-0 left-0 right-0 py-1 text-center text-[10px] font-black text-white tracking-wider"
-            style={{ background: 'linear-gradient(90deg,#EF4444,#FF6B35,#EF4444)', backgroundSize: '200% 100%' }}>
-            🏷 {lang === 'ar' ? 'عرض خاص!' : lang === 'id' ? 'PROMO SPESIAL!' : 'SPECIAL DEAL!'}
-          </motion.div>
-        )}
+          )}
+        </div>
 
         {/* Cook time + calories */}
         <div className="absolute bottom-2 left-2 flex items-center gap-1">
@@ -293,34 +281,58 @@ function FeaturedSlideshow({
           </motion.div>
         </AnimatePresence>
 
+        {/* ── PROMO STRIP — scrolling ticker for discounted items ── */}
+        {hasDiscount && (
+          <div className="absolute top-0 left-0 right-0 z-10 overflow-hidden"
+            style={{ background: 'linear-gradient(90deg,#EF4444,#FF6B35,#EF4444)' }}>
+            <motion.div
+              animate={{ x: ['0%', '-50%'] }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+              className="flex whitespace-nowrap py-1.5"
+            >
+              {[...Array(6)].map((_, i) => (
+                <span key={i} className="text-white text-[10px] font-black tracking-[2px] px-4">
+                  🏷 {lang === 'ar'
+                    ? `خصم ${item.discount_percent}% — عرض محدود!`
+                    : lang === 'id'
+                      ? `DISKON ${item.discount_percent}% — PENAWARAN TERBATAS!`
+                      : `${item.discount_percent}% OFF — LIMITED OFFER!`}
+                  &nbsp;&nbsp;✦&nbsp;&nbsp;
+                </span>
+              ))}
+            </motion.div>
+          </div>
+        )}
+
         {/* Badges */}
-        <div className="absolute top-3.5 left-4 flex gap-2 z-10">
+        <div className="absolute left-4 flex gap-2 z-10" style={{ top: hasDiscount ? 34 : 14 }}>
           {item.is_best_seller && (
-            <span className="flex items-center gap-1 text-white text-[10px] font-black px-2.5 py-1 rounded-full"
+            <span className="flex items-center gap-1 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md"
               style={{ background: PRIMARY }}>
               🔥 {lang === 'ar' ? 'الأكثر مبيعاً' : lang === 'id' ? 'TERLARIS' : 'BEST SELLER'}
-            </span>
-          )}
-          {hasDiscount && (
-            <span className="text-white text-[10px] font-black px-2.5 py-1 rounded-full"
-              style={{ background: '#EF4444' }}>
-              -{item.discount_percent}%
             </span>
           )}
         </div>
 
         {/* Content */}
         <div className="absolute bottom-0 left-0 p-4 z-10">
-          <p className="text-white/70 text-[10px] tracking-widest uppercase mb-1">
-            {lang === 'ar' ? 'مميز' : lang === 'id' ? 'Unggulan' : 'Featured'}
-          </p>
-          <p className="text-white font-black text-xl leading-tight line-clamp-1 mb-2">{name}</p>
-          <div className="flex items-center gap-2">
+          {hasDiscount && (
+            <motion.div
+              animate={{ scale: [1, 1.04, 1] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+              className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
+              style={{ background: 'rgba(239,68,68,0.9)', backdropFilter: 'blur(4px)' }}>
+              <span className="text-white font-black text-sm">💰 {formatPrice(finalPrice)}</span>
+              <span className="text-white/65 text-xs line-through">{formatPrice(item.price)}</span>
+              <span className="text-white font-black text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
+                -{item.discount_percent}%
+              </span>
+            </motion.div>
+          )}
+          <p className="text-white font-black text-xl leading-tight line-clamp-1 mb-1">{name}</p>
+          {!hasDiscount && (
             <span className="text-white font-black text-base">{formatPrice(finalPrice)}</span>
-            {hasDiscount && (
-              <span className="text-white/55 text-xs line-through">{formatPrice(item.price)}</span>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Add button */}
