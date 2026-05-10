@@ -281,31 +281,8 @@ function FeaturedSlideshow({
           </motion.div>
         </AnimatePresence>
 
-        {/* ── PROMO STRIP — scrolling ticker for discounted items ── */}
-        {hasDiscount && (
-          <div className="absolute top-0 left-0 right-0 z-10 overflow-hidden"
-            style={{ background: 'linear-gradient(90deg,#EF4444,#FF6B35,#EF4444)' }}>
-            <motion.div
-              animate={{ x: ['0%', '-50%'] }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-              className="flex whitespace-nowrap py-1.5"
-            >
-              {[...Array(6)].map((_, i) => (
-                <span key={i} className="text-white text-[10px] font-black tracking-[2px] px-4">
-                  🏷 {lang === 'ar'
-                    ? `خصم ${item.discount_percent}% — عرض محدود!`
-                    : lang === 'id'
-                      ? `DISKON ${item.discount_percent}% — PENAWARAN TERBATAS!`
-                      : `${item.discount_percent}% OFF — LIMITED OFFER!`}
-                  &nbsp;&nbsp;✦&nbsp;&nbsp;
-                </span>
-              ))}
-            </motion.div>
-          </div>
-        )}
-
         {/* Badges */}
-        <div className="absolute left-4 flex gap-2 z-10" style={{ top: hasDiscount ? 34 : 14 }}>
+        <div className="absolute left-4 top-3.5 flex gap-2 z-10">
           {item.is_best_seller && (
             <span className="flex items-center gap-1 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md"
               style={{ background: PRIMARY }}>
