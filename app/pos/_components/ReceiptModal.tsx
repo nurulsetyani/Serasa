@@ -340,6 +340,3 @@ export default function ReceiptModal({ open, onClose, orderNumber }: Props) {
   )
 }
 
-const ORDER_TYPE_LABELS: Record<string, string> = {
-  dine_in: 'Dine In', take_away: 'Take Away', delivery: 'Delivery',
-}

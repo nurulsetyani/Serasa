@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { devtools, persist, createJSONStorage } from 'zustand/middleware'
 import { MenuItem } from '@/types'
 import {
-  OrderTypeV2, DiscountType, POSPaymentMethod,
+  OrderTypeV2, DiscountType,
   POSModifier, POSLine, POSPayment,
 } from '@/types/pos'
 
@@ -248,7 +248,9 @@ export const usePOSStore = create<POSState & POSActions>()(
       }),
       {
         name: 'pos-cart-v1',
-        storage: createJSONStorage(() => sessionStorage),
+        storage: createJSONStorage(() =>
+          typeof window !== 'undefined' ? sessionStorage : localStorage
+        ),
         partialize: (s) => ({
           lines: s.lines,
           orderType: s.orderType,
