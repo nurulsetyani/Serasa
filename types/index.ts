@@ -30,7 +30,7 @@ export interface CartItem extends MenuItem {
   itemNotes?: string
 }
 
-export type OrderType = 'dine_in' | 'take_away'
+export type OrderType = 'dine_in' | 'take_away' | 'delivery'
 export type PaymentMethod = 'cash' | 'online' | 'qris'
 
 export interface Order {

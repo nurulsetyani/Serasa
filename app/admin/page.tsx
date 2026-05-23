@@ -64,7 +64,7 @@ const MOCK_ORDERS: Order[] = [
 ]
 
 const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
-  pending: 'cooking', cooking: 'ready', ready: 'delivered', delivered: null,
+  pending: 'cooking', cooking: 'ready', ready: 'delivered', delivered: null, cancelled: null,
 }
 
 const STATUS_CONFIG: Record<OrderStatus, {
@@ -74,6 +74,7 @@ const STATUS_CONFIG: Record<OrderStatus, {
   cooking:   { label: 'Cooking',   dot: 'bg-[#EF4444]', badge: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20', btnLabel: 'Mark Ready',    btnClass: 'bg-[#22C55E] hover:bg-[#16A34A] text-white', icon: Flame },
   ready:     { label: 'Ready',     dot: 'bg-[#22C55E]', badge: 'bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/20', btnLabel: 'Mark Delivered', btnClass: 'bg-[#6366F1] hover:bg-[#4F46E5] text-white', icon: CircleCheck },
   delivered: { label: 'Delivered', dot: 'bg-[#6366F1]', badge: 'bg-[#6366F1]/10 text-[#6366F1] border-[#6366F1]/20', btnLabel: '',             btnClass: '', icon: CheckCircle2 },
+  cancelled: { label: 'Cancelled', dot: 'bg-gray-400',  badge: 'bg-gray-100 text-gray-500 border-gray-200',           btnLabel: '',             btnClass: '', icon: CheckCircle2 },
 }
 
 // ── Sub-components ───────────────────────────────────────────

@@ -9,6 +9,7 @@ const STATUS_CONFIG: Record<OrderStatus, { icon: string; className: string; labe
   cooking:   { icon: '🔥', className: 'status-cooking',   labelKey: 'cooking' },
   ready:     { icon: '✅', className: 'status-ready',     labelKey: 'ready' },
   delivered: { icon: '🎉', className: 'status-delivered', labelKey: 'delivered' },
+  cancelled: { icon: '❌', className: 'status-pending',   labelKey: 'pending' },
 }
 
 interface Props {
