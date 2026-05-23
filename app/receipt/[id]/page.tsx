@@ -7,7 +7,12 @@ import { Printer } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Order, MenuItem, Language } from '@/types'
 import { formatPrice } from '@/lib/utils'
-import { PDFDownloadButton } from '@/components/PDFReceipt'
+import dynamic from 'next/dynamic'
+
+const PDFDownloadButton = dynamic(
+  () => import('@/components/PDFReceipt').then(m => ({ default: m.PDFDownloadButton })),
+  { ssr: false }
+)
 
 const MOCK_ORDER: Order = {
   id: 'mock-preview-order',

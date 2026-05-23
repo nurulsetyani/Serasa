@@ -2,10 +2,20 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Printer, CheckCircle2, Thermometer } from 'lucide-react'
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
 import { POSLine } from '@/types/pos'
-import { PDFDownloadButton } from '@/components/PDFReceipt'
+
+const PDFDownloadButton = dynamic(
+  () => import('@/components/PDFReceipt').then(m => ({ default: m.PDFDownloadButton })),
+  { ssr: false, loading: () => (
+    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm opacity-50"
+      style={{ background: '#1A1208', color: 'white' }}>
+      PDF...
+    </button>
+  )}
+)
 
 const P = '#FF6B35'
 const RESTO_NAME = 'SERASA RESTAURANT'
@@ -19,7 +29,7 @@ interface Props {
   orderId?: string
 }
 
-function ReceiptLine({ line, lang }: { line: POSLine; lang: string }) {
+function ReceiptLine({ line }: { line: POSLine }) {
   const modSum = line.modifiers.reduce((s, m) => s + m.priceAdj, 0)
   const unitFinal = line.unitPrice + modSum
 
@@ -64,14 +74,12 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
   const getTaxAmount = usePOSStore(s => s.getTaxAmount)
   const getTotal = usePOSStore(s => s.getTotal)
   const getChange = usePOSStore(s => s.getChange)
-  const getAmountPaid = usePOSStore(s => s.getAmountPaid)
 
   const subtotal = getSubtotal()
   const discountAmount = getDiscountAmount()
   const taxAmount = getTaxAmount()
   const total = getTotal()
   const change = getChange()
-  const amountPaid = getAmountPaid()
 
   const [thermalLoading, setThermalLoading] = useState(false)
 
@@ -296,7 +304,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
 
                   {/* Items */}
                   {lines.map(line => (
-                    <ReceiptLine key={line.lineId} line={line} lang={lang} />
+                    <ReceiptLine key={line.lineId} line={line} />
                   ))}
 
                   <Divider />
