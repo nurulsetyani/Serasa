@@ -223,7 +223,7 @@ interface DownloadButtonProps {
 }
 
 export function PDFDownloadButton({ data, orderNumber }: DownloadButtonProps) {
-  const logoUrl = typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : undefined
+  const logoUrl = typeof window !== 'undefined' ? `${window.location.origin}/logof22.png` : undefined
   const filename = `struk-${orderNumber || data.tableNumber}-${Date.now()}.pdf`
 
   return (
