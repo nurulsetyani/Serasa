@@ -16,9 +16,7 @@ export async function POST(req: NextRequest) {
 
     const {
       customer_name, table_number, order_type,
-      subtotal, discount_type, discount_value, discount_amount,
-      tax_percent, tax_amount, total_price,
-      items, source = 'pos',
+      total_price, items,
     } = body
 
     if (!items?.length) {
@@ -31,6 +29,7 @@ export async function POST(req: NextRequest) {
 
     const orderNumber = generateOrderNumber()
 
+    // Insert ke skema yang sudah ada — tanpa kolom baru
     const { data: order, error: orderErr } = await supabase
       .from('orders')
       .insert({
@@ -41,13 +40,6 @@ export async function POST(req: NextRequest) {
         order_type: order_type ?? 'dine_in',
         payment_method: 'cash',
         status: 'pending',
-        source,
-        subtotal: subtotal ?? total_price,
-        discount_type: discount_type ?? null,
-        discount_value: discount_value ?? 0,
-        discount_amount: discount_amount ?? 0,
-        tax_percent: tax_percent ?? 15,
-        tax_amount: tax_amount ?? 0,
         total_price,
       })
       .select()
@@ -58,44 +50,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Gagal membuat order' }, { status: 500 })
     }
 
-    const orderItems = items.map((item: { menu_id: string; name: string; price: number; qty: number; notes?: string | null; modifiers?: { id: string; name: string; priceAdj: number }[] }) => ({
+    // Insert order items
+    const orderItems = items.map((item: {
+      menu_id: string; name: string; price: number; qty: number; notes?: string | null
+    }) => ({
       order_id: order.id,
       menu_id: item.menu_id,
       name: item.name,
       price: item.price,
       qty: item.qty,
       notes: item.notes ?? null,
-      unit_price: item.price,
-      modifier_total: (item.modifiers ?? []).reduce((s: number, m: { priceAdj: number }) => s + m.priceAdj, 0),
-      line_total: (item.price + (item.modifiers ?? []).reduce((s: number, m: { priceAdj: number }) => s + m.priceAdj, 0)) * item.qty,
     }))
 
-    const { data: createdItems, error: itemsErr } = await supabase
+    const { error: itemsErr } = await supabase
       .from('order_items')
       .insert(orderItems)
-      .select()
 
     if (itemsErr) {
       await supabase.from('orders').delete().eq('id', order.id)
+      console.error('POS items error:', itemsErr)
       return NextResponse.json({ error: 'Gagal menyimpan item' }, { status: 500 })
-    }
-
-    // Insert modifier records jika ada
-    const modifierInserts: object[] = []
-    items.forEach((item: { modifiers?: { id: string; name: string; priceAdj: number }[] }, idx: number) => {
-      const createdItem = createdItems?.[idx]
-      if (!createdItem || !item.modifiers?.length) return
-      item.modifiers.forEach(mod => {
-        modifierInserts.push({
-          order_item_id: createdItem.id,
-          modifier_id: mod.id,
-          name: mod.name,
-          price_adj: mod.priceAdj,
-        })
-      })
-    })
-    if (modifierInserts.length > 0) {
-      await supabase.from('order_item_modifiers').insert(modifierInserts)
     }
 
     return NextResponse.json(
