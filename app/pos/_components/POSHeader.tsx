@@ -14,14 +14,22 @@ interface DailySummary {
   revenue: number
 }
 
-interface Props {
-  onOpenIncoming: () => void
+interface PlatformCounts {
+  qr: number
+  hungerstation: number
+  keeta: number
 }
 
-export default function POSHeader({ onOpenIncoming }: Props) {
+interface Props {
+  onOpenIncoming: () => void
+  onOpenHungerStation: () => void
+  onOpenKeeta: () => void
+}
+
+export default function POSHeader({ onOpenIncoming, onOpenHungerStation, onOpenKeeta }: Props) {
   const [time, setTime] = useState('')
   const [summary, setSummary] = useState<DailySummary | null>(null)
-  const [incomingCount, setIncomingCount] = useState(0)
+  const [counts, setCounts] = useState<PlatformCounts>({ qr: 0, hungerstation: 0, keeta: 0 })
   const newOrder = usePOSStore(s => s.newOrder)
 
   useEffect(() => {
@@ -36,7 +44,7 @@ export default function POSHeader({ onOpenIncoming }: Props) {
   useEffect(() => {
     if (IS_MOCK_MODE) {
       setSummary({ count: 12, revenue: 1840 })
-      setIncomingCount(2)
+      setCounts({ qr: 2, hungerstation: 1, keeta: 0 })
       return
     }
 
@@ -44,7 +52,7 @@ export default function POSHeader({ onOpenIncoming }: Props) {
       const todayStart = new Date()
       todayStart.setHours(0, 0, 0, 0)
 
-      const [salesRes, incomingRes] = await Promise.all([
+      const [salesRes, qrRes, hsRes, ktRes] = await Promise.all([
         supabase
           .from('orders')
           .select('total_price')
@@ -57,6 +65,18 @@ export default function POSHeader({ onOpenIncoming }: Props) {
           .eq('restaurant_id', RESTAURANT_ID)
           .eq('source', 'qr')
           .eq('status', 'pending'),
+        supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('restaurant_id', RESTAURANT_ID)
+          .eq('source', 'hungerstation')
+          .eq('status', 'pending'),
+        supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('restaurant_id', RESTAURANT_ID)
+          .eq('source', 'keeta')
+          .eq('status', 'pending'),
       ])
 
       if (salesRes.data) {
@@ -65,14 +85,18 @@ export default function POSHeader({ onOpenIncoming }: Props) {
           revenue: salesRes.data.reduce((s, o) => s + (o.total_price ?? 0), 0),
         })
       }
-      setIncomingCount(incomingRes.count ?? 0)
+      setCounts({
+        qr: qrRes.count ?? 0,
+        hungerstation: hsRes.count ?? 0,
+        keeta: ktRes.count ?? 0,
+      })
     }
 
     fetchData()
 
     const ch = supabase.channel('pos-header')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => fetchData())
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, () => fetchData())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, fetchData)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, fetchData)
       .subscribe()
 
     return () => { supabase.removeChannel(ch) }
@@ -90,7 +114,7 @@ export default function POSHeader({ onOpenIncoming }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {/* Daily summary */}
         {summary && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
@@ -104,27 +128,32 @@ export default function POSHeader({ onOpenIncoming }: Props) {
           </div>
         )}
 
-        {/* QR incoming orders button */}
-        <button
+        {/* QR orders button */}
+        <PlatformButton
+          label="QR Order"
+          count={counts.qr}
+          color="#FF6B35"
           onClick={onOpenIncoming}
-          className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
-          style={{
-            background: incomingCount > 0 ? `${P}25` : 'rgba(255,255,255,0.08)',
-            color: incomingCount > 0 ? '#FFB347' : 'rgba(255,255,255,0.6)',
-            border: `1px solid ${incomingCount > 0 ? `${P}50` : 'transparent'}`,
-          }}
-        >
-          <QrCode size={13} />
-          <span>QR Order</span>
-          {incomingCount > 0 && (
-            <span
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black text-white flex items-center justify-center animate-pulse"
-              style={{ background: '#EF4444' }}
-            >
-              {incomingCount}
-            </span>
-          )}
-        </button>
+          icon={<QrCode size={13} />}
+        />
+
+        {/* HungerStation button */}
+        <PlatformButton
+          label="HungerStation"
+          count={counts.hungerstation}
+          color="#FF6000"
+          onClick={onOpenHungerStation}
+          icon={<span className="text-[10px] font-black leading-none">HS</span>}
+        />
+
+        {/* Keeta button */}
+        <PlatformButton
+          label="Keeta"
+          count={counts.keeta}
+          color="#00C851"
+          onClick={onOpenKeeta}
+          icon={<span className="text-[10px] font-black leading-none">KT</span>}
+        />
 
         <div className="flex items-center gap-1.5 text-gray-300">
           <Clock size={13} />
@@ -140,5 +169,39 @@ export default function POSHeader({ onOpenIncoming }: Props) {
         </button>
       </div>
     </div>
+  )
+}
+
+function PlatformButton({
+  label, count, color, onClick, icon,
+}: {
+  label: string
+  count: number
+  color: string
+  onClick: () => void
+  icon: React.ReactNode
+}) {
+  const active = count > 0
+  return (
+    <button
+      onClick={onClick}
+      className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+      style={{
+        background: active ? `${color}25` : 'rgba(255,255,255,0.08)',
+        color: active ? '#FFB347' : 'rgba(255,255,255,0.6)',
+        border: `1px solid ${active ? `${color}50` : 'transparent'}`,
+      }}
+    >
+      {icon}
+      <span>{label}</span>
+      {active && (
+        <span
+          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black text-white flex items-center justify-center animate-pulse"
+          style={{ background: '#EF4444' }}
+        >
+          {count}
+        </span>
+      )}
+    </button>
   )
 }

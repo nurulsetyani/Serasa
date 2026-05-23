@@ -14,8 +14,9 @@ import CategoryTabs from './_components/CategoryTabs'
 import ProductGrid from './_components/ProductGrid'
 import Cart from './_components/Cart'
 import IncomingOrders from './_components/IncomingOrders'
+import HungerStationOrders from './_components/HungerStationOrders'
+import KeetaOrders from './_components/KeetaOrders'
 
-// ── Inner component: boleh pakai useSearchParams karena dibungkus Suspense ──
 function POSInner() {
   const searchParams = useSearchParams()
   const tableParam = searchParams.get('table') ?? '1'
@@ -25,6 +26,8 @@ function POSInner() {
   const [menu, setMenu] = useState<MenuItem[]>([])
   const [loadingMenu, setLoadingMenu] = useState(true)
   const [showIncoming, setShowIncoming] = useState(false)
+  const [showHungerStation, setShowHungerStation] = useState(false)
+  const [showKeeta, setShowKeeta] = useState(false)
 
   useEffect(() => {
     if (!tableNumber) setTable(tableParam)
@@ -53,7 +56,11 @@ function POSInner() {
     <div className="h-full flex" style={{ background: '#F5F2EE' }}>
       {/* ── LEFT PANEL ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <POSHeader onOpenIncoming={() => setShowIncoming(true)} />
+        <POSHeader
+          onOpenIncoming={() => setShowIncoming(true)}
+          onOpenHungerStation={() => setShowHungerStation(true)}
+          onOpenKeeta={() => setShowKeeta(true)}
+        />
         <OrderTypeBar />
         <SearchBar />
         {!loadingMenu && <CategoryTabs menu={menu} />}
@@ -78,17 +85,24 @@ function POSInner() {
         <Cart tableParam={tableParam} />
       </div>
 
-      {/* ── QR Incoming Orders Drawer ── */}
+      {/* ── Drawers ── */}
       <IncomingOrders
         open={showIncoming}
         onClose={() => setShowIncoming(false)}
         onOrderLoaded={() => setShowIncoming(false)}
       />
+      <HungerStationOrders
+        open={showHungerStation}
+        onClose={() => setShowHungerStation(false)}
+      />
+      <KeetaOrders
+        open={showKeeta}
+        onClose={() => setShowKeeta(false)}
+      />
     </div>
   )
 }
 
-// ── Page: Suspense wajib untuk useSearchParams di Next.js 14 ──
 export default function POSPage() {
   return (
     <Suspense
