@@ -17,6 +17,8 @@ export async function POST(req: NextRequest) {
     const {
       customer_name, table_number, order_type,
       total_price, items,
+      subtotal, discount_type, discount_value, discount_amount,
+      tax_percent, tax_amount,
     } = body
 
     if (!items?.length) {
@@ -29,7 +31,6 @@ export async function POST(req: NextRequest) {
 
     const orderNumber = generateOrderNumber()
 
-    // Insert ke skema yang sudah ada — tanpa kolom baru
     const { data: order, error: orderErr } = await supabase
       .from('orders')
       .insert({
@@ -40,7 +41,14 @@ export async function POST(req: NextRequest) {
         order_type: order_type ?? 'dine_in',
         payment_method: 'cash',
         status: 'pending',
+        source: 'pos',
         total_price,
+        subtotal: subtotal ?? total_price,
+        discount_type: discount_type ?? null,
+        discount_value: discount_value ?? 0,
+        discount_amount: discount_amount ?? 0,
+        tax_percent: tax_percent ?? 15,
+        tax_amount: tax_amount ?? 0,
       })
       .select()
       .single()
@@ -50,7 +58,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Gagal membuat order' }, { status: 500 })
     }
 
-    // Insert order items
     const orderItems = items.map((item: {
       menu_id: string; name: string; price: number; qty: number; notes?: string | null
     }) => ({
