@@ -84,7 +84,14 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
     return () => { supabase.removeChannel(ch) }
   }, [open, fetchOrders])
 
-  function handleLoad(order: QROrder) {
+  async function handleLoad(order: QROrder) {
+    // Mark as cooking immediately so badge disappears and kitchen sees it
+    fetch(`/api/order/${order.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'cooking' }),
+    }).catch(() => {})
+
     loadFromQROrder({
       orderId: order.id,
       tableNumber: order.table_number,

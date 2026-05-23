@@ -35,10 +35,6 @@ const s = StyleSheet.create({
   sectionTitle: { color: '#9A8A7A', fontSize: 7, letterSpacing: 1.5, marginBottom: 3 },
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
   itemName: { color: DARK, fontSize: 8.5, fontWeight: 700, flex: 1, marginRight: 4 },
-  itemNameAr: {
-    color: '#6B5B4E', fontSize: 8,
-    textAlign: 'right', marginTop: 1,
-  },
   itemQtyPrice: { color: '#9A8A7A', fontSize: 7.5, marginTop: 1 },
   itemTotal: { color: DARK, fontSize: 8.5, fontWeight: 700, minWidth: 50, textAlign: 'right' },
   itemNote: { color: P, fontSize: 7.5, fontWeight: 700, marginTop: 1 },
@@ -55,10 +51,6 @@ const s = StyleSheet.create({
   discountValue: { color: '#16A34A', fontSize: 8, fontWeight: 700 },
   footer: { alignItems: 'center', marginTop: 4 },
   footerText: { color: '#9A8A7A', fontSize: 7, marginBottom: 1.5, textAlign: 'center' },
-  footerAr: {
-    color: '#9A8A7A', fontSize: 7,
-    textAlign: 'center', marginBottom: 1.5,
-  },
 })
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -124,7 +116,7 @@ function ReceiptDocument({ data, logoUrl }: { data: PDFReceiptProps; logoUrl?: s
         </View>
 
         <View style={s.orangeBar}>
-          <Text style={s.receiptTitle}>STRUK PEMBAYARAN · RECEIPT · إيصال</Text>
+          <Text style={s.receiptTitle}>STRUK PEMBAYARAN · RECEIPT</Text>
         </View>
 
         {/* Meta */}
@@ -137,15 +129,14 @@ function ReceiptDocument({ data, logoUrl }: { data: PDFReceiptProps; logoUrl?: s
         <View style={s.divider} />
 
         {/* Items */}
-        <Text style={s.sectionTitle}>PESANAN / ORDER / الطلب</Text>
+        <Text style={s.sectionTitle}>PESANAN / ORDER</Text>
         {data.items.map(item => (
           <View key={item.id}>
             <View style={s.itemRow}>
               <View style={{ flex: 1 }}>
                 <Text style={s.itemName}>{item.name}</Text>
-                {item.name_ar && <Text style={s.itemNameAr}>{item.name_ar}</Text>}
-                <Text style={s.itemQtyPrice}>{item.qty}× {formatPrice(item.price)}</Text>
-                {item.notes && <Text style={s.itemNote}>⚠ {item.notes}</Text>}
+                <Text style={s.itemQtyPrice}>{item.qty}x {formatPrice(item.price)}</Text>
+                {item.notes && <Text style={s.itemNote}>! {item.notes}</Text>}
               </View>
               <Text style={s.itemTotal}>{formatPrice(item.price * item.qty)}</Text>
             </View>
@@ -193,7 +184,6 @@ function ReceiptDocument({ data, logoUrl }: { data: PDFReceiptProps; logoUrl?: s
         <View style={s.footer}>
           <Text style={s.footerText}>Terima kasih telah berkunjung</Text>
           <Text style={s.footerText}>Thank you for dining with us</Text>
-          <Text style={s.footerAr}>شكراً لزيارتكم</Text>
           <Text style={{ ...s.footerText, marginTop: 4, fontSize: 6.5 }}>
             **** Struk ini adalah bukti pembayaran ****
           </Text>
