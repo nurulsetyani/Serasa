@@ -1,0 +1,144 @@
+'use client'
+import Image from 'next/image'
+import { Plus, Star, ChevronDown } from 'lucide-react'
+import { useState } from 'react'
+import { MenuItem } from '@/types'
+import { usePOSStore } from '@/stores/pos.store'
+import { formatPrice, discountedPrice } from '@/lib/utils'
+import { motion } from 'framer-motion'
+import { useModifiers } from '@/hooks/useModifiers'
+import ModifierSheet from './ModifierSheet'
+
+const P = '#FF6B35'
+
+interface Props {
+  item: MenuItem
+}
+
+export default function ProductCard({ item }: Props) {
+  const addLine = usePOSStore(s => s.addLine)
+  const lines = usePOSStore(s => s.lines)
+  const lang = usePOSStore(s => s.lang)
+  const { hasModifiers } = useModifiers(item.id)
+  const [sheetOpen, setSheetOpen] = useState(false)
+
+  const name = lang === 'ar' ? (item.name_ar || item.name_id) : lang === 'en' ? item.name_en : item.name_id
+  const finalPrice = discountedPrice(item.price, item.discount_percent)
+  const hasDiscount = (item.discount_percent ?? 0) > 0
+  const inCart = lines.filter(l => l.menuId === item.id).reduce((s, l) => s + l.qty, 0)
+  const unavailable = item.is_available === false
+
+  function handleTap() {
+    if (unavailable) return
+    if (hasModifiers) {
+      setSheetOpen(true)
+    } else {
+      addLine(item)
+    }
+  }
+
+  return (
+    <>
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        onClick={handleTap}
+        disabled={unavailable}
+        className="relative flex flex-col bg-white rounded-2xl overflow-hidden text-left transition-shadow hover:shadow-md"
+        style={{
+          border: inCart > 0 ? `2px solid ${P}` : '2px solid transparent',
+          opacity: unavailable ? 0.45 : 1,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        }}
+      >
+        {/* Image */}
+        <div className="relative w-full aspect-[4/3] bg-amber-50">
+          <Image
+            src={item.image || '/hero-food.png'}
+            alt={name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 50vw, 200px"
+          />
+
+          {/* Overlay badges */}
+          <div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
+            {hasDiscount && (
+              <span
+                className="text-white text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                style={{ background: 'linear-gradient(135deg,#EF4444,#FF6B35)' }}
+              >
+                -{item.discount_percent}%
+              </span>
+            )}
+            {item.is_best_seller && (
+              <span
+                className="flex items-center gap-0.5 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                style={{ background: P }}
+              >
+                <Star size={7} fill="white" />
+              </span>
+            )}
+          </div>
+
+          {/* Cart badge */}
+          {inCart > 0 && (
+            <div
+              className="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-black"
+              style={{ background: P, boxShadow: `0 2px 6px rgba(255,107,53,0.5)` }}
+            >
+              {inCart}
+            </div>
+          )}
+
+          {/* Modifier indicator */}
+          {hasModifiers && (
+            <div
+              className="absolute bottom-1.5 left-1.5 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black text-white"
+              style={{ background: 'rgba(0,0,0,0.55)' }}
+            >
+              <ChevronDown size={8} />
+              Pilihan
+            </div>
+          )}
+
+          {/* Unavailable overlay */}
+          {unavailable && (
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+              <span className="text-[10px] font-black text-gray-500 bg-white px-2 py-1 rounded-full">
+                Habis
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="p-2.5 flex-1 flex flex-col">
+          <p className="text-gray-900 font-bold text-xs leading-tight line-clamp-2 flex-1 mb-1.5">{name}</p>
+          <div className="flex items-end justify-between gap-1">
+            <div>
+              <p className="font-black text-sm" style={{ color: P }}>{formatPrice(finalPrice)}</p>
+              {hasDiscount && (
+                <p className="text-[9px] text-gray-400 line-through">{formatPrice(item.price)}</p>
+              )}
+            </div>
+            <div
+              className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${P}20` }}
+            >
+              {hasModifiers
+                ? <ChevronDown size={13} style={{ color: P }} />
+                : <Plus size={13} style={{ color: P }} />
+              }
+            </div>
+          </div>
+        </div>
+      </motion.button>
+
+      <ModifierSheet
+        item={sheetOpen ? item : null}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+      />
+    </>
+  )
+}

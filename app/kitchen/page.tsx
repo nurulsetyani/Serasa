@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
-const P = '#F0A030'
+const P = '#FF6B35'
 
 const MOCK_ORDERS: Order[] = [
   { id: 'd1', restaurant_id: RESTAURANT_ID, table_number: '3', customer_name: 'Ahmad',
