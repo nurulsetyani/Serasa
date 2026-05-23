@@ -20,6 +20,9 @@ export async function POST(req: NextRequest) {
       subtotal, discount_type, discount_value, discount_amount,
       tax_percent, tax_amount,
     } = body
+    // delivery fields — columns added via migration
+    const customer_phone: string | null = body.customer_phone?.trim() || null
+    const delivery_address: string | null = body.delivery_address?.trim() || null
 
     if (!items?.length) {
       return NextResponse.json({ error: 'Order harus memiliki item' }, { status: 400 })
@@ -37,8 +40,10 @@ export async function POST(req: NextRequest) {
         restaurant_id: RESTAURANT_ID,
         order_number: orderNumber,
         customer_name: customer_name?.trim() || 'Guest',
+        customer_phone,
         table_number: String(table_number || '1'),
         order_type: order_type ?? 'dine_in',
+        delivery_address,
         payment_method: 'cash',
         status: 'pending',
         source: 'pos',

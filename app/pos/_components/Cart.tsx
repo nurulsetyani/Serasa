@@ -1,6 +1,6 @@
 'use client'
 import { AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Tag, Percent, ChevronRight, Trash2, Scissors, Receipt } from 'lucide-react'
+import { ShoppingCart, Tag, Percent, Trash2, Scissors, Receipt, Phone, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -9,7 +9,6 @@ import DiscountModal from './DiscountModal'
 import PaymentModal from './PaymentModal'
 import SplitBillModal from './SplitBillModal'
 import ReceiptModal from './ReceiptModal'
-import { useRouter } from 'next/navigation'
 
 const P = '#FF6B35'
 
@@ -18,13 +17,15 @@ interface Props {
 }
 
 export default function Cart({ tableParam }: Props) {
-  const router = useRouter()
   const lines = usePOSStore(s => s.lines)
   const orderType = usePOSStore(s => s.orderType)
   const tableNumber = usePOSStore(s => s.tableNumber)
   const customerName = usePOSStore(s => s.customerName)
+  const customerPhone = usePOSStore(s => s.customerPhone)
+  const deliveryAddress = usePOSStore(s => s.deliveryAddress)
   const setTable = usePOSStore(s => s.setTable)
   const setCustomer = usePOSStore(s => s.setCustomer)
+  const setDeliveryAddress = usePOSStore(s => s.setDeliveryAddress)
   const discountType = usePOSStore(s => s.discountType)
   const discountValue = usePOSStore(s => s.discountValue)
   const taxPercent = usePOSStore(s => s.taxPercent)
@@ -62,8 +63,10 @@ export default function Cart({ tableParam }: Props) {
         body: JSON.stringify({
           source: 'pos',
           customer_name: customerName || 'Guest',
+          customer_phone: customerPhone || null,
           table_number: tableNumber || tableParam || '1',
           order_type: orderType,
+          delivery_address: orderType === 'delivery' ? deliveryAddress : null,
           subtotal,
           discount_type: discountType,
           discount_value: discountValue,
@@ -126,27 +129,61 @@ export default function Cart({ tableParam }: Props) {
 
         {/* Table & Customer */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="bg-[#F5F2EE] rounded-xl px-3 py-2">
-            <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">MEJA</p>
-            <input
-              type="text"
-              value={tableNumber}
-              onChange={e => setTable(e.target.value)}
-              placeholder={tableParam ?? '–'}
-              className="w-full text-sm font-black text-gray-900 bg-transparent outline-none placeholder:text-gray-400"
-            />
-          </div>
+          {orderType !== 'delivery' ? (
+            <div className="bg-[#F5F2EE] rounded-xl px-3 py-2">
+              <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">MEJA</p>
+              <input
+                type="text"
+                value={tableNumber}
+                onChange={e => setTable(e.target.value)}
+                placeholder={tableParam ?? '–'}
+                className="w-full text-sm font-black text-gray-900 bg-transparent outline-none placeholder:text-gray-400"
+              />
+            </div>
+          ) : (
+            <div className="bg-[#F5F2EE] rounded-xl px-3 py-2 flex items-center gap-1.5">
+              <Phone size={11} className="text-gray-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">TELEPON</p>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={e => setCustomer(customerName, e.target.value)}
+                  placeholder="05XX-XXX-XXXX"
+                  className="w-full text-sm font-black text-gray-900 bg-transparent outline-none placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+          )}
           <div className="bg-[#F5F2EE] rounded-xl px-3 py-2">
             <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">NAMA</p>
             <input
               type="text"
               value={customerName === 'Guest' ? '' : customerName}
-              onChange={e => setCustomer(e.target.value)}
+              onChange={e => setCustomer(e.target.value, customerPhone)}
               placeholder="Guest"
               className="w-full text-sm font-black text-gray-900 bg-transparent outline-none placeholder:text-gray-400"
             />
           </div>
         </div>
+
+        {/* Delivery address — only when delivery */}
+        {orderType === 'delivery' && (
+          <div className="bg-[#FFF8EE] rounded-xl px-3 py-2 mt-2 flex gap-2 items-start"
+            style={{ border: '1.5px solid #FDE0A8' }}>
+            <MapPin size={12} className="text-orange-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-[9px] font-black tracking-widest uppercase text-orange-400 mb-1">ALAMAT PENGIRIMAN</p>
+              <textarea
+                value={deliveryAddress}
+                onChange={e => setDeliveryAddress(e.target.value)}
+                placeholder="Tulis alamat lengkap..."
+                rows={2}
+                className="w-full text-xs font-semibold text-gray-900 bg-transparent outline-none resize-none placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lines */}

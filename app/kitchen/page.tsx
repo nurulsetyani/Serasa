@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { Clock, RefreshCw, Volume2, VolumeX, ChefHat, CheckCircle2 } from 'lucide-react'
+import { Clock, RefreshCw, Volume2, VolumeX, ChefHat, CheckCircle2, XCircle, MapPin, Bike } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -13,17 +13,17 @@ const P = '#FF6B35'
 
 const MOCK_ORDERS: Order[] = [
   { id: 'd1', restaurant_id: RESTAURANT_ID, table_number: '3', customer_name: 'Ahmad',
-    status: 'pending', total_price: 60, order_number: 'SV-930686', order_type: 'dine_in',
+    status: 'pending', total_price: 60, order_number: 'POS-930686', order_type: 'dine_in',
     created_at: new Date().toISOString(),
     order_items: [
-      { id: 'i1', order_id: 'd1', menu_id: 'm1', name: 'Mie Goreng Ayam', price: 25, qty: 2 },
+      { id: 'i1', order_id: 'd1', menu_id: 'm1', name: 'Mie Goreng Ayam', price: 25, qty: 2, notes: 'Tidak pedas' },
       { id: 'i2', order_id: 'd1', menu_id: 'm5', name: 'Es Cendol', price: 12, qty: 1 },
     ] },
-  { id: 'd2', restaurant_id: RESTAURANT_ID, table_number: '5', customer_name: 'Fatimah',
-    status: 'cooking', total_price: 57, order_number: 'SV-847291', order_type: 'take_away',
+  { id: 'd2', restaurant_id: RESTAURANT_ID, table_number: '–', customer_name: 'Fatimah',
+    status: 'cooking', total_price: 57, order_number: 'POS-847291', order_type: 'delivery',
     created_at: new Date(Date.now() - 9 * 60000).toISOString(),
     order_items: [
-      { id: 'i3', order_id: 'd2', menu_id: 'm3', name: 'Nasi Goreng Spesial', price: 22, qty: 1 },
+      { id: 'i3', order_id: 'd2', menu_id: 'm3', name: 'Nasi Goreng Spesial', price: 22, qty: 1, notes: 'Extra sambal' },
       { id: 'i4', order_id: 'd2', menu_id: 'm6', name: 'Rendang Sapi', price: 35, qty: 1 },
     ] },
 ]
@@ -60,14 +60,18 @@ function Timer({ createdAt }: { createdAt: string }) {
 
 const COLS = [
   { status: 'pending' as OrderStatus, label: 'BARU',  color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A', nextLabel: '🔥 Mulai Masak', nextStatus: 'cooking' as OrderStatus, btnColor: P },
-  { status: 'cooking' as OrderStatus, label: 'MASAK', color: P,         bg: '#FFF8EE', border: '#FDE0A8', nextLabel: '✅ Siap',        nextStatus: 'ready'   as OrderStatus, btnColor: '#22C55E' },
-  { status: 'ready'   as OrderStatus, label: 'SIAP',  color: '#22C55E', bg: '#F0FDF4', border: '#BBF7D0', nextLabel: '',               nextStatus: 'delivered' as OrderStatus, btnColor: '' },
+  { status: 'cooking' as OrderStatus, label: 'MASAK', color: P,         bg: '#FFF8EE', border: '#FDE0A8', nextLabel: '✅ Siap',         nextStatus: 'ready'   as OrderStatus, btnColor: '#22C55E' },
+  { status: 'ready'   as OrderStatus, label: 'SIAP',  color: '#22C55E', bg: '#F0FDF4', border: '#BBF7D0', nextLabel: '🛎 Selesai',      nextStatus: 'delivered' as OrderStatus, btnColor: '#6366F1' },
 ]
 
+// Extended type to carry delivery_address from DB
+type KitchenOrder = Order & { delivery_address?: string | null }
+
 export default function KitchenPage() {
-  const [orders, setOrders]     = useState<Order[]>([])
+  const [orders, setOrders]     = useState<KitchenOrder[]>([])
   const [loading, setLoading]   = useState(true)
   const [advancing, setAdv]     = useState<string | null>(null)
+  const [voiding, setVoiding]   = useState<string | null>(null)
   const [soundOn, setSoundOn]   = useState(true)
   const [alert, setAlert]       = useState<string | null>(null)
   const soundRef = useRef(true)
@@ -80,7 +84,7 @@ export default function KitchenPage() {
       .eq('restaurant_id', RESTAURANT_ID)
       .in('status', ['pending', 'cooking', 'ready'])
       .order('created_at', { ascending: true })
-    if (data) setOrders(data as Order[])
+    if (data) setOrders(data as KitchenOrder[])
     setLoading(false)
   }, [])
 
@@ -90,14 +94,17 @@ export default function KitchenPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, p => {
         if (p.eventType === 'INSERT') {
           if (soundRef.current) playBeep()
-          const o = p.new as Order
-          setAlert(`🆕 Pesanan baru — Meja ${o.table_number}`)
+          const o = p.new as KitchenOrder
+          setAlert(`🆕 Pesanan baru — ${o.order_type === 'delivery' ? 'Delivery' : `Meja ${o.table_number}`}`)
           setTimeout(() => setAlert(null), 4000)
           fetchOrders()
         } else if (p.eventType === 'UPDATE') {
-          const u = p.new as Order
-          if (u.status === 'delivered') setOrders(prev => prev.filter(o => o.id !== u.id))
-          else setOrders(prev => prev.map(o => o.id === u.id ? { ...o, ...u } : o))
+          const u = p.new as KitchenOrder
+          if (u.status === 'delivered' || u.status === 'cancelled') {
+            setOrders(prev => prev.filter(o => o.id !== u.id))
+          } else {
+            setOrders(prev => prev.map(o => o.id === u.id ? { ...o, ...u } : o))
+          }
         }
       }).subscribe()
     return () => { supabase.removeChannel(ch) }
@@ -110,6 +117,16 @@ export default function KitchenPage() {
       body: JSON.stringify({ status: nextStatus }),
     })
     setAdv(null)
+  }
+
+  async function voidOrder(orderId: string, tableNum: string) {
+    if (!confirm(`Void order Meja ${tableNum}? Tindakan ini tidak bisa dibatalkan.`)) return
+    setVoiding(orderId)
+    await fetch(`/api/order/${orderId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'cancelled' }),
+    })
+    setVoiding(null)
   }
 
   return (
@@ -212,63 +229,84 @@ export default function KitchenPage() {
                           <div className="px-4 pt-4 pb-3 border-b border-gray-50">
                             <div className="flex items-start justify-between mb-1">
                               <div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-black text-2xl" style={{ color: '#1A1208' }}>
-                                    Meja {order.table_number}
+                                    {order.order_type === 'delivery' ? 'Delivery' : `Meja ${order.table_number}`}
                                   </span>
                                   <span className="text-[9px] font-black px-2 py-1 rounded-full"
                                     style={{ background: col.bg, color: col.color }}>
                                     {col.label}
                                   </span>
+                                  {order.order_type === 'delivery' && (
+                                    <span className="flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full bg-blue-50 text-blue-600">
+                                      <Bike size={9} /> DELIVERY
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="text-gray-400 text-xs">{order.customer_name}</p>
                               </div>
-                              <Timer createdAt={order.created_at} />
+                              <div className="flex items-center gap-2">
+                                <Timer createdAt={order.created_at} />
+                                {/* Void button — only on pending */}
+                                {col.status === 'pending' && (
+                                  <button
+                                    onClick={() => voidOrder(order.id, order.table_number)}
+                                    disabled={voiding === order.id}
+                                    className="w-7 h-7 flex items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors disabled:opacity-40"
+                                    title="Void/Cancel order"
+                                  >
+                                    {voiding === order.id
+                                      ? <span className="text-[9px] font-black">...</span>
+                                      : <XCircle size={14} />
+                                    }
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             {order.order_number && (
                               <p className="text-[10px] font-mono" style={{ color: '#C0B0A0' }}>
                                 {order.order_number}
                               </p>
                             )}
-                            {order.order_type && (
-                              <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 bg-gray-100 text-gray-500">
-                                {order.order_type === 'dine_in' ? '🍽 Dine In' : '🛍 Take Away'}
-                              </span>
+                            {/* Delivery address */}
+                            {order.order_type === 'delivery' && order.delivery_address && (
+                              <div className="flex items-start gap-1.5 mt-2 bg-blue-50 rounded-lg px-2.5 py-1.5">
+                                <MapPin size={10} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-[10px] text-blue-700 font-semibold leading-tight">{order.delivery_address}</p>
+                              </div>
                             )}
                           </div>
 
                           {/* Items */}
-                          <div className="px-4 py-3 space-y-2">
+                          <div className="px-4 py-3 space-y-2.5">
                             {order.order_items?.map(item => (
-                              <div key={item.id} className="flex items-center gap-3">
-                                <span className="font-black text-lg w-7 text-center" style={{ color: P }}>
-                                  {item.qty}×
-                                </span>
-                                <span className="text-gray-800 font-semibold text-sm">{item.name}</span>
+                              <div key={item.id}>
+                                <div className="flex items-center gap-3">
+                                  <span className="font-black text-lg w-7 text-center flex-shrink-0" style={{ color: P }}>
+                                    {item.qty}×
+                                  </span>
+                                  <span className="text-gray-800 font-semibold text-sm">{item.name}</span>
+                                </div>
+                                {item.notes && (
+                                  <p className="text-[10px] text-orange-500 font-bold pl-10 mt-0.5 flex items-center gap-1">
+                                    ⚠ {item.notes}
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>
 
                           {/* Action */}
-                          {col.nextLabel && (
-                            <div className="px-4 pb-4">
-                              <motion.button
-                                whileTap={{ scale: 0.96 }}
-                                onClick={() => advance(order.id, col.nextStatus)}
-                                disabled={advancing === order.id}
-                                className="w-full py-3.5 rounded-full text-white font-black text-sm disabled:opacity-50"
-                                style={{ background: col.btnColor, boxShadow: `0 4px 14px ${col.btnColor}40` }}>
-                                {advancing === order.id ? '...' : col.nextLabel}
-                              </motion.button>
-                            </div>
-                          )}
-                          {col.status === 'ready' && (
-                            <div className="px-4 pb-4">
-                              <div className="w-full py-3 rounded-full bg-green-50 text-green-600 text-sm font-black text-center border border-green-100">
-                                ✓ Siap Disajikan
-                              </div>
-                            </div>
-                          )}
+                          <div className="px-4 pb-4">
+                            <motion.button
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => advance(order.id, col.nextStatus)}
+                              disabled={advancing === order.id}
+                              className="w-full py-3.5 rounded-full text-white font-black text-sm disabled:opacity-50"
+                              style={{ background: col.btnColor, boxShadow: `0 4px 14px ${col.btnColor}40` }}>
+                              {advancing === order.id ? '...' : col.nextLabel}
+                            </motion.button>
+                          </div>
                         </motion.div>
                       ))}
                     </AnimatePresence>

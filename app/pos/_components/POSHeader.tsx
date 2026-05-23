@@ -1,14 +1,23 @@
 'use client'
-import { Clock, RefreshCw } from 'lucide-react'
+import { Clock, RefreshCw, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
+import { supabase } from '@/lib/supabase'
+import { IS_MOCK_MODE } from '@/lib/mock-data'
+import { formatPrice } from '@/lib/utils'
 
 const P = '#FF6B35'
+const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
+
+interface DailySummary {
+  count: number
+  revenue: number
+}
 
 export default function POSHeader() {
   const [time, setTime] = useState('')
+  const [summary, setSummary] = useState<DailySummary | null>(null)
   const newOrder = usePOSStore(s => s.newOrder)
-  const getTotalQty = usePOSStore(s => s.getTotalQty)
 
   useEffect(() => {
     const tick = () => {
@@ -17,6 +26,46 @@ export default function POSHeader() {
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    if (IS_MOCK_MODE) {
+      setSummary({ count: 12, revenue: 1840 })
+      return
+    }
+
+    async function fetchSummary() {
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+
+      const { data } = await supabase
+        .from('orders')
+        .select('total_price')
+        .eq('restaurant_id', RESTAURANT_ID)
+        .neq('status', 'cancelled')
+        .gte('created_at', todayStart.toISOString())
+
+      if (data) {
+        setSummary({
+          count: data.length,
+          revenue: data.reduce((s, o) => s + (o.total_price ?? 0), 0),
+        })
+      }
+    }
+
+    fetchSummary()
+
+    // Realtime: update summary when new order comes in
+    const ch = supabase.channel('pos-header-orders')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => {
+        fetchSummary()
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, () => {
+        fetchSummary()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(ch) }
   }, [])
 
   return (
@@ -32,6 +81,19 @@ export default function POSHeader() {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Daily summary */}
+        {summary && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+            <TrendingUp size={12} className="text-green-400" />
+            <div className="text-right">
+              <p className="text-[10px] text-gray-400 leading-none">{summary.count} order hari ini</p>
+              <p className="text-xs font-black text-green-400 leading-none mt-0.5">
+                {formatPrice(summary.revenue)}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-1.5 text-gray-300">
           <Clock size={13} />
           <span className="text-sm font-mono font-bold">{time}</span>

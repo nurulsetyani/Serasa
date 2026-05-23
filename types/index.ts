@@ -1,5 +1,5 @@
 export type Language = 'id' | 'en' | 'ar'
-export type OrderStatus = 'pending' | 'cooking' | 'ready' | 'delivered'
+export type OrderStatus = 'pending' | 'cooking' | 'ready' | 'delivered' | 'cancelled'
 
 export interface Restaurant {
   id: string
