@@ -32,6 +32,7 @@ export default function Cart({ tableParam }: Props) {
   const clearCart = usePOSStore(s => s.clearCart)
   const newOrder = usePOSStore(s => s.newOrder)
   const clearPayments = usePOSStore(s => s.clearPayments)
+  const sourceQrOrderId = usePOSStore(s => s.sourceQrOrderId)
 
   const getSubtotal = usePOSStore(s => s.getSubtotal)
   const getDiscountAmount = usePOSStore(s => s.getDiscountAmount)
@@ -89,6 +90,14 @@ export default function Cart({ tableParam }: Props) {
       if (!res.ok) throw new Error(data.error ?? 'Gagal membuat order')
       setLastOrderNumber(data.order_number)
       setLastOrderId(data.id)
+      // Mark original QR order as delivered
+      if (sourceQrOrderId) {
+        fetch(`/api/order/${sourceQrOrderId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'delivered' }),
+        }).catch(() => {})
+      }
       // Auto kitchen print — fire and forget
       fetch('/api/print', {
         method: 'POST',

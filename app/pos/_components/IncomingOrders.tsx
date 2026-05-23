@@ -86,6 +86,7 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
 
   function handleLoad(order: QROrder) {
     loadFromQROrder({
+      orderId: order.id,
       tableNumber: order.table_number,
       customerName: order.customer_name,
       orderType: order.order_type,
