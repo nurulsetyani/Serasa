@@ -285,8 +285,9 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                 <div className="px-5 py-4">
                   {/* Resto info */}
                   <div className="text-center mb-3">
-                    <p className="font-black text-sm tracking-widest">{RESTO_NAME}</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">{RESTO_SUB}</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/logof22.png" alt="Serasa" style={{ height: 36, margin: '0 auto 4px', objectFit: 'contain' }} />
+                    <p className="text-[10px] text-gray-500">{RESTO_SUB}</p>
                     <p className="text-[10px] text-gray-400">{RESTO_ADDR}</p>
                   </div>
 
