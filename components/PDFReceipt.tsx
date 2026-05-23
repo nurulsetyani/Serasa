@@ -18,8 +18,7 @@ Font.register({
   src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5krK0z9_Mnuw.woff2',
 })
 
-const P   = '#FF6B35'
-const BG  = '#F5F2EE'
+const P    = '#FF6B35'
 const DARK = '#1A1208'
 
 const s = StyleSheet.create({
@@ -133,7 +132,7 @@ function ReceiptDocument({ data }: { data: PDFReceiptProps }) {
 
         {/* Header */}
         <View style={s.headerBg}>
-          <Image style={s.logo} src="/logof22.png" />
+          <Image style={s.logo} src="/logo.png" />
           <Text style={s.sub}>FROM INDONESIA FOR THE WORLD</Text>
         </View>
 

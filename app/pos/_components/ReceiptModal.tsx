@@ -1,7 +1,7 @@
 'use client'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Printer, CheckCircle2, Thermometer } from 'lucide-react'
-import { useState } from 'react'
+import { X, Printer, CheckCircle2, Thermometer, Download } from 'lucide-react'
+import { useState, Component, ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -10,12 +10,26 @@ import { POSLine } from '@/types/pos'
 const PDFDownloadButton = dynamic(
   () => import('@/components/PDFReceipt').then(m => ({ default: m.PDFDownloadButton })),
   { ssr: false, loading: () => (
-    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm opacity-50"
+    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm opacity-40 cursor-not-allowed"
       style={{ background: '#1A1208', color: 'white' }}>
-      PDF...
+      <Download size={14} /> PDF...
     </button>
   )}
 )
+
+class PDFErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() {
+    if (this.state.failed) return (
+      <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm opacity-40 cursor-not-allowed"
+        style={{ background: '#1A1208', color: 'white' }}>
+        <Download size={14} /> PDF N/A
+      </button>
+    )
+    return this.props.children
+  }
+}
 
 const P = '#FF6B35'
 const RESTO_NAME = 'SERASA RESTAURANT'
@@ -376,7 +390,9 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
             <div className="px-4 pb-5 pt-3 flex-shrink-0 border-t border-gray-100 space-y-2">
               {/* PDF + Thermal row */}
               <div className="flex gap-2">
-                <PDFDownloadButton data={pdfData} orderNumber={orderNumber} />
+                <PDFErrorBoundary>
+                  <PDFDownloadButton data={pdfData} orderNumber={orderNumber} />
+                </PDFErrorBoundary>
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={handleThermalPrint}
