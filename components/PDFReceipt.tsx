@@ -121,7 +121,7 @@ function formatDate(iso: string) {
   })
 }
 
-function ReceiptDocument({ data }: { data: PDFReceiptProps }) {
+function ReceiptDocument({ data, logoUrl }: { data: PDFReceiptProps; logoUrl?: string }) {
   const change = data.payments
     ? Math.max(0, data.payments.reduce((s, p) => s + p.amount, 0) - data.total)
     : 0
@@ -132,7 +132,7 @@ function ReceiptDocument({ data }: { data: PDFReceiptProps }) {
 
         {/* Header */}
         <View style={s.headerBg}>
-          <Image style={s.logo} src="/logo.png" />
+          {logoUrl && <Image style={s.logo} src={logoUrl} />}
           <Text style={s.sub}>FROM INDONESIA FOR THE WORLD</Text>
         </View>
 
@@ -223,10 +223,11 @@ interface DownloadButtonProps {
 }
 
 export function PDFDownloadButton({ data, orderNumber }: DownloadButtonProps) {
+  const logoUrl = typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : undefined
   const filename = `struk-${orderNumber || data.tableNumber}-${Date.now()}.pdf`
 
   return (
-    <PDFDownloadLink document={<ReceiptDocument data={data} />} fileName={filename}>
+    <PDFDownloadLink document={<ReceiptDocument data={data} logoUrl={logoUrl} />} fileName={filename}>
       {({ loading }) => (
         <button
           disabled={loading}
