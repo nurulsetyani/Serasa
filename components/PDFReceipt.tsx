@@ -1,29 +1,16 @@
 'use client'
 import {
   Document, Page, Text, View, Image, StyleSheet,
-  PDFDownloadLink, Font,
+  PDFDownloadLink,
 } from '@react-pdf/renderer'
 import { Download } from 'lucide-react'
-
-// Register Noto font for Arabic support
-Font.register({
-  family: 'NotoSans',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/notosans/v36/o-0bIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjc5a7du3mhPy63rBlFpA.woff2', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/notosans/v36/o-0bIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjcaKXdu3mhPy63rBlFpA.woff2', fontWeight: 700 },
-  ],
-})
-Font.register({
-  family: 'NotoArabic',
-  src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5krK0z9_Mnuw.woff2',
-})
 
 const P    = '#FF6B35'
 const DARK = '#1A1208'
 
 const s = StyleSheet.create({
   page: {
-    fontFamily: 'NotoSans',
+    fontFamily: 'Helvetica',
     backgroundColor: '#FFFFFF',
     padding: '8mm',
     width: '80mm',
@@ -49,7 +36,7 @@ const s = StyleSheet.create({
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
   itemName: { color: DARK, fontSize: 8.5, fontWeight: 700, flex: 1, marginRight: 4 },
   itemNameAr: {
-    fontFamily: 'NotoArabic', color: '#6B5B4E', fontSize: 8,
+    color: '#6B5B4E', fontSize: 8,
     textAlign: 'right', marginTop: 1,
   },
   itemQtyPrice: { color: '#9A8A7A', fontSize: 7.5, marginTop: 1 },
@@ -69,7 +56,7 @@ const s = StyleSheet.create({
   footer: { alignItems: 'center', marginTop: 4 },
   footerText: { color: '#9A8A7A', fontSize: 7, marginBottom: 1.5, textAlign: 'center' },
   footerAr: {
-    fontFamily: 'NotoArabic', color: '#9A8A7A', fontSize: 7,
+    color: '#9A8A7A', fontSize: 7,
     textAlign: 'center', marginBottom: 1.5,
   },
 })
