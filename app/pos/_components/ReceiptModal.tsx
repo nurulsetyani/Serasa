@@ -1,9 +1,11 @@
 'use client'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Printer, Download, CheckCircle2 } from 'lucide-react'
+import { X, Printer, CheckCircle2, Thermometer } from 'lucide-react'
+import { useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
 import { POSLine } from '@/types/pos'
+import { PDFDownloadButton } from '@/components/PDFReceipt'
 
 const P = '#FF6B35'
 const RESTO_NAME = 'SERASA RESTAURANT'
@@ -14,6 +16,7 @@ interface Props {
   open: boolean
   onClose: () => void
   orderNumber?: string
+  orderId?: string
 }
 
 function ReceiptLine({ line, lang }: { line: POSLine; lang: string }) {
@@ -45,7 +48,7 @@ function Divider() {
   return <div className="border-t border-dashed border-gray-300 my-3" />
 }
 
-export default function ReceiptModal({ open, onClose, orderNumber }: Props) {
+export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Props) {
   const lines = usePOSStore(s => s.lines)
   const lang = usePOSStore(s => s.lang)
   const orderType = usePOSStore(s => s.orderType)
@@ -69,6 +72,52 @@ export default function ReceiptModal({ open, onClose, orderNumber }: Props) {
   const total = getTotal()
   const change = getChange()
   const amountPaid = getAmountPaid()
+
+  const [thermalLoading, setThermalLoading] = useState(false)
+
+  const pdfData = {
+    orderNumber,
+    tableNumber,
+    customerName: customerName || 'Guest',
+    orderType,
+    createdAt: new Date().toISOString(),
+    items: lines.map(l => ({
+      id: l.lineId, name: l.name, price: l.unitPrice, qty: l.qty, notes: l.note,
+    })),
+    subtotal, discountType, discountValue, discountAmount,
+    taxPercent, taxAmount, total, payments,
+  }
+
+  async function handleThermalPrint() {
+    if (thermalLoading) return
+    setThermalLoading(true)
+    try {
+      await fetch('/api/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'cashier',
+          order: {
+            id: orderId,
+            order_number: orderNumber,
+            table_number: tableNumber,
+            customer_name: customerName || 'Guest',
+            order_type: orderType,
+            created_at: new Date().toISOString(),
+            subtotal, discount_type: discountType, discount_value: discountValue,
+            discount_amount: discountAmount, tax_percent: taxPercent,
+            tax_amount: taxAmount, total_price: total, payments,
+            order_items: lines.map(l => ({
+              id: l.lineId, name: l.name, price: l.unitPrice,
+              qty: l.qty, notes: l.note || null,
+            })),
+          },
+        }),
+      })
+    } finally {
+      setThermalLoading(false)
+    }
+  }
 
   const now = new Date()
   const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -316,22 +365,39 @@ export default function ReceiptModal({ open, onClose, orderNumber }: Props) {
             </div>
 
             {/* Actions */}
-            <div className="px-4 pb-5 pt-3 flex gap-2 flex-shrink-0 border-t border-gray-100">
-              <button
-                onClick={onClose}
-                className="px-4 py-3 rounded-2xl font-bold text-gray-600 bg-[#F5F2EE] text-sm"
-              >
-                <X size={14} />
-              </button>
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={handlePrint}
-                className="flex-1 py-3 rounded-2xl font-black text-white text-sm flex items-center justify-center gap-2"
-                style={{ background: P, boxShadow: `0 6px 20px rgba(255,107,53,0.35)` }}
-              >
-                <Printer size={16} />
-                Print Struk
-              </motion.button>
+            <div className="px-4 pb-5 pt-3 flex-shrink-0 border-t border-gray-100 space-y-2">
+              {/* PDF + Thermal row */}
+              <div className="flex gap-2">
+                <PDFDownloadButton data={pdfData} orderNumber={orderNumber} />
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleThermalPrint}
+                  disabled={thermalLoading}
+                  className="flex-1 py-2.5 rounded-xl font-black text-white text-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  style={{ background: '#1A1208' }}
+                >
+                  <Thermometer size={13} />
+                  {thermalLoading ? 'Mengirim...' : 'Thermal'}
+                </motion.button>
+              </div>
+              {/* Close + Browser print */}
+              <div className="flex gap-2">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-3 rounded-2xl font-bold text-gray-600 bg-[#F5F2EE] text-sm"
+                >
+                  <X size={14} />
+                </button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handlePrint}
+                  className="flex-1 py-3 rounded-2xl font-black text-white text-sm flex items-center justify-center gap-2"
+                  style={{ background: P, boxShadow: `0 6px 20px rgba(255,107,53,0.35)` }}
+                >
+                  <Printer size={16} />
+                  Print Struk
+                </motion.button>
+              </div>
             </div>
           </motion.div>
         </div>

@@ -1,0 +1,17 @@
+{
+  "name": "serasa-print-agent",
+  "version": "1.0.0",
+  "description": "Local thermal printer agent for Serasa POS",
+  "main": "agent.js",
+  "scripts": {
+    "start": "node agent.js",
+    "setup": "node setup.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.44.3",
+    "node-thermal-printer": "^4.4.1",
+    "jimp": "^0.22.12",
+    "qrcode": "^1.5.4",
+    "dotenv": "^16.4.5"
+  }
+}

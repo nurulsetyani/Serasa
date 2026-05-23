@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import { Printer } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { Order, MenuItem, Language } from '@/types'
 import { formatPrice } from '@/lib/utils'
+import { PDFDownloadButton } from '@/components/PDFReceipt'
 
 const MOCK_ORDER: Order = {
   id: 'mock-preview-order',
@@ -70,6 +72,9 @@ export default function ReceiptPage() {
   const [menuMap, setMenuMap] = useState<Record<string, MenuItem>>({})
   const [loading, setLoading] = useState(true)
   const [lang, setLang]       = useState<Language>('id')
+  const [receiptUrl, setReceiptUrl] = useState('')
+
+  useEffect(() => { setReceiptUrl(window.location.href) }, [])
 
   useEffect(() => {
     try {
@@ -129,16 +134,41 @@ export default function ReceiptPage() {
   const paymentLabel   = order.payment_method === 'cash' ? lbl.cash
     : order.payment_method === 'qris' ? lbl.qris : lbl.online
 
+  const pdfData = {
+    orderNumber: order.order_number,
+    tableNumber: order.table_number,
+    customerName: order.customer_name,
+    orderType: order.order_type ?? 'dine_in',
+    paymentMethod: order.payment_method,
+    createdAt: order.created_at,
+    items: (order.order_items ?? []).map(item => ({
+      id: item.id,
+      name: item.name,
+      name_ar: menuMap[item.menu_id]?.name_ar,
+      price: item.price,
+      qty: item.qty,
+      notes: item.notes,
+    })),
+    subtotal: order.total_price,
+    total: order.total_price,
+    payments: order.payment_method
+      ? [{ method: order.payment_method, amount: order.total_price }]
+      : undefined,
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4"
       dir={isRTL ? 'rtl' : 'ltr'}>
 
-      {/* Print button — hidden on print */}
-      <button onClick={() => window.print()}
-        className="no-print flex items-center gap-2 mb-6 px-6 py-3 rounded-full text-white font-semibold text-sm"
-        style={{ background: '#FF6B35', boxShadow: '0 4px 16px rgba(255,107,53,0.35)' }}>
-        <Printer size={16} /> {lbl.print}
-      </button>
+      {/* Action buttons — hidden on print */}
+      <div className="no-print flex items-center gap-3 mb-6">
+        <button onClick={() => window.print()}
+          className="flex items-center gap-2 px-6 py-3 rounded-full text-white font-semibold text-sm"
+          style={{ background: '#FF6B35', boxShadow: '0 4px 16px rgba(255,107,53,0.35)' }}>
+          <Printer size={16} /> {lbl.print}
+        </button>
+        <PDFDownloadButton data={pdfData} orderNumber={order.order_number} />
+      </div>
 
       {/* Receipt */}
       <div id="receipt" className="bg-white w-full max-w-[320px] overflow-hidden"
@@ -227,6 +257,18 @@ export default function ReceiptPage() {
           </p>
           <p className="text-gray-300 text-[9px] mt-3">Serasa Indonesian Restaurant · Saudi Arabia</p>
         </div>
+
+        {/* QR Code — link to this receipt */}
+        {receiptUrl && (
+          <div className="px-6 py-4 flex flex-col items-center gap-2"
+            style={{ borderTop: '1px dashed #E5E7EB' }}>
+            <QRCodeSVG value={receiptUrl} size={96} level="M"
+              fgColor="#1A1208" bgColor="transparent" />
+            <p className="text-gray-300 text-[9px] text-center">
+              Scan untuk struk digital · Scan for digital receipt
+            </p>
+          </div>
+        )}
 
         {/* Barcode */}
         <div className="flex h-4">

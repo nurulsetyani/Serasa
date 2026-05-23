@@ -45,6 +45,7 @@ export default function Cart({ tableParam }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [lastOrderNumber, setLastOrderNumber] = useState<string | undefined>()
+  const [lastOrderId, setLastOrderId] = useState<string | undefined>()
 
   const subtotal = getSubtotal()
   const discountAmount = getDiscountAmount()
@@ -87,8 +88,29 @@ export default function Cart({ tableParam }: Props) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Gagal membuat order')
       setLastOrderNumber(data.order_number)
+      setLastOrderId(data.id)
+      // Auto kitchen print — fire and forget
+      fetch('/api/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'kitchen',
+          order: {
+            id: data.id,
+            order_number: data.order_number,
+            table_number: tableNumber || tableParam || '1',
+            customer_name: customerName || 'Guest',
+            order_type: orderType,
+            created_at: new Date().toISOString(),
+            order_items: lines.map(l => ({
+              id: l.lineId, name: l.name, price: l.unitPrice,
+              qty: l.qty, notes: l.note || null,
+            })),
+          },
+        }),
+      }).catch(() => {})
       setShowPayment(false)
-      setShowReceipt(true)   // Langsung tampilkan struk setelah konfirmasi
+      setShowReceipt(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error')
     } finally {
@@ -306,6 +328,7 @@ export default function Cart({ tableParam }: Props) {
         open={showReceipt}
         onClose={handleReceiptClose}
         orderNumber={lastOrderNumber}
+        orderId={lastOrderId}
       />
     </div>
   )
