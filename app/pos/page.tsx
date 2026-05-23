@@ -13,6 +13,7 @@ import SearchBar from './_components/SearchBar'
 import CategoryTabs from './_components/CategoryTabs'
 import ProductGrid from './_components/ProductGrid'
 import Cart from './_components/Cart'
+import IncomingOrders from './_components/IncomingOrders'
 
 // ── Inner component: boleh pakai useSearchParams karena dibungkus Suspense ──
 function POSInner() {
@@ -23,6 +24,7 @@ function POSInner() {
   const tableNumber = usePOSStore(s => s.tableNumber)
   const [menu, setMenu] = useState<MenuItem[]>([])
   const [loadingMenu, setLoadingMenu] = useState(true)
+  const [showIncoming, setShowIncoming] = useState(false)
 
   useEffect(() => {
     if (!tableNumber) setTable(tableParam)
@@ -51,7 +53,7 @@ function POSInner() {
     <div className="h-full flex" style={{ background: '#F5F2EE' }}>
       {/* ── LEFT PANEL ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <POSHeader />
+        <POSHeader onOpenIncoming={() => setShowIncoming(true)} />
         <OrderTypeBar />
         <SearchBar />
         {!loadingMenu && <CategoryTabs menu={menu} />}
@@ -75,6 +77,13 @@ function POSInner() {
       >
         <Cart tableParam={tableParam} />
       </div>
+
+      {/* ── QR Incoming Orders Drawer ── */}
+      <IncomingOrders
+        open={showIncoming}
+        onClose={() => setShowIncoming(false)}
+        onOrderLoaded={() => setShowIncoming(false)}
+      />
     </div>
   )
 }

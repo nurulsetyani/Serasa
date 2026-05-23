@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
         payment_method: body.payment_method ?? 'cash',
         notes: body.notes?.trim() || null,
         total_price: body.total_price,
+        source: 'qr',
         status: 'pending',
       })
       .select()

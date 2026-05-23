@@ -1,5 +1,5 @@
 'use client'
-import { Clock, RefreshCw, TrendingUp } from 'lucide-react'
+import { Clock, RefreshCw, TrendingUp, QrCode } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { supabase } from '@/lib/supabase'
@@ -14,9 +14,14 @@ interface DailySummary {
   revenue: number
 }
 
-export default function POSHeader() {
+interface Props {
+  onOpenIncoming: () => void
+}
+
+export default function POSHeader({ onOpenIncoming }: Props) {
   const [time, setTime] = useState('')
   const [summary, setSummary] = useState<DailySummary | null>(null)
+  const [incomingCount, setIncomingCount] = useState(0)
   const newOrder = usePOSStore(s => s.newOrder)
 
   useEffect(() => {
@@ -31,38 +36,43 @@ export default function POSHeader() {
   useEffect(() => {
     if (IS_MOCK_MODE) {
       setSummary({ count: 12, revenue: 1840 })
+      setIncomingCount(2)
       return
     }
 
-    async function fetchSummary() {
+    async function fetchData() {
       const todayStart = new Date()
       todayStart.setHours(0, 0, 0, 0)
 
-      const { data } = await supabase
-        .from('orders')
-        .select('total_price')
-        .eq('restaurant_id', RESTAURANT_ID)
-        .neq('status', 'cancelled')
-        .gte('created_at', todayStart.toISOString())
+      const [salesRes, incomingRes] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('total_price')
+          .eq('restaurant_id', RESTAURANT_ID)
+          .neq('status', 'cancelled')
+          .gte('created_at', todayStart.toISOString()),
+        supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('restaurant_id', RESTAURANT_ID)
+          .eq('source', 'qr')
+          .eq('status', 'pending'),
+      ])
 
-      if (data) {
+      if (salesRes.data) {
         setSummary({
-          count: data.length,
-          revenue: data.reduce((s, o) => s + (o.total_price ?? 0), 0),
+          count: salesRes.data.length,
+          revenue: salesRes.data.reduce((s, o) => s + (o.total_price ?? 0), 0),
         })
       }
+      setIncomingCount(incomingRes.count ?? 0)
     }
 
-    fetchSummary()
+    fetchData()
 
-    // Realtime: update summary when new order comes in
-    const ch = supabase.channel('pos-header-orders')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => {
-        fetchSummary()
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, () => {
-        fetchSummary()
-      })
+    const ch = supabase.channel('pos-header')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => fetchData())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, () => fetchData())
       .subscribe()
 
     return () => { supabase.removeChannel(ch) }
@@ -80,7 +90,7 @@ export default function POSHeader() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {/* Daily summary */}
         {summary && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
@@ -93,6 +103,28 @@ export default function POSHeader() {
             </div>
           </div>
         )}
+
+        {/* QR incoming orders button */}
+        <button
+          onClick={onOpenIncoming}
+          className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+          style={{
+            background: incomingCount > 0 ? `${P}25` : 'rgba(255,255,255,0.08)',
+            color: incomingCount > 0 ? '#FFB347' : 'rgba(255,255,255,0.6)',
+            border: `1px solid ${incomingCount > 0 ? `${P}50` : 'transparent'}`,
+          }}
+        >
+          <QrCode size={13} />
+          <span>QR Order</span>
+          {incomingCount > 0 && (
+            <span
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black text-white flex items-center justify-center animate-pulse"
+              style={{ background: '#EF4444' }}
+            >
+              {incomingCount}
+            </span>
+          )}
+        </button>
 
         <div className="flex items-center gap-1.5 text-gray-300">
           <Clock size={13} />

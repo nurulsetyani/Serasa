@@ -76,6 +76,12 @@ interface POSActions {
 
   clearCart: () => void
   newOrder: () => void
+  loadFromQROrder: (order: {
+    tableNumber: string
+    customerName: string
+    orderType: 'dine_in' | 'take_away' | 'delivery'
+    items: { menuId: string; name: string; unitPrice: number; qty: number; note?: string }[]
+  }) => void
 }
 
 export const usePOSStore = create<POSState & POSActions>()(
@@ -244,6 +250,28 @@ export const usePOSStore = create<POSState & POSActions>()(
           customerName: 'Guest', customerPhone: '', deliveryAddress: '',
           tableNumber: '', orderType: 'dine_in', activeLineId: null,
           searchQuery: '', selectedCategory: null,
+        }),
+
+        loadFromQROrder: (order) => set({
+          lines: order.items.map(item => ({
+            lineId: crypto.randomUUID(),
+            menuId: item.menuId,
+            name: item.name,
+            unitPrice: item.unitPrice,
+            modifiers: [],
+            qty: item.qty,
+            note: item.note ?? '',
+            lineTotal: item.unitPrice * item.qty,
+          })),
+          tableNumber: order.tableNumber,
+          customerName: order.customerName,
+          orderType: order.orderType,
+          payments: [],
+          discountType: null,
+          discountValue: 0,
+          activeLineId: null,
+          searchQuery: '',
+          selectedCategory: null,
         }),
       }),
       {
