@@ -542,7 +542,7 @@ export default function AdminPage() {
           <SidebarItem icon={ClipboardList} label="Pesanan" active />
           <SidebarItem icon={UtensilsCrossed} label="Kelola Menu" onClick={() => router.push('/admin/menu')} />
           <SidebarItem icon={ChefHat} label="Kitchen Display" onClick={() => router.push('/kitchen')} />
-          <SidebarItem icon={BarChart3} label="Laporan" onClick={() => setShowReport(true)} />
+          <SidebarItem icon={BarChart3} label="Laporan" onClick={() => router.push('/admin/laporan')} />
         </nav>
 
         {/* Status */}
