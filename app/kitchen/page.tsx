@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { Clock, RefreshCw, Volume2, VolumeX, ChefHat, CheckCircle2, XCircle, MapPin, Bike } from 'lucide-react'
+import { Clock, RefreshCw, Volume2, VolumeX, ChefHat, CheckCircle2, XCircle, MapPin, Bike, QrCode, Monitor } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -14,17 +14,26 @@ const P = '#FF6B35'
 const MOCK_ORDERS: Order[] = [
   { id: 'd1', restaurant_id: RESTAURANT_ID, table_number: '3', customer_name: 'Ahmad',
     status: 'pending', total_price: 60, order_number: 'POS-930686', order_type: 'dine_in',
-    created_at: new Date().toISOString(),
+    created_at: new Date().toISOString(), source: 'qr',
     order_items: [
       { id: 'i1', order_id: 'd1', menu_id: 'm1', name: 'Mie Goreng Ayam', price: 25, qty: 2, notes: 'Tidak pedas' },
       { id: 'i2', order_id: 'd1', menu_id: 'm5', name: 'Es Cendol', price: 12, qty: 1 },
     ] },
   { id: 'd2', restaurant_id: RESTAURANT_ID, table_number: '–', customer_name: 'Fatimah',
-    status: 'cooking', total_price: 57, order_number: 'POS-847291', order_type: 'delivery',
-    created_at: new Date(Date.now() - 9 * 60000).toISOString(),
+    status: 'cooking', total_price: 57, order_number: 'HS-847291', order_type: 'delivery',
+    created_at: new Date(Date.now() - 9 * 60000).toISOString(), source: 'hungerstation',
+    delivery_address: 'King Fahd Road, Riyadh',
     order_items: [
       { id: 'i3', order_id: 'd2', menu_id: 'm3', name: 'Nasi Goreng Spesial', price: 22, qty: 1, notes: 'Extra sambal' },
       { id: 'i4', order_id: 'd2', menu_id: 'm6', name: 'Rendang Sapi', price: 35, qty: 1 },
+    ] },
+  { id: 'd3', restaurant_id: RESTAURANT_ID, table_number: '–', customer_name: 'Mohammed',
+    status: 'ready', total_price: 45, order_number: 'KT-221983', order_type: 'delivery',
+    created_at: new Date(Date.now() - 18 * 60000).toISOString(), source: 'keeta',
+    delivery_address: 'Olaya Street, Riyadh',
+    order_items: [
+      { id: 'i5', order_id: 'd3', menu_id: 'm2', name: 'Soto Ayam', price: 20, qty: 1 },
+      { id: 'i6', order_id: 'd3', menu_id: 'm4', name: 'Teh Manis', price: 8, qty: 2, notes: 'Dingin' },
     ] },
 ]
 
@@ -64,8 +73,25 @@ const COLS = [
   { status: 'ready'   as OrderStatus, label: 'SIAP',  color: '#22C55E', bg: '#F0FDF4', border: '#BBF7D0', nextLabel: '🛎 Selesai',      nextStatus: 'delivered' as OrderStatus, btnColor: '#6366F1' },
 ]
 
-// Extended type to carry delivery_address from DB
-type KitchenOrder = Order & { delivery_address?: string | null }
+// Extended type to carry delivery_address and source from DB
+type KitchenOrder = Order & { delivery_address?: string | null; source?: string | null }
+
+const SOURCE_CONFIG: Record<string, { label: string; bg: string; color: string; icon: React.ReactNode }> = {
+  hungerstation: { label: 'HungerStation', bg: '#FFF0E6', color: '#FF6000', icon: <span className="font-black text-[9px]">HS</span> },
+  keeta:         { label: 'Keeta',         bg: '#E6FFF3', color: '#00C851', icon: <span className="font-black text-[9px]">KT</span> },
+  qr:            { label: 'QR Scan',       bg: '#FFF8EE', color: '#FF6B35', icon: <QrCode size={9} /> },
+  pos:           { label: 'Kasir',         bg: '#F0F4FF', color: '#6366F1', icon: <Monitor size={9} /> },
+}
+
+function SourceBadge({ source }: { source?: string | null }) {
+  const cfg = SOURCE_CONFIG[source ?? 'pos'] ?? SOURCE_CONFIG.pos
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full"
+      style={{ background: cfg.bg, color: cfg.color }}>
+      {cfg.icon}{cfg.label}
+    </span>
+  )
+}
 
 export default function KitchenPage() {
   const [orders, setOrders]     = useState<KitchenOrder[]>([])
@@ -138,7 +164,7 @@ export default function KitchenPage() {
         <div className="flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="relative w-[90px] h-[32px]">
-              <Image src="/logo.png" alt="Serasa" fill className="object-contain object-left" sizes="90px" />
+              <Image src="/logof22.png" alt="Serasa" fill className="object-contain object-left" sizes="90px" />
             </div>
             <div className="h-5 w-px bg-gray-200" />
             <div>
@@ -237,6 +263,7 @@ export default function KitchenPage() {
                                     style={{ background: col.bg, color: col.color }}>
                                     {col.label}
                                   </span>
+                                  <SourceBadge source={order.source} />
                                   {order.order_type === 'delivery' && (
                                     <span className="flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full bg-blue-50 text-blue-600">
                                       <Bike size={9} /> DELIVERY

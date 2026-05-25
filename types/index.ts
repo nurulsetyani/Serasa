@@ -39,10 +39,14 @@ export interface Order {
   order_number?: string
   table_number: string
   customer_name: string
+  customer_phone?: string | null
   order_type?: OrderType
   payment_method?: PaymentMethod
   status: OrderStatus
+  source?: string | null
   total_price: number
+  delivery_address?: string | null
+  platform_order_id?: string | null
   created_at: string
   updated_at?: string
   order_items?: OrderItem[]
