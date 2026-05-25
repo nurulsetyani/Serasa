@@ -13,6 +13,7 @@ export interface POSLine {
   lineId: string
   menuId: string
   name: string
+  name_ar?: string
   unitPrice: number
   modifiers: POSModifier[]
   qty: number

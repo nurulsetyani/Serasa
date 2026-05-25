@@ -5,8 +5,12 @@ import {
 } from '@react-pdf/renderer'
 import { Download } from 'lucide-react'
 
-const P    = '#FF6B35'
-const DARK = '#1A1208'
+const RED    = '#CC0000'
+const DARK   = '#1A1208'
+const GRAY   = '#6B7280'
+const LGRAY  = '#9CA3AF'
+
+const TAX_PERCENT = 15
 
 const s = StyleSheet.create({
   page: {
@@ -15,51 +19,48 @@ const s = StyleSheet.create({
     padding: '8mm',
     width: '80mm',
   },
-  headerBg: {
-    backgroundColor: DARK,
-    padding: '6mm',
-    alignItems: 'center',
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  logo: { width: 120, height: 40, objectFit: 'contain' },
-  sub: { color: '#9A8A7A', fontSize: 7, marginTop: 2, letterSpacing: 1 },
-  orangeBar: {
-    backgroundColor: P, padding: '3mm', alignItems: 'center', marginBottom: 4,
-  },
-  receiptTitle: { color: 'white', fontSize: 9, fontWeight: 700, letterSpacing: 2 },
-  divider: { borderTop: '1px dashed #E5E7EB', marginVertical: 4 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  label: { color: '#9A8A7A', fontSize: 8 },
-  value: { color: DARK, fontSize: 8, fontWeight: 700, textAlign: 'right', maxWidth: '55%' },
-  sectionTitle: { color: '#9A8A7A', fontSize: 7, letterSpacing: 1.5, marginBottom: 3 },
-  itemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
-  itemName: { color: DARK, fontSize: 8.5, fontWeight: 700, flex: 1, marginRight: 4 },
-  itemQtyPrice: { color: '#9A8A7A', fontSize: 7.5, marginTop: 1 },
-  itemTotal: { color: DARK, fontSize: 8.5, fontWeight: 700, minWidth: 50, textAlign: 'right' },
-  itemNote: { color: P, fontSize: 7.5, fontWeight: 700, marginTop: 1 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 },
-  totalLabel: { color: DARK, fontSize: 12, fontWeight: 700 },
-  totalValue: { color: P, fontSize: 16, fontWeight: 700 },
+  center: { alignItems: 'center' },
+  restoName: { color: RED, fontSize: 13, fontWeight: 700, textAlign: 'center' },
+  branchName: { color: GRAY, fontSize: 8, textAlign: 'center', marginTop: 2 },
+  invoiceNo: { color: LGRAY, fontSize: 7, textAlign: 'center', marginTop: 1 },
+  divider: { borderTop: '1px dashed #D1D5DB', marginVertical: 5 },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
+  metaLabel: { color: GRAY, fontSize: 8 },
+  metaValue: { color: DARK, fontSize: 8, fontWeight: 700, textAlign: 'right', maxWidth: '60%' },
+  metaValueRed: { color: RED, fontSize: 8, fontWeight: 700, textAlign: 'right' },
+  tableHeader: { flexDirection: 'row', borderBottom: '1px solid #E5E7EB', paddingBottom: 3, marginBottom: 4 },
+  thLeft: { flex: 1, color: GRAY, fontSize: 7 },
+  thMid: { width: 24, color: GRAY, fontSize: 7, textAlign: 'center' },
+  thRight: { width: 60, color: GRAY, fontSize: 7, textAlign: 'right' },
+  itemRow: { marginBottom: 5 },
+  itemInner: { flexDirection: 'row', alignItems: 'flex-start' },
+  itemName: { flex: 1, color: DARK, fontSize: 9, fontWeight: 700, lineHeight: 1.3 },
+  itemNameAr: { color: LGRAY, fontSize: 7, marginTop: 1 },
+  itemQty: { width: 24, color: GRAY, fontSize: 9, textAlign: 'center' },
+  itemTotal: { width: 60, color: DARK, fontSize: 9, fontWeight: 700, textAlign: 'right' },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
+  totalLabel: { color: GRAY, fontSize: 8 },
+  totalValue: { color: DARK, fontSize: 8, fontWeight: 700 },
+  grandRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 },
+  grandLabel: { color: DARK, fontSize: 11, fontWeight: 700 },
+  grandValue: { color: DARK, fontSize: 11, fontWeight: 700 },
+  discountValue: { color: '#16A34A', fontSize: 8, fontWeight: 700 },
+  discountLabel: { color: '#16A34A', fontSize: 8 },
+  complianceText: { color: LGRAY, fontSize: 6.5, textAlign: 'center', lineHeight: 1.4, marginVertical: 5 },
   payRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 1.5 },
-  payLabel: { color: '#6B5B4E', fontSize: 8 },
+  payLabel: { color: GRAY, fontSize: 8 },
   payValue: { color: DARK, fontSize: 8, fontWeight: 700 },
-  changeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
   changeLabel: { color: '#16A34A', fontSize: 8.5, fontWeight: 700 },
   changeValue: { color: '#16A34A', fontSize: 8.5, fontWeight: 700 },
-  discountLabel: { color: '#16A34A', fontSize: 8 },
-  discountValue: { color: '#16A34A', fontSize: 8, fontWeight: 700 },
-  footer: { alignItems: 'center', marginTop: 4 },
-  footerText: { color: '#9A8A7A', fontSize: 7, marginBottom: 1.5, textAlign: 'center' },
 })
 
-const PAYMENT_LABELS: Record<string, string> = {
-  cash: 'Tunai', mada: 'Mada', visa: 'Visa/MC',
-  qris: 'QRIS', transfer: 'Transfer Bank', online: 'Online',
+function fmt(n: number) {
+  return `${n.toFixed(2)} SAR`
 }
 
-const ORDER_TYPE_LABELS: Record<string, string> = {
-  dine_in: 'Dine In', take_away: 'Take Away', delivery: 'Delivery',
+function fmtDate(iso: string) {
+  const d = new Date(iso)
+  return `${d.toLocaleDateString('en-SA', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${d.toLocaleTimeString('en-SA', { hour: '2-digit', minute: '2-digit', hour12: false })}`
 }
 
 export interface ReceiptItem {
@@ -89,75 +90,133 @@ export interface PDFReceiptProps {
   payments?: { method: string; amount: number }[]
 }
 
-function formatPrice(n: number) {
-  return `SR ${n.toLocaleString('en-SA')}`
+const PAYMENT_LABELS: Record<string, string> = {
+  cash: 'Cash / نقد',
+  mada: 'Mada',
+  visa: 'Visa/MC',
+  qris: 'QRIS',
+  transfer: 'Bank Transfer',
+  online: 'Online',
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('id-ID', {
-    day: '2-digit', month: 'long', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
+const ORDER_TYPE_LABELS: Record<string, string> = {
+  dine_in: 'DINE IN',
+  take_away: 'TAKE AWAY',
+  delivery: 'DELIVERY',
 }
 
-function ReceiptDocument({ data, logoUrl }: { data: PDFReceiptProps; logoUrl?: string }) {
+function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
+  data: PDFReceiptProps
+  logoUrl?: string
+  restoName: string
+  branchName: string
+  vatReg: string
+}) {
+  const taxPct = data.taxPercent ?? TAX_PERCENT
+  const total = data.total
+  // VAT-inclusive breakdown
+  const taxableAmount = total > 0 ? +(total / (1 + taxPct / 100)).toFixed(2) : 0
+  const vatAmount = +(total - taxableAmount).toFixed(2)
+
   const change = data.payments
-    ? Math.max(0, data.payments.reduce((s, p) => s + p.amount, 0) - data.total)
+    ? Math.max(0, data.payments.reduce((s, p) => s + p.amount, 0) - total)
     : 0
+
+  const invoiceNo = data.orderNumber ? `INV-${data.orderNumber}` : `INV-${Date.now().toString().slice(-6)}`
 
   return (
     <Document>
-      <Page size={[226.77, 900]} style={s.page}> {/* 80mm width, auto height */}
+      <Page size={[226.77, 900]} style={s.page}>
 
-        {/* Header */}
-        <View style={s.headerBg}>
-          {logoUrl && <Image style={s.logo} src={logoUrl} />}
-          <Text style={s.sub}>FROM INDONESIA FOR THE WORLD</Text>
+        {/* Restaurant name */}
+        <View style={s.center}>
+          {logoUrl && <Image style={{ width: 100, height: 32, objectFit: 'contain', marginBottom: 3 }} src={logoUrl} />}
+          <Text style={s.restoName}>{restoName}</Text>
+          <Text style={s.branchName}>{branchName}</Text>
+          <Text style={s.invoiceNo}>{invoiceNo}</Text>
         </View>
 
-        <View style={s.orangeBar}>
-          <Text style={s.receiptTitle}>STRUK PEMBAYARAN · RECEIPT</Text>
-        </View>
+        <View style={s.divider} />
 
         {/* Meta */}
-        <View style={s.divider} />
-        <View style={s.row}><Text style={s.label}>Tanggal / Date</Text><Text style={s.value}>{formatDate(data.createdAt)}</Text></View>
-        {data.orderNumber && <View style={s.row}><Text style={s.label}>No. Order</Text><Text style={s.value}>{data.orderNumber}</Text></View>}
-        <View style={s.row}><Text style={s.label}>Meja / Table</Text><Text style={s.value}>#{data.tableNumber}</Text></View>
-        <View style={s.row}><Text style={s.label}>Nama / Customer</Text><Text style={s.value}>{data.customerName}</Text></View>
-        <View style={s.row}><Text style={s.label}>Jenis / Type</Text><Text style={s.value}>{ORDER_TYPE_LABELS[data.orderType] || data.orderType}</Text></View>
+        <View style={s.metaRow}>
+          <Text style={s.metaLabel}>الرقم الضريبي (VAT Reg):</Text>
+          <Text style={s.metaValue}>{vatReg}</Text>
+        </View>
+        <View style={s.metaRow}>
+          <Text style={s.metaLabel}>التاريخ (Date):</Text>
+          <Text style={s.metaValue}>{fmtDate(data.createdAt)}</Text>
+        </View>
+        <View style={s.metaRow}>
+          <Text style={s.metaLabel}>الموظف (Operator):</Text>
+          <Text style={s.metaValue}>{data.customerName || 'Cashier'}</Text>
+        </View>
+        <View style={s.metaRow}>
+          <Text style={s.metaLabel}>نوع الطلب (Order Type):</Text>
+          <Text style={s.metaValue}>{ORDER_TYPE_LABELS[data.orderType] || data.orderType}</Text>
+        </View>
+        <View style={s.metaRow}>
+          <Text style={s.metaLabel}>رقم الطاولة (Table No):</Text>
+          <Text style={s.metaValueRed}>{data.tableNumber || '—'}</Text>
+        </View>
+
         <View style={s.divider} />
 
+        {/* Items table header */}
+        <View style={s.tableHeader}>
+          <Text style={s.thLeft}>Item الوصف</Text>
+          <Text style={s.thMid}>Qty</Text>
+          <Text style={s.thRight}>Total SAR</Text>
+        </View>
+
         {/* Items */}
-        <Text style={s.sectionTitle}>PESANAN / ORDER</Text>
         {data.items.map(item => (
-          <View key={item.id}>
-            <View style={s.itemRow}>
+          <View key={item.id} style={s.itemRow}>
+            <View style={s.itemInner}>
               <View style={{ flex: 1 }}>
                 <Text style={s.itemName}>{item.name}</Text>
-                <Text style={s.itemQtyPrice}>{item.qty}x {formatPrice(item.price)}</Text>
-                {item.notes && <Text style={s.itemNote}>! {item.notes}</Text>}
+                {item.name_ar && <Text style={s.itemNameAr}>{item.name_ar}</Text>}
+                {item.notes && <Text style={{ color: '#9CA3AF', fontSize: 7, fontStyle: 'italic' }}>{item.notes}</Text>}
               </View>
-              <Text style={s.itemTotal}>{formatPrice(item.price * item.qty)}</Text>
+              <Text style={s.itemQty}>{item.qty}</Text>
+              <Text style={s.itemTotal}>{fmt(item.price * item.qty)}</Text>
             </View>
           </View>
         ))}
+
         <View style={s.divider} />
 
         {/* Totals */}
-        <View style={s.row}><Text style={s.label}>Subtotal</Text><Text style={s.value}>{formatPrice(data.subtotal)}</Text></View>
+        <View style={s.totalRow}>
+          <Text style={s.totalLabel}>Subtotal (الفرعي):</Text>
+          <Text style={s.totalValue}>{fmt(data.subtotal)}</Text>
+        </View>
+
         {(data.discountAmount ?? 0) > 0 && (
-          <View style={s.row}>
-            <Text style={s.discountLabel}>Diskon {data.discountType === 'percent' ? `${data.discountValue}%` : ''}</Text>
-            <Text style={s.discountValue}>-{formatPrice(data.discountAmount ?? 0)}</Text>
+          <View style={s.totalRow}>
+            <Text style={s.discountLabel}>
+              Discount {data.discountType === 'percent' ? `${data.discountValue}%` : ''}:
+            </Text>
+            <Text style={s.discountValue}>-{fmt(data.discountAmount ?? 0)}</Text>
           </View>
         )}
-        {(data.taxAmount ?? 0) > 0 && (
-          <View style={s.row}><Text style={s.label}>VAT {data.taxPercent ?? 15}%</Text><Text style={s.value}>{formatPrice(data.taxAmount ?? 0)}</Text></View>
-        )}
+
         <View style={s.totalRow}>
-          <Text style={s.totalLabel}>TOTAL</Text>
-          <Text style={s.totalValue}>{formatPrice(data.total)}</Text>
+          <Text style={s.totalLabel}>Taxable Amount (الخاضع للضريبة):</Text>
+          <Text style={s.totalValue}>{fmt(taxableAmount)}</Text>
+        </View>
+
+        <View style={s.totalRow}>
+          <Text style={s.totalLabel}>VAT @ {taxPct}% (ضريبة القيمة المضافة):</Text>
+          <Text style={s.totalValue}>{fmt(vatAmount)}</Text>
+        </View>
+
+        <View style={s.divider} />
+
+        {/* Grand total */}
+        <View style={s.grandRow}>
+          <Text style={s.grandLabel}>Total Amount (الإجمالي):</Text>
+          <Text style={s.grandValue}>{fmt(total)}</Text>
         </View>
 
         {/* Payments */}
@@ -167,27 +226,24 @@ function ReceiptDocument({ data, logoUrl }: { data: PDFReceiptProps; logoUrl?: s
             {data.payments.map((p, i) => (
               <View key={i} style={s.payRow}>
                 <Text style={s.payLabel}>{PAYMENT_LABELS[p.method] ?? p.method}</Text>
-                <Text style={s.payValue}>{formatPrice(p.amount)}</Text>
+                <Text style={s.payValue}>{fmt(p.amount)}</Text>
               </View>
             ))}
             {change > 0 && (
-              <View style={s.changeRow}>
-                <Text style={s.changeLabel}>Kembalian / Change</Text>
-                <Text style={s.changeValue}>{formatPrice(change)}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 }}>
+                <Text style={s.changeLabel}>Change / الباقي:</Text>
+                <Text style={s.changeValue}>{fmt(change)}</Text>
               </View>
             )}
           </>
         )}
 
-        {/* Footer */}
         <View style={s.divider} />
-        <View style={s.footer}>
-          <Text style={s.footerText}>Terima kasih telah berkunjung</Text>
-          <Text style={s.footerText}>Thank you for dining with us</Text>
-          <Text style={{ ...s.footerText, marginTop: 4, fontSize: 6.5 }}>
-            **** Struk ini adalah bukti pembayaran ****
-          </Text>
-        </View>
+
+        {/* Compliance */}
+        <Text style={s.complianceText}>
+          This is a simplified tax invoice compliant with Saudi Arabia FATOORA Phase 2 regulations. رقم تسجيل ضريبي: {vatReg}
+        </Text>
 
       </Page>
     </Document>
@@ -201,10 +257,16 @@ interface DownloadButtonProps {
 
 export function PDFDownloadButton({ data, orderNumber }: DownloadButtonProps) {
   const logoUrl = typeof window !== 'undefined' ? `${window.location.origin}/logof22.png` : undefined
-  const filename = `struk-${orderNumber || data.tableNumber}-${Date.now()}.pdf`
+  const restoName = process.env.NEXT_PUBLIC_RESTO_NAME || 'SERASA RESTAURANT'
+  const branchName = process.env.NEXT_PUBLIC_BRANCH_NAME || 'Al Khobar Branch (Saudi Arabia)'
+  const vatReg = process.env.NEXT_PUBLIC_VAT_REG || '310000000000003'
+  const filename = `invoice-${orderNumber || data.tableNumber}-${Date.now()}.pdf`
 
   return (
-    <PDFDownloadLink document={<ReceiptDocument data={data} logoUrl={logoUrl} />} fileName={filename}>
+    <PDFDownloadLink
+      document={<ReceiptDocument data={data} logoUrl={logoUrl} restoName={restoName} branchName={branchName} vatReg={vatReg} />}
+      fileName={filename}
+    >
       {({ loading }) => (
         <button
           disabled={loading}
@@ -212,7 +274,7 @@ export function PDFDownloadButton({ data, orderNumber }: DownloadButtonProps) {
           style={{ background: '#1A1208', color: 'white' }}
         >
           <Download size={14} />
-          {loading ? 'Menyiapkan...' : 'Download PDF'}
+          {loading ? 'Preparing...' : 'Download PDF'}
         </button>
       )}
     </PDFDownloadLink>

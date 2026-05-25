@@ -100,12 +100,12 @@ export const usePOSStore = create<POSState & POSActions>()(
         discountType: null,
         discountValue: 0,
         taxPercent: 15,      // Saudi VAT 15%
-        taxInclusive: false,
+        taxInclusive: true,  // Saudi prices are VAT-inclusive
         payments: [],
         searchQuery: '',
         selectedCategory: null,
         activeLineId: null,
-        lang: 'id',
+        lang: 'en',
         sourceQrOrderId: null,
 
         // ── Cart ──
@@ -131,6 +131,7 @@ export const usePOSStore = create<POSState & POSActions>()(
             lineId: crypto.randomUUID(),
             menuId: item.id,
             name,
+            name_ar: item.name_ar || undefined,
             unitPrice,
             modifiers: [],
             qty: 1,

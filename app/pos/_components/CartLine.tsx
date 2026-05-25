@@ -1,5 +1,5 @@
 'use client'
-import { Minus, Plus, Trash2, ChevronDown, StickyNote } from 'lucide-react'
+import { Minus, Plus, Trash2, StickyNote } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import { POSLine } from '@/types/pos'
@@ -48,6 +48,9 @@ export default function CartLine({ line, index }: Props) {
         {/* Name & Modifiers */}
         <div className="flex-1 min-w-0">
           <p className="text-gray-900 font-bold text-[13px] leading-tight">{line.name}</p>
+          {line.name_ar && (
+            <p className="text-gray-400 text-[10px] leading-tight" dir="rtl">{line.name_ar}</p>
+          )}
           {line.modifiers.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {line.modifiers.map(m => (

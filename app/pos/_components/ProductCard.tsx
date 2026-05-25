@@ -1,6 +1,6 @@
 'use client'
 import Image from 'next/image'
-import { Plus, Star, ChevronDown } from 'lucide-react'
+import { Plus, Star, ChevronDown, Flame } from 'lucide-react'
 import { useState } from 'react'
 import { MenuItem } from '@/types'
 import { usePOSStore } from '@/stores/pos.store'
@@ -18,11 +18,9 @@ interface Props {
 export default function ProductCard({ item }: Props) {
   const addLine = usePOSStore(s => s.addLine)
   const lines = usePOSStore(s => s.lines)
-  const lang = usePOSStore(s => s.lang)
   const { hasModifiers } = useModifiers(item.id)
   const [sheetOpen, setSheetOpen] = useState(false)
 
-  const name = lang === 'ar' ? (item.name_ar || item.name_id) : lang === 'en' ? item.name_en : item.name_id
   const finalPrice = discountedPrice(item.price, item.discount_percent)
   const hasDiscount = (item.discount_percent ?? 0) > 0
   const inCart = lines.filter(l => l.menuId === item.id).reduce((s, l) => s + l.qty, 0)
@@ -50,11 +48,22 @@ export default function ProductCard({ item }: Props) {
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         }}
       >
+        {/* kcal + Stock row */}
+        <div className="flex items-center justify-between px-2 pt-1.5 pb-0">
+          <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+            <Flame size={9} className="text-orange-300" />
+            {item.calories ?? '—'} kCal
+          </span>
+          <span className="text-[10px] text-gray-400">
+            Stock: {(item as MenuItem & { stock?: number }).stock ?? '∞'}
+          </span>
+        </div>
+
         {/* Image */}
-        <div className="relative w-full aspect-[4/3] bg-amber-50">
+        <div className="relative w-full aspect-[4/3] bg-amber-50 mt-1">
           <Image
             src={item.image || '/hero-food.png'}
-            alt={name}
+            alt={item.name_en}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 50vw, 200px"
@@ -97,7 +106,7 @@ export default function ProductCard({ item }: Props) {
               style={{ background: 'rgba(0,0,0,0.55)' }}
             >
               <ChevronDown size={8} />
-              Pilihan
+              Options
             </div>
           )}
 
@@ -105,16 +114,26 @@ export default function ProductCard({ item }: Props) {
           {unavailable && (
             <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
               <span className="text-[10px] font-black text-gray-500 bg-white px-2 py-1 rounded-full">
-                Habis
+                Out of Stock
               </span>
             </div>
           )}
         </div>
 
         {/* Info */}
-        <div className="p-2.5 flex-1 flex flex-col">
-          <p className="text-gray-900 font-bold text-xs leading-tight line-clamp-2 flex-1 mb-1.5">{name}</p>
-          <div className="flex items-end justify-between gap-1">
+        <div className="px-2 pb-2.5 pt-2 flex-1 flex flex-col">
+          {/* English name */}
+          <p className="text-gray-900 font-bold text-xs leading-tight line-clamp-1 mb-0.5">
+            {item.name_en}
+          </p>
+          {/* Arabic name */}
+          {item.name_ar && (
+            <p className="text-gray-400 text-[10px] leading-tight line-clamp-1 mb-1.5" dir="rtl">
+              {item.name_ar}
+            </p>
+          )}
+
+          <div className="flex items-end justify-between gap-1 mt-auto">
             <div>
               <p className="font-black text-sm" style={{ color: P }}>{formatPrice(finalPrice)}</p>
               {hasDiscount && (

@@ -5,10 +5,10 @@ import { OrderTypeV2 } from '@/types/pos'
 
 const P = '#FF6B35'
 
-const TYPES: { value: OrderTypeV2; icon: React.ElementType; label: string }[] = [
-  { value: 'dine_in',   icon: UtensilsCrossed, label: 'Dine In' },
-  { value: 'take_away', icon: ShoppingBag,     label: 'Take Away' },
-  { value: 'delivery',  icon: Bike,            label: 'Delivery' },
+const TYPES: { value: OrderTypeV2; icon: React.ElementType; label: string; labelAr: string }[] = [
+  { value: 'dine_in',   icon: UtensilsCrossed, label: 'Dine-In',   labelAr: 'تناول داخل' },
+  { value: 'take_away', icon: ShoppingBag,     label: 'Takeaway',  labelAr: 'للمنزل' },
+  { value: 'delivery',  icon: Bike,            label: 'Delivery',  labelAr: 'توصيل' },
 ]
 
 export default function OrderTypeBar() {
@@ -17,7 +17,7 @@ export default function OrderTypeBar() {
 
   return (
     <div className="flex gap-2 px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0">
-      {TYPES.map(({ value, icon: Icon, label }) => {
+      {TYPES.map(({ value, icon: Icon, label, labelAr }) => {
         const active = orderType === value
         return (
           <button
@@ -31,7 +31,8 @@ export default function OrderTypeBar() {
             }}
           >
             <Icon size={12} />
-            {label}
+            <span>{label}</span>
+            <span className="opacity-70 font-normal text-[10px]">{labelAr}</span>
           </button>
         )
       })}

@@ -1,7 +1,7 @@
 'use client'
 import { Search, X } from 'lucide-react'
 import { usePOSStore } from '@/stores/pos.store'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 const P = '#FF6B35'
 
@@ -29,7 +29,7 @@ export default function SearchBar() {
           type="text"
           value={searchQuery}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Cari menu... (F1)"
+          placeholder="Search name / اسم البحث... (F1)"
           className="w-full pl-9 pr-8 py-2.5 rounded-xl text-sm text-gray-800 outline-none bg-[#F5F2EE] placeholder:text-gray-400"
           style={{ transition: 'box-shadow 0.15s' }}
           onFocus={e => (e.currentTarget.style.boxShadow = `0 0 0 2px ${P}40`)}

@@ -1,11 +1,10 @@
 'use client'
 import { AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Tag, Percent, Trash2, Scissors, Receipt, Phone, MapPin } from 'lucide-react'
+import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard } from 'lucide-react'
 import { useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
 import CartLine from './CartLine'
-import DiscountModal from './DiscountModal'
 import PaymentModal from './PaymentModal'
 import SplitBillModal from './SplitBillModal'
 import ReceiptModal from './ReceiptModal'
@@ -15,6 +14,8 @@ const P = '#FF6B35'
 interface Props {
   tableParam?: string
 }
+
+const QUICK_DISCOUNTS = [5, 10, 15, 20]
 
 export default function Cart({ tableParam }: Props) {
   const lines = usePOSStore(s => s.lines)
@@ -28,6 +29,8 @@ export default function Cart({ tableParam }: Props) {
   const setDeliveryAddress = usePOSStore(s => s.setDeliveryAddress)
   const discountType = usePOSStore(s => s.discountType)
   const discountValue = usePOSStore(s => s.discountValue)
+  const setDiscount = usePOSStore(s => s.setDiscount)
+  const clearDiscount = usePOSStore(s => s.clearDiscount)
   const taxPercent = usePOSStore(s => s.taxPercent)
   const clearCart = usePOSStore(s => s.clearCart)
   const newOrder = usePOSStore(s => s.newOrder)
@@ -39,7 +42,6 @@ export default function Cart({ tableParam }: Props) {
   const getTaxAmount = usePOSStore(s => s.getTaxAmount)
   const getTotal = usePOSStore(s => s.getTotal)
 
-  const [showDiscount, setShowDiscount] = useState(false)
   const [showPayment, setShowPayment] = useState(false)
   const [showSplit, setShowSplit] = useState(false)
   const [showReceipt, setShowReceipt] = useState(false)
@@ -47,6 +49,7 @@ export default function Cart({ tableParam }: Props) {
   const [error, setError] = useState('')
   const [lastOrderNumber, setLastOrderNumber] = useState<string | undefined>()
   const [lastOrderId, setLastOrderId] = useState<string | undefined>()
+  const [discountCode, setDiscountCode] = useState('')
 
   const subtotal = getSubtotal()
   const discountAmount = getDiscountAmount()
@@ -54,6 +57,23 @@ export default function Cart({ tableParam }: Props) {
   const total = getTotal()
   const isEmpty = lines.length === 0
   const totalQty = lines.reduce((s, l) => s + l.qty, 0)
+
+  // Taxable amount = total / 1.15 (VAT inclusive)
+  const taxableAmount = total > 0 ? +(total / (1 + taxPercent / 100)).toFixed(2) : 0
+
+  function handleApplyCode() {
+    // Simple code logic: codes like "10OFF" → 10%, "SAVE20" → 20%
+    const match = discountCode.toUpperCase().match(/(\d+)/)
+    if (match) {
+      const pct = parseInt(match[1])
+      if (pct > 0 && pct <= 100) {
+        setDiscount('percent', pct)
+        setDiscountCode('')
+        return
+      }
+    }
+    // Unknown code — no-op (could show error)
+  }
 
   async function handleConfirmOrder() {
     if (loading || isEmpty) return
@@ -87,10 +107,9 @@ export default function Cart({ tableParam }: Props) {
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Gagal membuat order')
+      if (!res.ok) throw new Error(data.error ?? 'Failed to create order')
       setLastOrderNumber(data.order_number)
       setLastOrderId(data.id)
-      // Mark original QR order as delivered
       if (sourceQrOrderId) {
         fetch(`/api/order/${sourceQrOrderId}`, {
           method: 'PATCH',
@@ -98,7 +117,6 @@ export default function Cart({ tableParam }: Props) {
           body: JSON.stringify({ status: 'delivered' }),
         }).catch(() => {})
       }
-      // Auto kitchen print — fire and forget
       fetch('/api/print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,7 +158,7 @@ export default function Cart({ tableParam }: Props) {
           <div className="flex items-center gap-2">
             <ShoppingCart size={16} style={{ color: P }} />
             <span className="font-black text-gray-900 text-sm">
-              Keranjang
+              Cart / السلة
               {totalQty > 0 && (
                 <span
                   className="ml-1.5 text-[11px] px-1.5 py-0.5 rounded-full text-white font-black"
@@ -151,18 +169,29 @@ export default function Cart({ tableParam }: Props) {
               )}
             </span>
           </div>
-          {!isEmpty && (
-            <button onClick={clearCart} className="text-red-400 hover:text-red-600 transition-colors">
-              <Trash2 size={14} />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {!isEmpty && (
+              <button
+                onClick={() => setShowReceipt(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <Receipt size={11} />
+                Receipt
+              </button>
+            )}
+            {!isEmpty && (
+              <button onClick={clearCart} className="text-red-400 hover:text-red-600 transition-colors">
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Table & Customer */}
         <div className="grid grid-cols-2 gap-2">
           {orderType !== 'delivery' ? (
             <div className="bg-[#F5F2EE] rounded-xl px-3 py-2">
-              <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">MEJA</p>
+              <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">Table No.</p>
               <input
                 type="text"
                 value={tableNumber}
@@ -175,7 +204,7 @@ export default function Cart({ tableParam }: Props) {
             <div className="bg-[#F5F2EE] rounded-xl px-3 py-2 flex items-center gap-1.5">
               <Phone size={11} className="text-gray-400 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">TELEPON</p>
+                <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">Phone / هاتف</p>
                 <input
                   type="tel"
                   value={customerPhone}
@@ -187,7 +216,7 @@ export default function Cart({ tableParam }: Props) {
             </div>
           )}
           <div className="bg-[#F5F2EE] rounded-xl px-3 py-2">
-            <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">NAMA</p>
+            <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">Name / اسم</p>
             <input
               type="text"
               value={customerName === 'Guest' ? '' : customerName}
@@ -198,17 +227,16 @@ export default function Cart({ tableParam }: Props) {
           </div>
         </div>
 
-        {/* Delivery address — only when delivery */}
         {orderType === 'delivery' && (
           <div className="bg-[#FFF8EE] rounded-xl px-3 py-2 mt-2 flex gap-2 items-start"
             style={{ border: '1.5px solid #FDE0A8' }}>
             <MapPin size={12} className="text-orange-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-[9px] font-black tracking-widest uppercase text-orange-400 mb-1">ALAMAT PENGIRIMAN</p>
+              <p className="text-[9px] font-black tracking-widest uppercase text-orange-400 mb-1">Delivery Address / عنوان التوصيل</p>
               <textarea
                 value={deliveryAddress}
                 onChange={e => setDeliveryAddress(e.target.value)}
-                placeholder="Tulis alamat lengkap..."
+                placeholder="Enter full address..."
                 rows={2}
                 className="w-full text-xs font-semibold text-gray-900 bg-transparent outline-none resize-none placeholder:text-gray-400"
               />
@@ -227,8 +255,8 @@ export default function Cart({ tableParam }: Props) {
             >
               <ShoppingCart size={24} style={{ color: P }} />
             </div>
-            <p className="text-gray-400 text-sm font-semibold">Keranjang kosong</p>
-            <p className="text-gray-300 text-xs mt-1">Tap item menu untuk menambahkan</p>
+            <p className="text-gray-400 text-sm font-semibold">Cart is empty</p>
+            <p className="text-gray-300 text-xs mt-1">Tap a menu item to add</p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
@@ -243,65 +271,77 @@ export default function Cart({ tableParam }: Props) {
       {!isEmpty && (
         <div className="flex-shrink-0 border-t border-gray-100 px-4 pt-3 pb-4 space-y-3">
 
-          {/* Quick actions row */}
+          {/* Discount code input */}
           <div className="flex gap-2">
-            {/* Discount button */}
+            <input
+              type="text"
+              value={discountCode}
+              onChange={e => setDiscountCode(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleApplyCode()}
+              placeholder="Discount Code (e.g. foodics15)"
+              className="flex-1 px-3 py-2 rounded-xl text-xs text-gray-700 bg-[#F5F2EE] outline-none placeholder:text-gray-400"
+              style={{ border: '1.5px solid transparent' }}
+              onFocus={e => (e.currentTarget.style.borderColor = `${P}60`)}
+              onBlur={e => (e.currentTarget.style.borderColor = 'transparent')}
+            />
             <button
-              onClick={() => setShowDiscount(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-colors"
-              style={{
-                background: discountType ? `${P}15` : '#F5F2EE',
-                color: discountType ? P : '#9A8A7A',
-                border: `1.5px solid ${discountType ? `${P}40` : 'transparent'}`,
-              }}
+              onClick={handleApplyCode}
+              className="px-3 py-2 rounded-xl text-xs font-black text-white flex-shrink-0"
+              style={{ background: '#1A1208' }}
             >
-              <Tag size={11} />
-              {discountType
-                ? `Diskon ${discountType === 'percent' ? `${discountValue}%` : formatPrice(discountValue)}`
-                : 'Diskon'
-              }
-            </button>
-
-            {/* Split bill button */}
-            <button
-              onClick={() => setShowSplit(true)}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-[#F5F2EE] text-gray-500 hover:bg-[#EDE9E4] transition-colors"
-            >
-              <Scissors size={11} />
-              Split
-            </button>
-
-            {/* Receipt preview */}
-            <button
-              onClick={() => setShowReceipt(true)}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-[#F5F2EE] text-gray-500 hover:bg-[#EDE9E4] transition-colors"
-            >
-              <Receipt size={11} />
-              Struk
+              Apply
             </button>
           </div>
+
+          {/* Quick discount buttons */}
+          <div className="flex gap-1.5">
+            {QUICK_DISCOUNTS.map(pct => {
+              const active = discountType === 'percent' && discountValue === pct
+              return (
+                <button
+                  key={pct}
+                  onClick={() => active ? clearDiscount() : setDiscount('percent', pct)}
+                  className="flex-1 py-1.5 rounded-lg text-[11px] font-black transition-all"
+                  style={{
+                    background: active ? P : '#F5F2EE',
+                    color: active ? 'white' : '#9A8A7A',
+                    boxShadow: active ? `0 2px 8px rgba(255,107,53,0.35)` : 'none',
+                  }}
+                >
+                  {pct}% OFF
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Split bill */}
+          <button
+            onClick={() => setShowSplit(true)}
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-bold bg-[#F5F2EE] text-gray-500 hover:bg-[#EDE9E4] transition-colors"
+          >
+            <Scissors size={11} />
+            Split Bill
+          </button>
 
           {/* Totals */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs text-gray-500">
-              <span>Subtotal ({totalQty} item)</span>
+              <span>Subtotal:</span>
               <span className="font-semibold">{formatPrice(subtotal)}</span>
             </div>
             {discountAmount > 0 && (
-              <div className="flex justify-between text-xs">
-                <span className="text-green-600 font-semibold flex items-center gap-1">
-                  <Percent size={10} /> Diskon
-                </span>
-                <span className="font-black text-green-600">-{formatPrice(discountAmount)}</span>
+              <div className="flex justify-between text-xs text-green-600">
+                <span className="font-semibold">Discount {discountType === 'percent' ? `${discountValue}%` : ''}:</span>
+                <span className="font-black">-{formatPrice(discountAmount)}</span>
               </div>
             )}
             <div className="flex justify-between text-xs text-gray-500">
-              <span>VAT {taxPercent}%</span>
+              <span>Saudi Inclusive VAT ({taxPercent}%):</span>
               <span className="font-semibold">{formatPrice(taxAmount)}</span>
             </div>
             <div className="flex justify-between items-baseline border-t border-gray-200 pt-2">
-              <span className="font-black text-gray-900 text-sm">TOTAL</span>
-              <span className="font-black text-2xl" style={{ color: P }}>{formatPrice(total)}</span>
+              <span className="font-black text-gray-900 text-sm">Grand Total:</span>
+              <span className="font-black text-2xl" style={{ color: '#EF4444' }}>{formatPrice(total)}</span>
             </div>
           </div>
 
@@ -309,23 +349,23 @@ export default function Cart({ tableParam }: Props) {
             <p className="text-xs text-red-500 text-center bg-red-50 rounded-xl py-2 px-3">{error}</p>
           )}
 
-          {/* Pay button */}
+          {/* Checkout button */}
           <button
             onClick={() => { setError(''); clearPayments(); setShowPayment(true) }}
-            className="w-full py-4 rounded-2xl font-black text-white text-base transition-opacity active:opacity-80"
+            className="w-full py-4 rounded-2xl font-black text-white text-base transition-opacity active:opacity-80 flex items-center justify-center gap-2"
             style={{
-              background: `linear-gradient(135deg, ${P}, #FF8C5A)`,
-              boxShadow: `0 6px 24px rgba(255,107,53,0.42)`,
+              background: '#EF4444',
+              boxShadow: '0 6px 24px rgba(239,68,68,0.35)',
               letterSpacing: '0.02em',
             }}
           >
-            Bayar · {formatPrice(total)}
+            <CreditCard size={18} />
+            Waiter Checkout
           </button>
         </div>
       )}
 
       {/* Modals */}
-      <DiscountModal open={showDiscount} onClose={() => setShowDiscount(false)} />
       <PaymentModal
         open={showPayment}
         onClose={() => setShowPayment(false)}
