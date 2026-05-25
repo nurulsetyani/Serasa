@@ -9,7 +9,6 @@ import { usePOSStore } from '@/stores/pos.store'
 
 import POSHeader from './_components/POSHeader'
 import CloudIntegrationsBanner from './_components/CloudIntegrationsBanner'
-import OrderTypeBar from './_components/OrderTypeBar'
 import SearchBar from './_components/SearchBar'
 import CategoryTabs from './_components/CategoryTabs'
 import ProductGrid from './_components/ProductGrid'
@@ -63,7 +62,6 @@ function POSInner() {
       {/* ── LEFT PANEL ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <POSHeader />
-        <OrderTypeBar />
         <SearchBar />
 
         {/* Cloud API Integrations banner */}

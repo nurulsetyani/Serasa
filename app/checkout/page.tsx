@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, UtensilsCrossed, ShoppingBag,
-  Banknote, Smartphone, QrCode, Minus, Plus, Trash2, ChevronDown, ChevronUp,
+  Minus, Plus, Trash2, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/context/CartContext'
@@ -12,26 +12,18 @@ import { useLang } from '@/context/LanguageContext'
 import { formatPrice, calculateCartTotal, discountedPrice } from '@/lib/utils'
 import { getItemName } from '@/lib/i18n'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
-import { OrderType, PaymentMethod } from '@/types'
+import { OrderType } from '@/types'
 
 const P = '#FF6B35'
 
-type OTOpt = { value: OrderType;    icon: React.ElementType; labelKey: 'dineIn' | 'takeAway' }
-type PMOpt = { value: PaymentMethod; icon: React.ElementType; labelKey: 'cash' | 'online' | 'qris' }
+type OTOpt = { value: OrderType; icon: React.ElementType; labelKey: 'dineIn' | 'takeAway' }
 
 const ORDER_TYPES: OTOpt[] = [
   { value: 'dine_in',   icon: UtensilsCrossed, labelKey: 'dineIn' },
   { value: 'take_away', icon: ShoppingBag,     labelKey: 'takeAway' },
 ]
-const PAYMENT_METHODS: PMOpt[] = [
-  { value: 'cash',   icon: Banknote,   labelKey: 'cash' },
-  { value: 'online', icon: Smartphone, labelKey: 'online' },
-  { value: 'qris',   icon: QrCode,     labelKey: 'qris' },
-]
 
-// ── Editable Order Summary ────────────────────────────────
 import type { CartItem, MenuItem } from '@/types'
-
 import type { TranslationKey } from '@/lib/i18n'
 
 function EditableOrderSummary({ lang, P, t, items, total, onAdd, onUpdate }: {
@@ -44,7 +36,6 @@ function EditableOrderSummary({ lang, P, t, items, total, onAdd, onUpdate }: {
   return (
     <div className="bg-white rounded-2xl overflow-hidden"
       style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
-      {/* Header — tap to collapse */}
       <button onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-5 py-4">
         <p className="text-[10px] font-black tracking-[2px] uppercase" style={{ color: '#9A8A7A' }}>
@@ -76,7 +67,6 @@ function EditableOrderSummary({ lang, P, t, items, total, onAdd, onUpdate }: {
                         )}
                       </div>
                     </div>
-                    {/* Inline stepper */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <motion.button whileTap={{ scale: 0.8 }}
                         onClick={() => onUpdate(item.id, item.qty - 1)}
@@ -97,7 +87,6 @@ function EditableOrderSummary({ lang, P, t, items, total, onAdd, onUpdate }: {
                   </div>
                 )
               })}
-              {/* Discount breakdown */}
               {(() => {
                 const originalTotal = items.reduce((s, i) => s + i.price * i.qty, 0)
                 const savings = originalTotal - total
@@ -130,19 +119,17 @@ function EditableOrderSummary({ lang, P, t, items, total, onAdd, onUpdate }: {
   )
 }
 
-// ── Checkout Page ──────────────────────────────────────────
 export default function CheckoutPage() {
   const router = useRouter()
   const { lang, t, isRTL } = useLang()
   const { items, clearCart, addItem, updateQty } = useCart()
 
-  const [table, setTable]               = useState('1')
-  const [name, setName]                 = useState('')
-  const [orderType, setOrderType]       = useState<OrderType>('dine_in')
-  const [payment, setPayment]           = useState<PaymentMethod>('cash')
-  const [loading, setLoading]           = useState(false)
-  const [submitted, setSubmitted]       = useState(false)
-  const [error, setError]               = useState('')
+  const [table, setTable]         = useState('1')
+  const [name, setName]           = useState('')
+  const [orderType, setOrderType] = useState<OrderType>('dine_in')
+  const [loading, setLoading]     = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError]         = useState('')
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -165,9 +152,18 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer_name: name.trim(), table_number: table,
-          order_type: orderType, payment_method: payment, total_price: total,
-          items: items.map(i => ({ menu_id: i.id, name: getItemName(i, 'en'), price: i.price, qty: i.qty, notes: i.itemNotes ?? null })),
+          customer_name: name.trim(),
+          table_number: table,
+          order_type: orderType,
+          payment_method: null,
+          total_price: total,
+          items: items.map(i => ({
+            menu_id: i.id,
+            name: getItemName(i, 'en'),
+            price: i.price,
+            qty: i.qty,
+            notes: i.itemNotes ?? null,
+          })),
         }),
       })
       const data = await res.json()
@@ -249,43 +245,18 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Payment */}
-        <div className="bg-white rounded-2xl px-5 py-4"
-          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
-          <p className="text-[10px] font-black tracking-[2px] uppercase mb-3" style={{ color: '#9A8A7A' }}>
-            {t('paymentMethod')}
+        {/* Payment handled by cashier — info note */}
+        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+          style={{ background: '#FFF8EE', border: '1.5px solid #FDE0A8' }}>
+          <span className="text-xl">💳</span>
+          <p className="text-xs text-orange-700 font-semibold leading-relaxed">
+            Payment will be processed by the cashier after your order is prepared.
+            <br />
+            <span className="text-orange-400 font-normal">سيتم استلام الدفع من قِبل الكاشير</span>
           </p>
-          <div className="grid grid-cols-3 gap-2">
-            {PAYMENT_METHODS.map(({ value, icon: Icon, labelKey }) => {
-              const active = payment === value
-              return (
-                <motion.button key={value} whileTap={{ scale: 0.94 }}
-                  onClick={() => setPayment(value)}
-                  className="relative flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all"
-                  style={{
-                    background: active ? `${P}10` : '#FAFAF8',
-                    borderColor: active ? P : '#EEEAE4',
-                  }}>
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background: active ? `${P}20` : '#F0EAE4' }}>
-                    <Icon size={18} style={{ color: active ? P : '#A09080' }} />
-                  </div>
-                  <span className="text-[11px] font-black" style={{ color: active ? P : '#9A8A7A' }}>
-                    {t(labelKey)}
-                  </span>
-                  {active && (
-                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center"
-                      style={{ background: P }}>
-                      <span className="text-white text-[8px] font-black">✓</span>
-                    </div>
-                  )}
-                </motion.button>
-              )
-            })}
-          </div>
         </div>
 
-        {/* Order summary — EDITABLE */}
+        {/* Order summary — editable */}
         <EditableOrderSummary lang={lang} P={P} t={t}
           items={items} total={total}
           onAdd={addItem} onUpdate={updateQty} />

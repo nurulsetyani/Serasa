@@ -1,6 +1,7 @@
 'use client'
 import { Clock, RefreshCw, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { usePOSStore } from '@/stores/pos.store'
 import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
@@ -65,8 +66,8 @@ export default function POSHeader() {
   return (
     <div className="flex items-center justify-between px-4 py-2.5 bg-[#1A1208] text-white flex-shrink-0">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: P }}>
-          <span className="text-sm font-black">S</span>
+        <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0" style={{ background: P }}>
+          <Image src="/logof22.png" alt="Logo" width={32} height={32} style={{ objectFit: 'contain', maxHeight: 32 }} />
         </div>
         <div>
           <p className="font-black text-sm leading-none">{restoName}</p>

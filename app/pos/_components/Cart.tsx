@@ -1,6 +1,6 @@
 'use client'
 import { AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, Unlink } from 'lucide-react'
+import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, Unlink, UtensilsCrossed, ShoppingBag } from 'lucide-react'
 import { useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -34,6 +34,7 @@ export default function Cart({ tableParam }: Props) {
   const taxPercent = usePOSStore(s => s.taxPercent)
   const clearCart = usePOSStore(s => s.clearCart)
   const newOrder = usePOSStore(s => s.newOrder)
+  const setOrderType = usePOSStore(s => s.setOrderType)
   const clearPayments = usePOSStore(s => s.clearPayments)
   const sourceQrOrderId = usePOSStore(s => s.sourceQrOrderId)
   const setSourceQrOrderId = usePOSStore(s => s.setSourceQrOrderId)
@@ -184,6 +185,34 @@ export default function Cart({ tableParam }: Props) {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Order Type toggle */}
+        <div className="flex gap-1.5 p-1 bg-gray-100 rounded-full mb-3">
+          <button
+            onClick={() => setOrderType('dine_in')}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-black transition-all"
+            style={{
+              background: orderType !== 'take_away' ? P : 'transparent',
+              color: orderType !== 'take_away' ? 'white' : '#9A8A7A',
+              boxShadow: orderType !== 'take_away' ? `0 3px 8px rgba(255,107,53,0.35)` : 'none',
+            }}
+          >
+            <UtensilsCrossed size={11} />
+            Dine-In
+          </button>
+          <button
+            onClick={() => setOrderType('take_away')}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-black transition-all"
+            style={{
+              background: orderType === 'take_away' ? P : 'transparent',
+              color: orderType === 'take_away' ? 'white' : '#9A8A7A',
+              boxShadow: orderType === 'take_away' ? `0 3px 8px rgba(255,107,53,0.35)` : 'none',
+            }}
+          >
+            <ShoppingBag size={11} />
+            Take Away
+          </button>
         </div>
 
         {/* Table & Customer */}

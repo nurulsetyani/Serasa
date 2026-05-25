@@ -72,7 +72,7 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
       <div className="flex items-center gap-2">
         <CountButton
           icon={<QrCode size={12} />}
-          label="Dine-in QR"
+          label="Dine-In/Takeaway QR"
           count={counts.qr}
           color="#FF6B35"
           onClick={onOpenQR}
