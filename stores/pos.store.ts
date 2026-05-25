@@ -65,6 +65,7 @@ interface POSActions {
   setCategory: (id: string | null) => void
   setActiveLine: (id: string | null) => void
   setLang: (lang: 'id' | 'en' | 'ar') => void
+  setSourceQrOrderId: (id: string | null) => void
 
   getSubtotal: () => number
   getDiscountAmount: () => number
@@ -211,6 +212,7 @@ export const usePOSStore = create<POSState & POSActions>()(
         setCategory: (selectedCategory) => set({ selectedCategory }),
         setActiveLine: (activeLineId) => set({ activeLineId }),
         setLang: (lang) => set({ lang }),
+        setSourceQrOrderId: (sourceQrOrderId) => set({ sourceQrOrderId }),
 
         // ── Computed ──
         getSubtotal: () => get().lines.reduce((s, l) => s + l.lineTotal, 0),

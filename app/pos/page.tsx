@@ -8,6 +8,7 @@ import { MOCK_MENU, IS_MOCK_MODE } from '@/lib/mock-data'
 import { usePOSStore } from '@/stores/pos.store'
 
 import POSHeader from './_components/POSHeader'
+import CloudIntegrationsBanner from './_components/CloudIntegrationsBanner'
 import OrderTypeBar from './_components/OrderTypeBar'
 import SearchBar from './_components/SearchBar'
 import CategoryTabs from './_components/CategoryTabs'
@@ -52,17 +53,25 @@ function POSInner() {
     loadMenu()
   }, [])
 
+  // "Delivery Apps" button opens HS first; if none pending, opens Keeta
+  function handleOpenDelivery() {
+    setShowHungerStation(true)
+  }
+
   return (
     <div className="h-full flex" style={{ background: '#F5F2EE' }}>
       {/* ── LEFT PANEL ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <POSHeader
-          onOpenIncoming={() => setShowIncoming(true)}
-          onOpenHungerStation={() => setShowHungerStation(true)}
-          onOpenKeeta={() => setShowKeeta(true)}
-        />
+        <POSHeader />
         <OrderTypeBar />
         <SearchBar />
+
+        {/* Cloud API Integrations banner */}
+        <CloudIntegrationsBanner
+          onOpenQR={() => setShowIncoming(true)}
+          onOpenDelivery={handleOpenDelivery}
+        />
+
         {!loadingMenu && <CategoryTabs menu={menu} />}
 
         {loadingMenu ? (

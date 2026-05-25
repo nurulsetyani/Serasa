@@ -1,6 +1,6 @@
 'use client'
 import { AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard } from 'lucide-react'
+import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, Unlink } from 'lucide-react'
 import { useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -36,6 +36,7 @@ export default function Cart({ tableParam }: Props) {
   const newOrder = usePOSStore(s => s.newOrder)
   const clearPayments = usePOSStore(s => s.clearPayments)
   const sourceQrOrderId = usePOSStore(s => s.sourceQrOrderId)
+  const setSourceQrOrderId = usePOSStore(s => s.setSourceQrOrderId)
 
   const getSubtotal = usePOSStore(s => s.getSubtotal)
   const getDiscountAmount = usePOSStore(s => s.getDiscountAmount)
@@ -58,8 +59,6 @@ export default function Cart({ tableParam }: Props) {
   const isEmpty = lines.length === 0
   const totalQty = lines.reduce((s, l) => s + l.qty, 0)
 
-  // Taxable amount = total / 1.15 (VAT inclusive)
-  const taxableAmount = total > 0 ? +(total / (1 + taxPercent / 100)).toFixed(2) : 0
 
   function handleApplyCode() {
     // Simple code logic: codes like "10OFF" → 10%, "SAVE20" → 20%
@@ -244,6 +243,40 @@ export default function Cart({ tableParam }: Props) {
           </div>
         )}
       </div>
+
+      {/* Table status + QR import banner */}
+      {orderType === 'dine_in' && tableNumber && (
+        <div className="px-4 py-2 flex-shrink-0 space-y-1.5">
+          {/* Table status row */}
+          <div className="flex items-center justify-between bg-[#F5F2EE] rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black tracking-widest uppercase text-gray-400">Dine-In Table:</span>
+              <span className="font-black text-gray-900 text-sm">{tableNumber}</span>
+            </div>
+            <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white" style={{ background: '#EF4444' }}>
+              ● OCCUPIED
+            </span>
+          </div>
+
+          {/* QR import banner */}
+          {sourceQrOrderId && (
+            <div className="flex items-center justify-between px-3 py-2 rounded-xl"
+              style={{ background: '#DCFCE7', border: '1.5px solid #86EFAC' }}>
+              <div className="flex items-center gap-2">
+                <QrCode size={13} className="text-green-600" />
+                <span className="text-[11px] font-bold text-green-800">Imported via Table QR code!</span>
+              </div>
+              <button
+                onClick={() => setSourceQrOrderId(null)}
+                className="flex items-center gap-1 text-[10px] font-bold text-green-700 hover:text-red-600 transition-colors"
+              >
+                <Unlink size={11} />
+                Disconnect
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Lines */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">

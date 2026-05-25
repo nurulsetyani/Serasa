@@ -1,20 +1,27 @@
 'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Banknote, CreditCard, Smartphone, Wallet, Building2, Check } from 'lucide-react'
+import { X, Banknote, CreditCard, Smartphone, Shield, ChevronRight } from 'lucide-react'
 import { usePOSStore } from '@/stores/pos.store'
-import { POSPayment, POSPaymentMethod } from '@/types/pos'
+import { POSPaymentMethod } from '@/types/pos'
 import { formatPrice } from '@/lib/utils'
 
-const P = '#FF6B35'
+interface Method {
+  value: POSPaymentMethod
+  label: string
+  sublabel: string
+  icon: React.ElementType
+  color: string
+}
 
-const METHODS: { value: POSPaymentMethod; label: string; labelAr: string; icon: React.ElementType; color: string }[] = [
-  { value: 'cash',     label: 'Tunai',     labelAr: 'نقدي',      icon: Banknote,  color: '#22C55E' },
-  { value: 'mada',     label: 'Mada',      labelAr: 'مدى',       icon: CreditCard,color: '#3B82F6' },
-  { value: 'visa',     label: 'Visa/MC',   labelAr: 'فيزا',      icon: CreditCard,color: '#6366F1' },
-  { value: 'qris',     label: 'QRIS',      labelAr: 'QRIS',      icon: Smartphone,color: '#EC4899' },
-  { value: 'transfer', label: 'Transfer',  labelAr: 'تحويل',     icon: Building2, color: '#F59E0B' },
+const METHODS: Method[] = [
+  { value: 'cash',     label: 'Cash / Tunai',       sublabel: 'Simulasi terima uang kertas', icon: Banknote,    color: '#22C55E' },
+  { value: 'mada',     label: 'Mada Debit Card',    sublabel: 'Saudi payment scheme',        icon: CreditCard,  color: '#3B82F6' },
+  { value: 'visa',     label: 'Visa & Mastercard',  sublabel: 'Safar, SAB, Al-Rajhi',        icon: CreditCard,  color: '#6366F1' },
+  { value: 'applepay', label: 'Apple Pay / NFC',    sublabel: 'Simulator tap terminal',       icon: Smartphone,  color: '#1A1208' },
 ]
+
+const QUICK_AMOUNTS = [100, 200, 500]
 
 interface Props {
   open: boolean
@@ -24,39 +31,54 @@ interface Props {
 }
 
 export default function PaymentModal({ open, onClose, onConfirm, loading }: Props) {
-  const payments = usePOSStore(s => s.payments)
-  const addPayment = usePOSStore(s => s.addPayment)
-  const removePayment = usePOSStore(s => s.removePayment)
-  const getTotal = usePOSStore(s => s.getTotal)
-  const getAmountPaid = usePOSStore(s => s.getAmountPaid)
-  const getChange = usePOSStore(s => s.getChange)
+  const getTotal    = usePOSStore(s => s.getTotal)
+  const getChange   = usePOSStore(s => s.getChange)
+  const addPayment  = usePOSStore(s => s.addPayment)
+  const clearPayments = usePOSStore(s => s.clearPayments)
   const isFullyPaid = usePOSStore(s => s.isFullyPaid)
 
-  const [selectedMethod, setSelectedMethod] = useState<POSPaymentMethod>('cash')
-  const [inputAmount, setInputAmount] = useState('')
+  const [selected, setSelected] = useState<POSPaymentMethod>('cash')
+  const [cashInput, setCashInput] = useState('')
 
-  const total = getTotal()
-  const amountPaid = getAmountPaid()
-  const remaining = Math.max(0, total - amountPaid)
-  const change = getChange()
+  const total    = getTotal()
+  const change   = getChange()
+  const isCash   = selected === 'cash'
 
-  function addCurrentPayment() {
-    const amt = Number(inputAmount) || remaining
-    if (amt <= 0) return
-    addPayment({ method: selectedMethod, amount: Math.min(amt, remaining + change) })
-    setInputAmount('')
+  // Sync cash payment on input change
+  function handleCashInput(val: string) {
+    setCashInput(val)
+    clearPayments()
+    const amt = parseFloat(val)
+    if (!isNaN(amt) && amt > 0) {
+      addPayment({ method: 'cash', amount: amt })
+    }
   }
 
-  function handleExactCash() {
-    addPayment({ method: 'cash', amount: remaining })
-    setInputAmount('')
+  function handleQuick(amt: number) {
+    clearPayments()
+    addPayment({ method: 'cash', amount: amt })
+    setCashInput(String(amt))
   }
 
-  function handleRound() {
-    const rounded = Math.ceil(remaining / 1000) * 1000
-    addPayment({ method: 'cash', amount: rounded })
-    setInputAmount('')
+  function handleExact() {
+    clearPayments()
+    addPayment({ method: 'cash', amount: total })
+    setCashInput(total.toFixed(2))
   }
+
+  function handleSelectMethod(m: POSPaymentMethod) {
+    setSelected(m)
+    clearPayments()
+    setCashInput('')
+    if (m !== 'cash') {
+      // Non-cash: auto-pay full amount
+      addPayment({ method: m, amount: total })
+    }
+  }
+
+  const cashReceived = parseFloat(cashInput) || 0
+  const changeReturn = isCash ? Math.max(0, cashReceived - total) : change
+  const canConfirm   = isFullyPaid()
 
   return (
     <AnimatePresence>
@@ -75,136 +97,129 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
             style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.25)' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h3 className="font-black text-gray-900 text-base">Proses Pembayaran</h3>
-              <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
-                <X size={16} className="text-gray-500" />
+            <div
+              className="flex items-center justify-between px-5 py-3.5"
+              style={{ background: '#1A1208' }}
+            >
+              <div className="flex items-center gap-2.5">
+                <Shield size={16} className="text-green-400" />
+                <div>
+                  <p className="text-white font-black text-sm leading-none">
+                    Pilih Metode Pembayaran <span className="font-normal opacity-70">(Select Payment)</span>
+                  </p>
+                  <p className="text-[9px] tracking-widest text-gray-400 mt-0.5 uppercase">
+                    Fatoora Saudi Compliant Gateway
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <X size={14} className="text-white" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
-              {/* Total display */}
-              <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-[#FFF5F1]">
-                <span className="font-bold text-gray-700 text-sm">Total Tagihan</span>
-                <span className="font-black text-xl" style={{ color: P }}>{formatPrice(total)}</span>
-              </div>
-
-              {/* Payment method tabs */}
-              <div className="grid grid-cols-5 gap-1.5">
-                {METHODS.map(({ value, label, icon: Icon, color }) => {
-                  const active = selectedMethod === value
+              {/* 2×2 payment method grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {METHODS.map(({ value, label, sublabel, icon: Icon, color }) => {
+                  const active = selected === value
                   return (
                     <button
                       key={value}
-                      onClick={() => setSelectedMethod(value)}
-                      className="flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all"
+                      onClick={() => handleSelectMethod(value)}
+                      className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-left transition-all"
                       style={{
-                        background: active ? `${color}15` : '#F5F2EE',
-                        border: `2px solid ${active ? color : 'transparent'}`,
+                        background: active ? `${color}12` : '#F9FAFB',
+                        border: `2px solid ${active ? color : '#E5E7EB'}`,
                       }}
                     >
-                      <Icon size={16} style={{ color: active ? color : '#9CA3AF' }} />
-                      <span className="text-[9px] font-black" style={{ color: active ? color : '#9CA3AF' }}>
-                        {label}
-                      </span>
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: active ? `${color}20` : '#F3F4F6' }}
+                      >
+                        <Icon size={18} style={{ color: active ? color : '#9CA3AF' }} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-black leading-tight truncate"
+                          style={{ color: active ? color : '#111827' }}>
+                          {label}
+                        </p>
+                        <p className="text-[9px] text-gray-400 leading-tight mt-0.5 truncate">
+                          {sublabel}
+                        </p>
+                      </div>
                     </button>
                   )
                 })}
               </div>
 
-              {/* Amount input */}
-              <div className="space-y-2">
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={inputAmount}
-                    onChange={e => setInputAmount(e.target.value)}
-                    placeholder={`${remaining} (sisa tagihan)`}
-                    className="w-full px-4 py-3.5 rounded-xl text-lg font-black text-gray-900 bg-[#F5F2EE] outline-none"
-                    style={{ border: `2px solid ${inputAmount ? P : 'transparent'}` }}
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">SR</span>
-                </div>
-
-                {/* Quick cash buttons */}
-                {selectedMethod === 'cash' && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleExactCash}
-                      className="flex-1 py-2 rounded-xl text-xs font-black text-white"
-                      style={{ background: '#22C55E' }}
-                    >
-                      Pas {formatPrice(remaining)}
-                    </button>
-                    <button
-                      onClick={handleRound}
-                      className="flex-1 py-2 rounded-xl text-xs font-black bg-[#F5F2EE] text-gray-700"
-                    >
-                      Bulatkan
-                    </button>
-                    <button
-                      onClick={addCurrentPayment}
-                      className="flex-1 py-2 rounded-xl text-xs font-black text-white"
-                      style={{ background: P }}
-                    >
-                      + Tambah
-                    </button>
-                  </div>
-                )}
-                {selectedMethod !== 'cash' && (
-                  <button
-                    onClick={addCurrentPayment}
-                    className="w-full py-2.5 rounded-xl text-sm font-black text-white"
-                    style={{ background: P }}
-                  >
-                    + Tambah Pembayaran
-                  </button>
-                )}
+              {/* Bill amount */}
+              <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-gray-50">
+                <span className="text-sm text-gray-500 font-semibold">Bill Amount:</span>
+                <span className="font-black text-lg text-gray-900">{formatPrice(total)}</span>
               </div>
 
-              {/* Payment list */}
-              {payments.length > 0 && (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-black tracking-[2px] uppercase text-gray-400">Pembayaran</p>
-                  {payments.map((p, i) => {
-                    const m = METHODS.find(m => m.value === p.method)
-                    return (
-                      <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#F5F2EE]">
-                        <div className="flex items-center gap-2">
-                          {m && <m.icon size={14} style={{ color: m.color }} />}
-                          <span className="text-sm font-semibold text-gray-700">{m?.label}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-sm" style={{ color: P }}>{formatPrice(p.amount)}</span>
-                          <button onClick={() => removePayment(i)} className="text-red-400 hover:text-red-600">
-                            <X size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
+              {/* Cash input — only for cash method */}
+              {isCash && (
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 mb-1.5 block">
+                      Cash Received (SAR):
+                    </label>
+                    <input
+                      type="number"
+                      value={cashInput}
+                      onChange={e => handleCashInput(e.target.value)}
+                      placeholder={total.toFixed(2)}
+                      className="w-full px-4 py-3 rounded-xl text-xl font-black text-gray-900 bg-gray-50 outline-none"
+                      style={{ border: `2px solid ${cashInput ? '#22C55E' : '#E5E7EB'}` }}
+                    />
+                  </div>
+
+                  {/* Quick amount buttons */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <button
+                      onClick={handleExact}
+                      className="py-2 rounded-xl text-xs font-black text-white transition-opacity active:opacity-80"
+                      style={{ background: '#22C55E' }}
+                    >
+                      {total.toFixed(0)} SAR
+                    </button>
+                    {QUICK_AMOUNTS.map(amt => (
+                      <button
+                        key={amt}
+                        onClick={() => handleQuick(amt)}
+                        className="py-2 rounded-xl text-xs font-black transition-colors"
+                        style={{
+                          background: cashReceived === amt ? '#1A1208' : '#F3F4F6',
+                          color: cashReceived === amt ? 'white' : '#374151',
+                        }}
+                      >
+                        {amt} SAR
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Change return */}
+                  <div className="flex items-center justify-between px-4 py-2.5 rounded-xl"
+                    style={{ background: changeReturn > 0 ? '#F0FDF4' : '#F9FAFB' }}>
+                    <span className="text-sm font-semibold" style={{ color: changeReturn > 0 ? '#15803D' : '#9CA3AF' }}>
+                      Uang Kembali <span className="font-normal text-[11px]">(Change Return):</span>
+                    </span>
+                    <span className="font-black text-lg" style={{ color: changeReturn > 0 ? '#16A34A' : '#9CA3AF' }}>
+                      {formatPrice(changeReturn)}
+                    </span>
+                  </div>
                 </div>
               )}
 
-              {/* Summary */}
-              {payments.length > 0 && (
-                <div className="border-t border-gray-100 pt-3 space-y-1.5">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Dibayar</span>
-                    <span className="font-bold">{formatPrice(amountPaid)}</span>
-                  </div>
-                  {remaining > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-red-500 font-semibold">Sisa</span>
-                      <span className="font-black text-red-500">{formatPrice(remaining)}</span>
-                    </div>
-                  )}
-                  {change > 0 && (
-                    <div className="flex justify-between">
-                      <span className="font-black text-green-700">Kembalian</span>
-                      <span className="font-black text-xl text-green-700">{formatPrice(change)}</span>
-                    </div>
-                  )}
+              {/* Non-cash: show auto-paid confirmation */}
+              {!isCash && canConfirm && (
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-blue-50">
+                  <span className="text-sm font-semibold text-blue-700">Amount charged:</span>
+                  <span className="font-black text-lg text-blue-700">{formatPrice(total)}</span>
                 </div>
               )}
             </div>
@@ -214,13 +229,16 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={onConfirm}
-                disabled={!isFullyPaid() || loading}
-                className="w-full py-4 rounded-2xl font-black text-white text-base flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: isFullyPaid() ? '#22C55E' : P }}
+                disabled={!canConfirm || loading}
+                className="w-full py-4 rounded-2xl font-black text-white text-sm flex items-center justify-center gap-2 disabled:opacity-40 transition-opacity"
+                style={{ background: '#EF4444', boxShadow: canConfirm ? '0 6px 20px rgba(239,68,68,0.35)' : 'none' }}
               >
                 {loading
                   ? <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  : <><Check size={18} /> Konfirmasi Order</>
+                  : <>
+                    Check &amp; Sign E-Invoice (ZATCA)
+                    <ChevronRight size={16} />
+                  </>
                 }
               </motion.button>
             </div>

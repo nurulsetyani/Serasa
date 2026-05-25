@@ -1,6 +1,6 @@
 export type OrderTypeV2 = 'dine_in' | 'take_away' | 'delivery'
 export type DiscountType = 'percent' | 'fixed'
-export type POSPaymentMethod = 'cash' | 'mada' | 'visa' | 'qris' | 'transfer'
+export type POSPaymentMethod = 'cash' | 'mada' | 'visa' | 'applepay' | 'qris' | 'transfer'
 
 export interface POSModifier {
   id: string
