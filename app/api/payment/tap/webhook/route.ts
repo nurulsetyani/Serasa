@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { tapChargeStore } from '@/lib/tap-store'
 
 // Tap sends POST to this URL when payment status changes.
 // Configure in Tap Dashboard → Developers → Webhooks → Add URL:
@@ -7,14 +8,6 @@ import crypto from 'crypto'
 
 const TAP_WEBHOOK_SECRET = process.env.TAP_WEBHOOK_SECRET ?? ''
 
-// In-memory store for charge status (resets on cold start).
-// For production: use Redis or Supabase instead.
-export const chargeStore = new Map<string, {
-  status: 'INITIATED' | 'CAPTURED' | 'DECLINED' | 'CANCELLED' | 'FAILED'
-  amount: number
-  currency: string
-  updatedAt: string
-}>()
 
 function verifySignature(rawBody: string, signature: string): boolean {
   if (!TAP_WEBHOOK_SECRET) return true  // skip in sandbox mode
@@ -57,7 +50,7 @@ export async function POST(req: NextRequest) {
     'INITIATED'
   ) as 'INITIATED' | 'CAPTURED' | 'DECLINED' | 'CANCELLED' | 'FAILED'
 
-  chargeStore.set(chargeId, {
+  tapChargeStore.set(chargeId, {
     status: mapped,
     amount: Number(payload.amount ?? 0),
     currency: String(payload.currency ?? 'SAR'),
