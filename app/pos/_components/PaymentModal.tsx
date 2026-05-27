@@ -286,7 +286,7 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
                       className="w-full py-3 rounded-xl font-black text-white text-sm flex items-center justify-center gap-2"
                       style={{ background: '#3B82F6' }}
                     >
-                      <Wifi size={15} /> Kirim ke Terminal Mada
+                      <Wifi size={15} /> Kirim ke Terminal {selected === 'mada' ? 'Mada' : selected === 'visa' ? 'Visa/MC' : 'NFC'}
                     </motion.button>
                   )}
 
