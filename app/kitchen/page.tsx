@@ -144,6 +144,7 @@ const SOURCE_CFG: Record<string, { label: string; bg: string; color: string }> =
 
 // ─────────────────────────────────────────────
 // TIMER — realtime, 1-second updates, SLA colors
+// Under 60 min → MM:SS | 60+ min → Xh YYm
 // ─────────────────────────────────────────────
 function Timer({ createdAt }: { createdAt: string }) {
   const [elapsed, setElapsed] = useState(0)
@@ -154,15 +155,23 @@ function Timer({ createdAt }: { createdAt: string }) {
     return () => clearInterval(id)
   }, [createdAt])
 
-  const mins = Math.floor(elapsed / 60)
-  const secs = elapsed % 60
-  const isUrgent = mins >= 10
-  const isWarn   = mins >= 5 && mins < 10
+  const totalMins = Math.floor(elapsed / 60)
+  const secs      = elapsed % 60
+  const hours     = Math.floor(totalMins / 60)
+  const remMins   = totalMins % 60
+
+  const isUrgent  = totalMins >= 10
+  const isWarn    = totalMins >= 5 && totalMins < 10
 
   const color  = isUrgent ? '#FF453A' : isWarn ? '#FFD60A' : '#32D74B'
   const shadow = isUrgent ? '0 0 18px rgba(255,69,58,0.70)'
                 : isWarn  ? '0 0 14px rgba(255,214,10,0.55)'
                 :            '0 0 14px rgba(50,215,75,0.55)'
+
+  // Display: MM:SS under 60 min, Xh YYm for 60+ min
+  const display = hours > 0
+    ? `${hours}h ${String(remMins).padStart(2, '0')}m`
+    : `${String(totalMins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 
   return (
     <div
@@ -170,15 +179,16 @@ function Timer({ createdAt }: { createdAt: string }) {
       style={{
         fontFamily: '"JetBrains Mono", monospace',
         fontWeight: 800,
-        fontSize: '2rem',
+        fontSize: hours > 0 ? '1.5rem' : '2rem',
         lineHeight: 1,
-        letterSpacing: '-0.03em',
+        letterSpacing: hours > 0 ? '0.02em' : '-0.03em',
         color,
         textShadow: shadow,
         fontVariantNumeric: 'tabular-nums',
+        whiteSpace: 'nowrap',
       }}
     >
-      {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+      {display}
     </div>
   )
 }
@@ -349,9 +359,7 @@ export default function KitchenPage() {
         .kds-btn:active { transform: scale(0.965) translateY(2px) !important; }
         .kds-btn:disabled { opacity: 0.45 !important; transform: none !important; }
 
-        .kds-col { max-height: calc(100dvh - 120px); overflow-y: auto; }
-        .kds-col::-webkit-scrollbar { width: 3px; }
-        .kds-col::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        /* No max-height — page scrolls naturally, all cards always visible */
 
         /* Noise texture overlay */
         .kds-noise::after {
@@ -540,12 +548,12 @@ export default function KitchenPage() {
             </p>
           </div>
         ) : (
-          /* 3-column grid */
-          <div style={{ padding: '16px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, alignItems: 'start', flex: 1 }}>
+          /* 3-column grid — page scrolls, no column overflow clipping */
+          <div style={{ padding: '16px 16px 70px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, alignItems: 'start' }}>
             {COLS.map(col => {
               const colOrders = orders.filter(o => o.status === col.status)
               return (
-                <div key={col.status} className="kds-col" style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 80 }}>
+                <div key={col.status} className="kds-col" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
                   {/* ── Column Header ── */}
                   <div style={{
@@ -633,45 +641,45 @@ export default function KitchenPage() {
                           }} />
 
                           {/* ── CARD HEADER ── */}
-                          <div style={{ position: 'relative', padding: '20px 20px 14px' }}>
+                          <div style={{ position: 'relative', padding: '14px 16px 10px' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
 
                               {/* Table number — DOMINANT */}
                               <div>
                                 {order.order_type === 'dine_in' ? (
-                                  <>
+                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
                                     <div style={{
                                       fontFamily: "'Barlow Condensed', sans-serif",
-                                      fontWeight: 900, fontSize: '6.5rem', lineHeight: 0.82,
+                                      fontWeight: 900, fontSize: '4.5rem', lineHeight: 0.85,
                                       letterSpacing: '-0.01em', color: '#FFFFFF',
-                                      textShadow: `0 0 70px ${col.glow}, 0 2px 0 rgba(0,0,0,0.6)`,
+                                      textShadow: `0 0 50px ${col.glow}`,
                                     }}>
                                       {order.table_number}
                                     </div>
                                     <div style={{
                                       fontFamily: '"JetBrains Mono", monospace',
-                                      fontWeight: 700, fontSize: 11, letterSpacing: '0.28em',
+                                      fontWeight: 700, fontSize: 11, letterSpacing: '0.20em',
                                       textTransform: 'uppercase', color: col.color,
-                                      opacity: 0.6, marginTop: 8,
+                                      opacity: 0.55, paddingBottom: 4,
                                     }}>
                                       MEJA
                                     </div>
-                                  </>
+                                  </div>
                                 ) : (
                                   <>
                                     <div style={{
                                       fontFamily: "'Barlow Condensed', sans-serif",
-                                      fontWeight: 900, fontSize: '2.8rem', lineHeight: 1,
+                                      fontWeight: 900, fontSize: '2.4rem', lineHeight: 1,
                                       letterSpacing: '0.04em', color: '#FFFFFF',
-                                      textShadow: `0 0 50px ${col.glow}`,
+                                      textShadow: `0 0 40px ${col.glow}`,
                                     }}>
                                       DELIVERY
                                     </div>
                                     <div style={{
                                       fontFamily: '"JetBrains Mono", monospace',
-                                      fontWeight: 700, fontSize: 10, letterSpacing: '0.22em',
+                                      fontWeight: 700, fontSize: 10, letterSpacing: '0.20em',
                                       textTransform: 'uppercase', color: col.color,
-                                      opacity: 0.5, marginTop: 6,
+                                      opacity: 0.5, marginTop: 4,
                                     }}>
                                       {order.source?.toUpperCase() ?? 'ONLINE'}
                                     </div>
@@ -702,7 +710,7 @@ export default function KitchenPage() {
                             </div>
 
                             {/* Customer + order number */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                               <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(240,240,250,0.38)' }}>
                                 {order.customer_name}
                               </span>
@@ -717,7 +725,7 @@ export default function KitchenPage() {
                             </div>
 
                             {/* Badges */}
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
                               <SourceBadge source={order.source} />
                               {order.order_type === 'delivery' && <DeliveryBadge />}
                             </div>
@@ -726,7 +734,7 @@ export default function KitchenPage() {
                             {order.order_type === 'delivery' && order.delivery_address && (
                               <div style={{
                                 display: 'flex', alignItems: 'flex-start', gap: 8,
-                                marginTop: 10, padding: '8px 12px', borderRadius: 12,
+                                marginTop: 7, padding: '6px 10px', borderRadius: 10,
                                 background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.18)',
                               }}>
                                 <span style={{ color: '#60A5FA', fontSize: 12, flexShrink: 0, marginTop: 1 }}>📍</span>
@@ -741,7 +749,7 @@ export default function KitchenPage() {
                           <div style={{ margin: '0 20px', height: 1, background: 'rgba(255,255,255,0.055)' }} />
 
                           {/* ── ITEMS ── */}
-                          <div style={{ padding: '14px 20px 12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          <div style={{ padding: '10px 16px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {order.order_items?.map(item => (
                               <div key={item.id} style={{ display: 'flex', gap: 12 }}>
                                 {/* Qty */}
@@ -756,11 +764,11 @@ export default function KitchenPage() {
                                 </span>
                                 {/* Name + notes */}
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 15, fontWeight: 700, color: 'rgba(240,240,250,0.92)', lineHeight: 1.3 }}>
+                                  <div style={{ fontSize: 14, fontWeight: 700, color: 'rgba(240,240,250,0.92)', lineHeight: 1.3 }}>
                                     {item.name}
                                   </div>
                                   {item.notes && (
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 5 }}>
                                       {item.notes.split(',').map((n, i) => (
                                         <NoteChip key={i} text={n} />
                                       ))}
@@ -772,7 +780,7 @@ export default function KitchenPage() {
                           </div>
 
                           {/* ── ACTION BUTTON ── */}
-                          <div style={{ padding: '2px 14px 16px' }}>
+                          <div style={{ padding: '2px 12px 14px' }}>
                             <motion.button
                               className="kds-btn"
                               whileTap={{ scale: 0.965 }}
@@ -780,7 +788,7 @@ export default function KitchenPage() {
                               disabled={advancing === order.id}
                               style={{
                                 width: '100%',
-                                padding: '17px 0',
+                                padding: '14px 0',
                                 borderRadius: 14,
                                 fontFamily: "'Barlow Condensed', sans-serif",
                                 fontWeight: 900, fontSize: '1.35rem',
