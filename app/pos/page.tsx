@@ -16,6 +16,7 @@ import Cart from './_components/Cart'
 import IncomingOrders from './_components/IncomingOrders'
 import HungerStationOrders from './_components/HungerStationOrders'
 import KeetaOrders from './_components/KeetaOrders'
+import NewOrderAlert from './_components/NewOrderAlert'
 
 function POSInner() {
   const searchParams = useSearchParams()
@@ -28,6 +29,7 @@ function POSInner() {
   const [showIncoming, setShowIncoming] = useState(false)
   const [showHungerStation, setShowHungerStation] = useState(false)
   const [showKeeta, setShowKeeta] = useState(false)
+  const [alertSound, setAlertSound] = useState(true)
 
   useEffect(() => {
     if (!tableNumber) setTable(tableParam)
@@ -52,9 +54,20 @@ function POSInner() {
     loadMenu()
   }, [])
 
-  // "Delivery Apps" button opens HS first; if none pending, opens Keeta
-  function handleOpenDelivery() {
-    setShowHungerStation(true)
+  // Ghost-order cleanup: run on mount + every 5 min
+  useEffect(() => {
+    function cleanup() {
+      fetch('/api/cleanup/ghost-orders', { method: 'POST' }).catch(() => {})
+    }
+    cleanup()
+    const id = setInterval(cleanup, 5 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Open correct delivery panel by source
+  function handleOpenDelivery(source?: string) {
+    if (source === 'keeta') setShowKeeta(true)
+    else setShowHungerStation(true)
   }
 
   return (
@@ -105,6 +118,13 @@ function POSInner() {
       <KeetaOrders
         open={showKeeta}
         onClose={() => setShowKeeta(false)}
+      />
+
+      {/* Realtime new-order alert banner + sound */}
+      <NewOrderAlert
+        soundEnabled={alertSound}
+        onOpenQR={() => setShowIncoming(true)}
+        onOpenDelivery={handleOpenDelivery}
       />
     </div>
   )
