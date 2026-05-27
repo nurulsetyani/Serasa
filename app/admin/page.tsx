@@ -513,10 +513,11 @@ export default function AdminPage() {
 
   const filtered = (filter === 'all' ? dateFiltered : dateFiltered.filter(o => o.status === filter))
   const counts = {
-    all: dateFiltered.length,
-    pending: dateFiltered.filter(o => o.status === 'pending').length,
-    cooking: dateFiltered.filter(o => o.status === 'cooking').length,
-    ready: dateFiltered.filter(o => o.status === 'ready').length,
+    all:       dateFiltered.length,
+    new:       dateFiltered.filter(o => o.status === 'new').length,
+    pending:   dateFiltered.filter(o => o.status === 'pending').length,
+    cooking:   dateFiltered.filter(o => o.status === 'cooking').length,
+    ready:     dateFiltered.filter(o => o.status === 'ready').length,
     delivered: dateFiltered.filter(o => o.status === 'delivered').length,
   }
   const todayRevenue = orders
@@ -639,8 +640,8 @@ export default function AdminPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard icon={ShoppingBag}    label="Total Pesanan"     value={counts.all}               color={C.accent} />
             <StatCard icon={TrendingUp}     label="Pendapatan Hari Ini" value={formatPrice(todayRevenue)} color={C.success} />
-            <StatCard icon={AlertCircle}    label="Pending"          value={counts.pending}            color={C.warning}
-              sub={counts.pending > 0 ? 'Menunggu diproses' : 'Semua clear'} />
+            <StatCard icon={AlertCircle}    label="Belum Konfirmasi" value={counts.new}                color={C.warning}
+              sub={counts.new > 0 ? 'Tunggu kasir' : 'Semua sudah diproses'} />
             <StatCard icon={CheckCircle2}   label="Selesai"          value={counts.delivered}          color="#6366F1"
               sub="Hari ini" />
           </div>
