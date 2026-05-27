@@ -58,7 +58,7 @@ function POSInner() {
   }
 
   return (
-    <div className="h-full flex" style={{ background: '#F5F2EE' }}>
+    <div className="h-full flex font-inter" style={{ background: 'var(--pos-bg)' }}>
       {/* ── LEFT PANEL ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <POSHeader />

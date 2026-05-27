@@ -21,19 +21,29 @@ export default function SearchBar() {
   }, [setSearch])
 
   return (
-    <div className="px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
+    <div className="px-4 py-2.5 bg-white flex-shrink-0" style={{ borderBottom: '1px solid var(--pos-border)' }}>
       <div className="relative">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         <input
           ref={ref}
           type="text"
           value={searchQuery}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search name / اسم البحث... (F1)"
-          className="w-full pl-9 pr-8 py-2.5 rounded-xl text-sm text-gray-800 outline-none bg-[#F5F2EE] placeholder:text-gray-400"
-          style={{ transition: 'box-shadow 0.15s' }}
-          onFocus={e => (e.currentTarget.style.boxShadow = `0 0 0 2px ${P}40`)}
-          onBlur={e => (e.currentTarget.style.boxShadow = 'none')}
+          placeholder="Search menu / ابحث في القائمة... (F1)"
+          className="w-full pl-9 pr-8 py-2.5 rounded-xl text-[13px] font-inter text-gray-800 outline-none placeholder:text-gray-400"
+          style={{
+            background: 'var(--pos-bg)',
+            border: '1.5px solid var(--pos-border)',
+            transition: 'border-color 0.15s, box-shadow 0.15s',
+          }}
+          onFocus={e => {
+            e.currentTarget.style.borderColor = `${P}80`
+            e.currentTarget.style.boxShadow = `0 0 0 3px ${P}18`
+          }}
+          onBlur={e => {
+            e.currentTarget.style.borderColor = 'var(--pos-border)'
+            e.currentTarget.style.boxShadow = 'none'
+          }}
         />
         {searchQuery && (
           <button

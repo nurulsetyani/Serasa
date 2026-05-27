@@ -58,8 +58,8 @@ export default function CategoryTabs({ menu }: Props) {
   return (
     <div
       ref={scrollRef}
-      className="flex gap-2 px-4 py-2.5 overflow-x-auto scrollbar-hide bg-white border-b border-gray-100 flex-shrink-0"
-      style={{ scrollbarWidth: 'none' }}
+      className="flex gap-2 px-4 py-3 overflow-x-auto bg-white flex-shrink-0"
+      style={{ borderBottom: '1px solid var(--pos-border)', scrollbarWidth: 'none' }}
     >
       {categories.map(cat => {
         const active = cat === 'Semua' ? selectedCategory === null : selectedCategory === cat
@@ -74,20 +74,21 @@ export default function CategoryTabs({ menu }: Props) {
             key={cat}
             data-active={active}
             onClick={() => setCategory(cat === 'Semua' ? null : cat)}
-            className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all"
+            className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full whitespace-nowrap font-inter transition-[background-color,color,box-shadow] duration-150"
             style={{
-              background: active ? P : '#F5F2EE',
-              color: active ? 'white' : '#6B7280',
-              boxShadow: active ? `0 3px 10px rgba(255,107,53,0.3)` : 'none',
+              background: active ? P : 'var(--pos-bg)',
+              color: active ? 'white' : 'var(--pos-muted)',
+              boxShadow: active ? `var(--pos-shadow-brand)` : 'none',
+              border: active ? 'none' : '1.5px solid var(--pos-border)',
             }}
           >
-            <span className="text-xs font-black">{enLabel}</span>
+            <span className="text-[12px] font-semibold">{enLabel}</span>
             {arLabel && (
-              <span className="text-[10px] font-normal opacity-80">{arLabel}</span>
+              <span className="text-[10px] font-normal opacity-75">{arLabel}</span>
             )}
             <span
-              className="text-[10px] px-1.5 py-0.5 rounded-full"
-              style={{ background: active ? 'rgba(255,255,255,0.25)' : '#E5E1DC' }}
+              className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+              style={{ background: active ? 'rgba(255,255,255,0.22)' : 'var(--pos-border)', color: active ? 'white' : 'var(--pos-muted)' }}
             >
               {count}
             </span>

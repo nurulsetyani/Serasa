@@ -53,17 +53,17 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
 
   return (
     <div
-      className="flex items-center justify-between px-4 py-2.5 flex-shrink-0"
-      style={{ background: '#111827', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+      className="flex items-center justify-between px-5 py-2.5 flex-shrink-0"
+      style={{ background: '#0F1724', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
     >
       {/* Left: label */}
       <div className="flex items-center gap-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-        <Cloud size={13} className="text-gray-400" />
-        <span className="text-[10px] font-black tracking-wider text-gray-400 uppercase">
-          Cloud API Integrations
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <Cloud size={12} className="text-white/30" />
+        <span className="text-[10px] font-semibold tracking-widest text-white/40 uppercase font-inter">
+          Cloud API
         </span>
-        <span className="text-[10px] text-gray-600 font-normal" dir="rtl">
+        <span className="text-[10px] text-white/20">
           / قنوات الربط السحابية
         </span>
       </div>

@@ -35,17 +35,20 @@ export default function ProductCard({ item }: Props) {
     }
   }
 
+  const shadowClass = inCart > 0
+    ? 'shadow-[0_4px_16px_rgba(255,107,53,0.18)] hover:shadow-[0_8px_28px_rgba(255,107,53,0.28)]'
+    : 'shadow-[0_2px_8px_rgba(26,18,8,0.07),0_1px_2px_rgba(26,18,8,0.04)] hover:shadow-[0_8px_24px_rgba(26,18,8,0.10),0_2px_6px_rgba(26,18,8,0.05)]'
+
   return (
     <>
       <motion.button
-        whileTap={{ scale: 0.95 }}
+        whileTap={{ scale: 0.96 }}
         onClick={handleTap}
         disabled={unavailable}
-        className="relative flex flex-col bg-white rounded-2xl overflow-hidden text-left transition-shadow hover:shadow-md"
+        className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden text-left hover:-translate-y-0.5 transition-[box-shadow,transform,border-color] duration-200 ease-out ${shadowClass}`}
         style={{
           border: inCart > 0 ? `2px solid ${P}` : '2px solid transparent',
           opacity: unavailable ? 0.45 : 1,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         }}
       >
         {/* kcal + Stock row */}
@@ -121,28 +124,28 @@ export default function ProductCard({ item }: Props) {
         </div>
 
         {/* Info */}
-        <div className="px-2 pb-2.5 pt-2 flex-1 flex flex-col">
+        <div className="px-2.5 pb-3 pt-2 flex-1 flex flex-col">
           {/* English name */}
-          <p className="text-gray-900 font-bold text-xs leading-tight line-clamp-1 mb-0.5">
+          <p className="text-gray-900 font-semibold text-[12px] leading-snug line-clamp-2 mb-0.5 font-inter">
             {item.name_en}
           </p>
           {/* Arabic name */}
           {item.name_ar && (
-            <p className="text-gray-400 text-[10px] leading-tight line-clamp-1 mb-1.5" dir="rtl">
+            <p className="text-gray-400 text-[10px] leading-tight line-clamp-1 mb-2">
               {item.name_ar}
             </p>
           )}
 
           <div className="flex items-end justify-between gap-1 mt-auto">
             <div>
-              <p className="font-black text-sm" style={{ color: P }}>{formatPrice(finalPrice)}</p>
+              <p className="font-bold text-[13px] font-inter tracking-tight" style={{ color: P }}>{formatPrice(finalPrice)}</p>
               {hasDiscount && (
                 <p className="text-[9px] text-gray-400 line-through">{formatPrice(item.price)}</p>
               )}
             </div>
             <div
-              className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: `${P}20` }}
+              className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 transition-[background-color] duration-150 group-hover:bg-[#FF6B35] group-hover:[&>*]:text-white"
+              style={{ background: `${P}18` }}
             >
               {hasModifiers
                 ? <ChevronDown size={13} style={{ color: P }} />

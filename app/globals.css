@@ -12,6 +12,22 @@
   --ink: #F5F5F0;
   --ink-muted: #9A9A8A;
 
+  /* ── POS Design System ─────────────────────────────── */
+  --pos-brand:           #FF6B35;
+  --pos-brand-deep:      #E5601F;
+  --pos-dark:            #1A1208;
+  --pos-bg:              #F5F2EE;
+  --pos-surface:         #FFFFFF;
+  --pos-border:          #EDE8E2;
+  --pos-muted:           #9A8A7A;
+  --pos-subtle:          #C4B8A8;
+  --pos-shadow-sm:       0 2px 8px rgba(26,18,8,0.07), 0 1px 2px rgba(26,18,8,0.04);
+  --pos-shadow-md:       0 4px 16px rgba(26,18,8,0.08), 0 2px 4px rgba(26,18,8,0.04);
+  --pos-shadow-lg:       0 8px 28px rgba(26,18,8,0.10), 0 3px 8px rgba(26,18,8,0.05);
+  --pos-shadow-brand:    0 4px 16px rgba(255,107,53,0.25), 0 1px 4px rgba(255,107,53,0.10);
+  --pos-shadow-brand-lg: 0 8px 28px rgba(255,107,53,0.36), 0 2px 6px rgba(255,107,53,0.14);
+  --pos-shadow-red:      0 4px 20px rgba(239,68,68,0.38), 0 1px 4px rgba(239,68,68,0.18);
+
   /* ── Theme tokens (light default) ── */
   --t-bg:       #FAFAF8;
   --t-card:     #FFFFFF;

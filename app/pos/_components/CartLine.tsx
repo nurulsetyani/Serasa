@@ -37,19 +37,19 @@ export default function CartLine({ line, index }: Props) {
       }}
     >
       <div
-        className="flex items-start gap-2 p-2.5 cursor-pointer"
+        className="flex items-start gap-2.5 p-3 cursor-pointer"
         onClick={() => setActiveLine(isActive ? null : line.lineId)}
       >
         {/* Index */}
-        <span className="text-[10px] font-black text-gray-400 mt-1 w-4 flex-shrink-0">
+        <span className="text-[10px] font-bold text-gray-400 mt-0.5 w-4 flex-shrink-0 font-inter">
           {index + 1}
         </span>
 
         {/* Name & Modifiers */}
         <div className="flex-1 min-w-0">
-          <p className="text-gray-900 font-bold text-[13px] leading-tight">{line.name}</p>
+          <p className="text-gray-900 font-semibold text-[13px] leading-snug font-inter">{line.name}</p>
           {line.name_ar && (
-            <p className="text-gray-400 text-[10px] leading-tight" dir="rtl">{line.name_ar}</p>
+            <p className="text-gray-400 text-[10px] leading-tight mt-0.5">{line.name_ar}</p>
           )}
           {line.modifiers.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
@@ -71,9 +71,9 @@ export default function CartLine({ line, index }: Props) {
 
         {/* Price */}
         <div className="text-right flex-shrink-0">
-          <p className="font-black text-[13px]" style={{ color: P }}>{formatPrice(line.lineTotal)}</p>
+          <p className="font-bold text-[13px] font-inter tracking-tight" style={{ color: P }}>{formatPrice(line.lineTotal)}</p>
           {line.qty > 1 && (
-            <p className="text-[9px] text-gray-400">{formatPrice(line.unitPrice)} × {line.qty}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">{formatPrice(line.unitPrice)} × {line.qty}</p>
           )}
         </div>
       </div>

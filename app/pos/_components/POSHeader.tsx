@@ -63,36 +63,39 @@ export default function POSHeader() {
   const branchName = process.env.NEXT_PUBLIC_BRANCH_NAME || 'Kuday, Mekkah - Saudi Arabia'
 
   return (
-    <div className="flex items-center justify-between px-4 py-2.5 bg-[#1A1208] text-white flex-shrink-0">
+    <div
+      className="flex items-center justify-between px-5 py-3 text-white flex-shrink-0"
+      style={{ background: 'var(--pos-dark)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+    >
       <div className="flex items-center gap-3">
-        <Image src="/logof22.png" alt="Logo" width={44} height={44} className="flex-shrink-0" style={{ objectFit: 'contain' }} />
+        <Image src="/logof22.png" alt="Logo" width={44} height={44} className="flex-shrink-0 rounded-lg" style={{ objectFit: 'contain' }} />
         <div>
-          <p className="font-black text-sm leading-none">{restoName}</p>
-          <p className="text-[9px] text-gray-400 mt-0.5">{branchName}</p>
+          <p className="font-inter font-bold text-[15px] leading-tight tracking-tight text-white">{restoName}</p>
+          <p className="text-[10px] text-white/40 mt-0.5 font-medium tracking-wide">{branchName}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {summary && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-            <TrendingUp size={12} className="text-green-400" />
+          <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/[0.06] border border-white/[0.08]">
+            <TrendingUp size={13} className="text-emerald-400" />
             <div className="text-right">
-              <p className="text-[10px] text-gray-400 leading-none">{summary.count} orders today</p>
-              <p className="text-xs font-black text-green-400 leading-none mt-0.5">
+              <p className="text-[10px] text-white/40 leading-none font-medium">{summary.count} orders today</p>
+              <p className="text-[13px] font-bold text-emerald-400 leading-none mt-1 tracking-tight">
                 {formatPrice(summary.revenue)}
               </p>
             </div>
           </div>
         )}
 
-        <div className="flex items-center gap-1.5 text-gray-300">
-          <Clock size={13} />
-          <span className="text-sm font-mono font-bold">{time}</span>
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.06]">
+          <Clock size={12} className="text-white/40" />
+          <span className="text-[13px] font-mono font-semibold text-white/80 tracking-wider">{time}</span>
         </div>
 
         <button
           onClick={newOrder}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold text-white/60 hover:text-white hover:bg-white/[0.08] transition-[background-color,color] duration-150"
         >
           <RefreshCw size={12} />
           New Order

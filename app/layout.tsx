@@ -1,9 +1,16 @@
 import type { Metadata, Viewport } from 'next'
-import { Playfair_Display, DM_Sans, Noto_Naskh_Arabic } from 'next/font/google'
+import { Inter, Playfair_Display, DM_Sans, Noto_Naskh_Arabic } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/context/CartContext'
 import { LanguageProvider } from '@/context/LanguageContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  weight: ['400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+})
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -40,7 +47,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
-      <body className={`${playfair.variable} ${dmSans.variable} ${notoNaskhArabic.variable}`}>
+      <body className={`${inter.variable} ${playfair.variable} ${dmSans.variable} ${notoNaskhArabic.variable}`}>
         <ThemeProvider>
           <LanguageProvider>
             <CartProvider>

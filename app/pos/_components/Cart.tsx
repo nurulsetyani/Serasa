@@ -398,12 +398,14 @@ export default function Cart({ tableParam }: Props) {
               </div>
             )}
             <div className="flex justify-between text-xs text-gray-500">
-              <span>Saudi Inclusive VAT ({taxPercent}%):</span>
+              <span>Saudi Incl. VAT ({taxPercent}%):</span>
               <span className="font-semibold">{formatPrice(taxAmount)}</span>
             </div>
-            <div className="flex justify-between items-baseline border-t border-gray-200 pt-2">
-              <span className="font-black text-gray-900 text-sm">Grand Total:</span>
-              <span className="font-black text-2xl" style={{ color: '#EF4444' }}>{formatPrice(total)}</span>
+            <div className="flex justify-between items-end border-t border-gray-100 pt-3 mt-1">
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider font-inter mb-0.5">Grand Total</p>
+              </div>
+              <span className="font-bold text-[28px] leading-none tracking-tight font-inter" style={{ color: '#EF4444' }}>{formatPrice(total)}</span>
             </div>
           </div>
 
@@ -414,14 +416,14 @@ export default function Cart({ tableParam }: Props) {
           {/* Checkout button */}
           <button
             onClick={() => { setError(''); clearPayments(); setShowPayment(true) }}
-            className="w-full py-4 rounded-2xl font-black text-white text-base transition-opacity active:opacity-80 flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-2xl font-bold text-white text-[15px] font-inter active:scale-[0.98] flex items-center justify-center gap-2 transition-[box-shadow,transform,opacity] duration-150"
             style={{
-              background: '#EF4444',
-              boxShadow: '0 6px 24px rgba(239,68,68,0.35)',
-              letterSpacing: '0.02em',
+              background: 'linear-gradient(135deg, #EF4444 0%, #E02020 100%)',
+              boxShadow: 'var(--pos-shadow-red)',
+              letterSpacing: '0.01em',
             }}
           >
-            <CreditCard size={18} />
+            <CreditCard size={17} />
             Waiter Checkout
           </button>
         </div>

@@ -30,6 +30,7 @@ const config: Config = {
         },
       },
       fontFamily: {
+        inter: ['var(--font-inter)', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['var(--font-playfair)', 'Georgia', 'serif'],
         body: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
         arabic: ['var(--font-noto-arabic)', 'serif'],
