@@ -60,7 +60,7 @@ export default function HungerStationOrders({ open, onClose }: Props) {
       .select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
       .eq('source', 'hungerstation')
-      .in('status', ['pending', 'cooking'])
+      .in('status', ['new', 'cooking'])
       .order('created_at', { ascending: true })
     setOrders((data as DeliveryOrder[]) ?? [])
     setLoading(false)
@@ -78,11 +78,11 @@ export default function HungerStationOrders({ open, onClose }: Props) {
   async function handleAccept(order: DeliveryOrder) {
     setActionLoading(order.id)
     try {
-      // Update status to cooking
+      // Advance new → pending so order appears in KDS as BARU
       await fetch(`/api/order/${order.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'cooking' }),
+        body: JSON.stringify({ status: 'pending' }),
       })
 
       // Callback to HungerStation
@@ -142,7 +142,7 @@ export default function HungerStationOrders({ open, onClose }: Props) {
     }
   }
 
-  const pending = orders.filter(o => o.status === 'pending')
+  const pending = orders.filter(o => o.status === 'new')
   const cooking = orders.filter(o => o.status === 'cooking')
 
   return (
@@ -217,11 +217,11 @@ export default function HungerStationOrders({ open, onClose }: Props) {
                             <div className="flex items-center gap-2 mb-0.5">
                               <span className="font-black text-gray-900 text-base">{order.customer_name}</span>
                               <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
-                                order.status === 'pending'
+                                order.status === 'new'
                                   ? 'bg-amber-50 text-amber-600'
                                   : 'bg-blue-50 text-blue-600'
                               }`}>
-                                {order.status === 'pending' ? 'MENUNGGU' : 'DIMASAK'}
+                                {order.status === 'new' ? 'MENUNGGU' : 'DIMASAK'}
                               </span>
                             </div>
                             {order.customer_phone && (
@@ -266,7 +266,7 @@ export default function HungerStationOrders({ open, onClose }: Props) {
                         </div>
 
                         {/* CTA */}
-                        {order.status === 'pending' ? (
+                        {order.status === 'new' ? (
                           <motion.button
                             whileTap={{ scale: 0.97 }}
                             disabled={actionLoading === order.id}

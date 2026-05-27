@@ -32,10 +32,10 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
           .eq('restaurant_id', RESTAURANT_ID).eq('source', 'qr').eq('status', 'new'),
         supabase
           .from('orders').select('id', { count: 'exact', head: true })
-          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'hungerstation').eq('status', 'pending'),
+          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'hungerstation').eq('status', 'new'),
         supabase
           .from('orders').select('id', { count: 'exact', head: true })
-          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'keeta').eq('status', 'pending'),
+          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'keeta').eq('status', 'new'),
       ])
       setCounts({
         qr: qrRes.count ?? 0,

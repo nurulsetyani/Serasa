@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
         order_type: 'delivery',
         delivery_address: norm.deliveryAddress,
         payment_method: 'online',
-        status: 'pending',
+        status: 'new',
         source: 'keeta',
         total_price: norm.total,
         subtotal: norm.subtotal || norm.total,
