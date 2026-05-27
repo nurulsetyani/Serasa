@@ -1,5 +1,5 @@
 'use client'
-import { Clock, RefreshCw, TrendingUp } from 'lucide-react'
+import { Clock, RefreshCw, TrendingUp, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { usePOSStore } from '@/stores/pos.store'
@@ -14,7 +14,12 @@ interface DailySummary {
   revenue: number
 }
 
-export default function POSHeader() {
+interface Props {
+  soundEnabled?: boolean
+  onToggleSound?: () => void
+}
+
+export default function POSHeader({ soundEnabled = true, onToggleSound }: Props) {
   const [time, setTime] = useState('')
   const [summary, setSummary] = useState<DailySummary | null>(null)
   const newOrder = usePOSStore(s => s.newOrder)
@@ -92,6 +97,21 @@ export default function POSHeader() {
           <Clock size={12} className="text-white/40" />
           <span className="text-[13px] font-mono font-semibold text-white/80 tracking-wider">{time}</span>
         </div>
+
+        {onToggleSound && (
+          <button
+            onClick={onToggleSound}
+            title={soundEnabled ? 'Matikan notif suara' : 'Aktifkan notif suara'}
+            className="flex items-center justify-center w-9 h-9 rounded-xl transition-[background-color,color] duration-150"
+            style={{
+              background: soundEnabled ? 'rgba(255,107,53,0.18)' : 'rgba(255,255,255,0.06)',
+              color: soundEnabled ? '#FF6B35' : 'rgba(255,255,255,0.30)',
+              border: `1px solid ${soundEnabled ? 'rgba(255,107,53,0.28)' : 'rgba(255,255,255,0.08)'}`,
+            }}
+          >
+            {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+          </button>
+        )}
 
         <button
           onClick={newOrder}

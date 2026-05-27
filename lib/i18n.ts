@@ -31,6 +31,7 @@ const translations = {
     // Order success
     orderReceived: 'Pesanan Diterima!',
     orderProcessing: 'Dapur sedang memproses pesananmu',
+    orderWaiting: 'Menunggu konfirmasi kasir',
     // Order tracking
     trackOrder: 'Lacak Pesanan', orderStatus: 'Status Pesanan',
     estimatedReady: 'Estimasi Siap', orderItems: 'Item Pesanan',
@@ -98,6 +99,7 @@ const translations = {
     orderSummary: 'Order Summary',
     orderReceived: 'Order Received!',
     orderProcessing: 'The kitchen is preparing your order',
+    orderWaiting: 'Waiting for cashier confirmation',
     trackOrder: 'Track Order', orderStatus: 'Order Status',
     estimatedReady: 'Est. Ready', orderItems: 'Order Items',
     thankYou: 'Thank You!', orderPlaced: 'Order Placed',
@@ -157,6 +159,7 @@ const translations = {
     orderSummary: 'ملخص الطلب',
     orderReceived: 'تم استلام طلبك!',
     orderProcessing: 'المطبخ يحضّر طلبك الآن',
+    orderWaiting: 'بانتظار تأكيد الكاشير',
     trackOrder: 'تتبع الطلب', orderStatus: 'حالة الطلب',
     estimatedReady: 'الوقت المتوقع', orderItems: 'عناصر الطلب',
     thankYou: 'شكراً لك!', orderPlaced: 'تم تقديم الطلب',

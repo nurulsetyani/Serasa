@@ -74,7 +74,7 @@ function POSInner() {
     <div className="h-full flex font-inter" style={{ background: 'var(--pos-bg)' }}>
       {/* ── LEFT PANEL ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <POSHeader />
+        <POSHeader soundEnabled={alertSound} onToggleSound={() => setAlertSound(s => !s)} />
         <SearchBar />
 
         {/* Cloud API Integrations banner */}

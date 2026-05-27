@@ -261,8 +261,28 @@ export default function OrderTrackingPage() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}
           className="text-gray-500 text-sm leading-relaxed"
         >
-          {t('orderProcessing')}
+          {order.status === 'new' ? t('orderWaiting') : t('orderProcessing')}
         </motion.p>
+
+        {/* Waiting badge — only for 'new' status */}
+        {order.status === 'new' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.35, type: 'spring', stiffness: 300, damping: 24 }}
+            className="flex items-center justify-center gap-2 mt-3 mx-auto px-4 py-2 rounded-full"
+            style={{
+              background: 'rgba(255,107,53,0.10)',
+              border: '1px solid rgba(255,107,53,0.25)',
+              width: 'fit-content',
+            }}
+          >
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#FF6B35' }} />
+            <span className="text-xs font-bold" style={{ color: '#FF6B35' }}>
+              {t('orderWaiting')}
+            </span>
+          </motion.div>
+        )}
       </div>
 
       <div className="px-5 space-y-4">
