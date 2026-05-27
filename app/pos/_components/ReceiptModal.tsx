@@ -52,7 +52,7 @@ interface Props {
 function MetaRow({ arLabel, value, highlight }: { arLabel: string; value: string; highlight?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-2 py-0.5">
-      <span className="text-[10px] text-gray-500" dir="rtl">{arLabel}</span>
+      <span className="text-[10px] text-gray-500">{arLabel}</span>
       <span
         className="text-[10px] font-bold text-right"
         style={{ color: highlight ? '#EF4444' : '#1a1a1a' }}
@@ -73,7 +73,7 @@ function ItemRow({ line }: { line: POSLine }) {
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-bold text-gray-900 leading-tight">{line.name}</p>
           {line.name_ar && (
-            <p className="text-[9px] text-gray-400 leading-tight" dir="rtl">{line.name_ar}</p>
+            <p className="text-[9px] text-gray-400 leading-tight">{line.name_ar}</p>
           )}
           {line.note && <p className="text-[9px] text-gray-400 italic">{line.note}</p>}
         </div>
@@ -185,16 +185,16 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
         </div>
         <div class="divider"></div>
         <div style="display:flex;justify-content:space-between;font-size:9px;color:#666;margin:2px 0">
-          <span dir="rtl">الرقم الضريبي (VAT Reg):</span><span>${VAT_REG}</span>
+          <span>الرقم الضريبي (VAT Reg):</span><span>${VAT_REG}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
-          <span dir="rtl">التاريخ (Date):</span><span>${dateStr}, ${timeStr}</span>
+          <span>التاريخ (Date):</span><span>${dateStr}, ${timeStr}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
-          <span dir="rtl">نوع الطلب (Order Type):</span><span>${ORDER_TYPE_LABELS[orderType] || orderType}</span>
+          <span>نوع الطلب (Order Type):</span><span>${ORDER_TYPE_LABELS[orderType] || orderType}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
-          <span dir="rtl">رقم الطاولة (Table No):</span><span style="color:#CC0000;font-weight:bold">${tableNumber || '—'}</span>
+          <span>رقم الطاولة (Table No):</span><span style="color:#CC0000;font-weight:bold">${tableNumber || '—'}</span>
         </div>
         <div class="divider"></div>
         <table>
@@ -207,20 +207,20 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
         </table>
         <div class="divider"></div>
         <div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0">
-          <span dir="rtl">Subtotal (الفرعي):</span><span>${formatPrice(subtotal)}</span>
+          <span>Subtotal (الفرعي):</span><span>${formatPrice(subtotal)}</span>
         </div>
         ${discountAmount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;color:green;margin:2px 0">
           <span>Discount ${discountType === 'percent' ? `${discountValue}%` : ''}:</span><span>-${formatPrice(discountAmount)}</span>
         </div>` : ''}
         <div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0">
-          <span dir="rtl">Taxable Amount (الخاضع للضريبة):</span><span>${formatPrice(taxableAmount)}</span>
+          <span>Taxable Amount (الخاضع للضريبة):</span><span>${formatPrice(taxableAmount)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0">
-          <span dir="rtl">VAT @ ${taxPercent}% (ضريبة القيمة المضافة):</span><span>${formatPrice(vatAmount)}</span>
+          <span>VAT @ ${taxPercent}% (ضريبة القيمة المضافة):</span><span>${formatPrice(vatAmount)}</span>
         </div>
         <div class="divider"></div>
         <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:900;margin:4px 0">
-          <span dir="rtl">Total Amount (الإجمالي):</span><span>${formatPrice(total)}</span>
+          <span>Total Amount (الإجمالي):</span><span>${formatPrice(total)}</span>
         </div>
         <div class="divider"></div>
         ${paymentsHtml}
@@ -343,7 +343,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                   {/* Totals */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-500" dir="rtl">Subtotal (الفرعي):</span>
+                      <span className="text-gray-500">Subtotal (الفرعي):</span>
                       <span className="font-semibold">{formatPrice(subtotal)}</span>
                     </div>
                     {discountAmount > 0 && (
@@ -353,11 +353,11 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                       </div>
                     )}
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-500" dir="rtl">Taxable Amount (الخاضع للضريبة):</span>
+                      <span className="text-gray-500">Taxable Amount (الخاضع للضريبة):</span>
                       <span className="font-semibold">{formatPrice(taxableAmount)}</span>
                     </div>
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-500" dir="rtl">VAT @ {taxPercent}% (ضريبة القيمة المضافة):</span>
+                      <span className="text-gray-500">VAT @ {taxPercent}% (ضريبة القيمة المضافة):</span>
                       <span className="font-semibold">{formatPrice(vatAmount)}</span>
                     </div>
                   </div>
@@ -366,7 +366,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
 
                   {/* Grand Total */}
                   <div className="flex justify-between items-baseline">
-                    <span className="font-black text-sm" dir="rtl">Total Amount (الإجمالي):</span>
+                    <span className="font-black text-sm">Total Amount (الإجمالي):</span>
                     <span className="font-black text-xl text-gray-900">{formatPrice(total)}</span>
                   </div>
 
