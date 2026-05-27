@@ -1,10 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Banknote, CreditCard, Smartphone, Shield, ChevronRight } from 'lucide-react'
+import { X, Banknote, CreditCard, Smartphone, Shield, ChevronRight, Wifi, CheckCircle, XCircle } from 'lucide-react'
 import { usePOSStore } from '@/stores/pos.store'
 import { POSPaymentMethod } from '@/types/pos'
 import { formatPrice } from '@/lib/utils'
+
+type TapStatus = 'idle' | 'creating' | 'waiting' | 'captured' | 'declined' | 'error'
 
 interface Method {
   value: POSPaymentMethod
@@ -37,12 +39,17 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
   const clearPayments = usePOSStore(s => s.clearPayments)
   const isFullyPaid = usePOSStore(s => s.isFullyPaid)
 
-  const [selected, setSelected] = useState<POSPaymentMethod>('cash')
+  const [selected, setSelected]   = useState<POSPaymentMethod>('cash')
   const [cashInput, setCashInput] = useState('')
+  const [tapStatus, setTapStatus] = useState<TapStatus>('idle')
+  const [tapChargeId, setTapChargeId] = useState<string | null>(null)
+  const [tapSandbox, setTapSandbox]   = useState(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const total    = getTotal()
-  const change   = getChange()
-  const isCash   = selected === 'cash'
+  const total   = getTotal()
+  const change  = getChange()
+  const isCash  = selected === 'cash'
+  const isCard  = !isCash
 
   // Sync cash payment on input change
   function handleCashInput(val: string) {
@@ -70,15 +77,68 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
     setSelected(m)
     clearPayments()
     setCashInput('')
+    setTapStatus('idle')
+    setTapChargeId(null)
+    if (pollRef.current) clearInterval(pollRef.current)
     if (m !== 'cash') {
-      // Non-cash: auto-pay full amount
       addPayment({ method: m, amount: total })
     }
   }
 
+  // Start Tap charge when card method selected and modal opens
+  async function startTapCharge() {
+    setTapStatus('creating')
+    try {
+      const res = await fetch('/api/payment/tap/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: total, currency: 'SAR', description: 'Serasa Restaurant' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      setTapChargeId(data.id)
+      setTapSandbox(data.sandbox ?? false)
+      setTapStatus('waiting')
+      startPolling(data.id)
+    } catch {
+      setTapStatus('error')
+    }
+  }
+
+  function startPolling(chargeId: string) {
+    if (pollRef.current) clearInterval(pollRef.current)
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/payment/tap/status?chargeId=${chargeId}`)
+        const data = await res.json()
+        if (data.status === 'CAPTURED') {
+          clearInterval(pollRef.current!)
+          setTapStatus('captured')
+        } else if (['DECLINED', 'CANCELLED', 'FAILED'].includes(data.status)) {
+          clearInterval(pollRef.current!)
+          setTapStatus('declined')
+        }
+      } catch {}
+    }, 2000)
+  }
+
+  // Cleanup polling on unmount
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
+
+  async function simulateApprove() {
+    if (!tapChargeId) return
+    await fetch('/api/payment/tap/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chargeId: tapChargeId, status: 'CAPTURED' }),
+    })
+  }
+
   const cashReceived = parseFloat(cashInput) || 0
   const changeReturn = isCash ? Math.max(0, cashReceived - total) : change
-  const canConfirm   = isFullyPaid()
+  const cardApproved = tapStatus === 'captured'
+  const canConfirm   = isCash ? isFullyPaid() : cardApproved
 
   return (
     <AnimatePresence>
@@ -215,11 +275,106 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
                 </div>
               )}
 
-              {/* Non-cash: show auto-paid confirmation */}
-              {!isCash && canConfirm && (
-                <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-blue-50">
-                  <span className="text-sm font-semibold text-blue-700">Amount charged:</span>
-                  <span className="font-black text-lg text-blue-700">{formatPrice(total)}</span>
+              {/* Card payment — Tap Terminal flow */}
+              {isCard && (
+                <div className="space-y-3">
+                  {/* Step 1: Initiate */}
+                  {tapStatus === 'idle' && (
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={startTapCharge}
+                      className="w-full py-3 rounded-xl font-black text-white text-sm flex items-center justify-center gap-2"
+                      style={{ background: '#3B82F6' }}
+                    >
+                      <Wifi size={15} /> Kirim ke Terminal Mada
+                    </motion.button>
+                  )}
+
+                  {/* Step 2: Creating charge */}
+                  {tapStatus === 'creating' && (
+                    <div className="flex items-center justify-center gap-3 py-3 rounded-xl bg-blue-50">
+                      <span className="w-5 h-5 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
+                      <span className="text-sm font-semibold text-blue-700">Menghubungkan terminal...</span>
+                    </div>
+                  )}
+
+                  {/* Step 3: Waiting for tap/swipe */}
+                  {tapStatus === 'waiting' && (
+                    <div className="rounded-xl overflow-hidden" style={{ border: '2px solid #3B82F6' }}>
+                      <div className="bg-blue-600 px-4 py-2.5 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                        <span className="text-white font-black text-xs uppercase tracking-wide">
+                          Menunggu Pembayaran Terminal
+                        </span>
+                      </div>
+                      <div className="px-4 py-3 bg-blue-50 text-center">
+                        <p className="text-2xl font-black text-blue-900 mb-1">{formatPrice(total)}</p>
+                        <p className="text-xs text-blue-600">Minta pelanggan tap / swipe kartu Mada di terminal</p>
+                        <p className="text-[10px] text-blue-400 mt-1 font-mono">{tapChargeId}</p>
+                      </div>
+
+                      {/* Sandbox: simulate approve button */}
+                      {tapSandbox && (
+                        <div className="px-4 pb-3 bg-blue-50">
+                          <button
+                            onClick={simulateApprove}
+                            className="w-full py-2 rounded-lg text-xs font-black text-white"
+                            style={{ background: '#F59E0B' }}
+                          >
+                            🧪 Sandbox: Simulate Terminal Approve
+                          </button>
+                          <p className="text-[9px] text-blue-400 text-center mt-1">
+                            Tombol ini hanya muncul di sandbox mode
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Step 4: Approved */}
+                  {tapStatus === 'captured' && (
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50"
+                      style={{ border: '2px solid #22C55E' }}>
+                      <CheckCircle size={22} className="text-green-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-black text-green-800">Pembayaran Approved ✓</p>
+                        <p className="text-xs text-green-600">{formatPrice(total)} — Terminal berhasil</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Declined */}
+                  {tapStatus === 'declined' && (
+                    <div className="rounded-xl overflow-hidden" style={{ border: '2px solid #EF4444' }}>
+                      <div className="px-4 py-3 bg-red-50 flex items-center gap-3">
+                        <XCircle size={22} className="text-red-500 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-black text-red-700">Pembayaran Ditolak</p>
+                          <p className="text-xs text-red-500">Kartu declined / cancelled oleh terminal</p>
+                        </div>
+                        <button
+                          onClick={() => { setTapStatus('idle'); setTapChargeId(null) }}
+                          className="text-xs font-bold text-red-600 underline"
+                        >
+                          Coba lagi
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error */}
+                  {tapStatus === 'error' && (
+                    <div className="px-4 py-3 rounded-xl bg-red-50 flex items-center justify-between"
+                      style={{ border: '1px solid #FCA5A5' }}>
+                      <p className="text-xs text-red-600 font-semibold">Gagal terhubung ke Tap API</p>
+                      <button
+                        onClick={() => setTapStatus('idle')}
+                        className="text-xs font-bold text-red-600 underline"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
