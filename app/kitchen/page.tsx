@@ -2,104 +2,258 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { Clock, RefreshCw, Volume2, VolumeX, ChefHat, CheckCircle2, XCircle, MapPin, Bike, QrCode, Monitor } from 'lucide-react'
+import {
+  Volume2, VolumeX, RefreshCw, Maximize, Minimize, X, Bike,
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
-const P = '#FF6B35'
 
-const MOCK_ORDERS: Order[] = [
-  { id: 'd1', restaurant_id: RESTAURANT_ID, table_number: '3', customer_name: 'Ahmad',
-    status: 'pending', total_price: 60, order_number: 'POS-930686', order_type: 'dine_in',
-    created_at: new Date().toISOString(), source: 'qr',
+type KitchenOrder = Order & { delivery_address?: string | null; source?: string | null }
+
+// ─────────────────────────────────────────────
+// MOCK DATA — showcases all timer states
+// ─────────────────────────────────────────────
+const MOCK_ORDERS: KitchenOrder[] = [
+  {
+    id: 'd1', restaurant_id: RESTAURANT_ID, table_number: '3',
+    customer_name: 'Ahmad', status: 'pending', total_price: 60,
+    order_number: 'POS-930686', order_type: 'dine_in',
+    created_at: new Date(Date.now() - 2 * 60000).toISOString(), source: 'pos',
     order_items: [
       { id: 'i1', order_id: 'd1', menu_id: 'm1', name: 'Mie Goreng Ayam', price: 25, qty: 2, notes: 'Tidak pedas' },
       { id: 'i2', order_id: 'd1', menu_id: 'm5', name: 'Es Cendol', price: 12, qty: 1 },
-    ] },
-  { id: 'd2', restaurant_id: RESTAURANT_ID, table_number: '–', customer_name: 'Fatimah',
-    status: 'cooking', total_price: 57, order_number: 'HS-847291', order_type: 'delivery',
-    created_at: new Date(Date.now() - 9 * 60000).toISOString(), source: 'hungerstation',
+    ],
+  },
+  {
+    id: 'd2', restaurant_id: RESTAURANT_ID, table_number: '–',
+    customer_name: 'Fatimah', status: 'cooking', total_price: 57,
+    order_number: 'HS-847291', order_type: 'delivery',
+    created_at: new Date(Date.now() - 7 * 60000).toISOString(), source: 'hungerstation',
     delivery_address: 'King Fahd Road, Riyadh',
     order_items: [
       { id: 'i3', order_id: 'd2', menu_id: 'm3', name: 'Nasi Goreng Spesial', price: 22, qty: 1, notes: 'Extra sambal' },
       { id: 'i4', order_id: 'd2', menu_id: 'm6', name: 'Rendang Sapi', price: 35, qty: 1 },
-    ] },
-  { id: 'd3', restaurant_id: RESTAURANT_ID, table_number: '–', customer_name: 'Mohammed',
-    status: 'ready', total_price: 45, order_number: 'KT-221983', order_type: 'delivery',
+    ],
+  },
+  {
+    id: 'd5', restaurant_id: RESTAURANT_ID, table_number: '7',
+    customer_name: 'Mohammed', status: 'cooking', total_price: 45,
+    order_number: 'QR-221983', order_type: 'dine_in',
+    created_at: new Date(Date.now() - 13 * 60000).toISOString(), source: 'qr',
+    order_items: [
+      { id: 'i9', order_id: 'd5', menu_id: 'm2', name: 'Soto Ayam', price: 20, qty: 1 },
+      { id: 'i10', order_id: 'd5', menu_id: 'm4', name: 'Teh Manis', price: 8, qty: 2, notes: 'Dingin, tidak manis' },
+    ],
+  },
+  {
+    id: 'd3', restaurant_id: RESTAURANT_ID, table_number: '–',
+    customer_name: 'Layla', status: 'ready', total_price: 82,
+    order_number: 'KT-558293', order_type: 'delivery',
     created_at: new Date(Date.now() - 18 * 60000).toISOString(), source: 'keeta',
     delivery_address: 'Olaya Street, Riyadh',
     order_items: [
-      { id: 'i5', order_id: 'd3', menu_id: 'm2', name: 'Soto Ayam', price: 20, qty: 1 },
-      { id: 'i6', order_id: 'd3', menu_id: 'm4', name: 'Teh Manis', price: 8, qty: 2, notes: 'Dingin' },
-    ] },
+      { id: 'i7', order_id: 'd3', menu_id: 'm7', name: 'Nasi Padang Komplit', price: 45, qty: 1 },
+      { id: 'i8', order_id: 'd3', menu_id: 'm8', name: 'Jus Alpukat', price: 15, qty: 2, notes: 'Tidak terlalu manis' },
+    ],
+  },
 ]
 
-function playBeep() {
+// ─────────────────────────────────────────────
+// SOUND — pleasant ascending triad
+// ─────────────────────────────────────────────
+function playNewOrderSound() {
   try {
     const ctx = new AudioContext()
-    ;[0, 0.18, 0.36].forEach((t, i) => {
-      const o = ctx.createOscillator(), g = ctx.createGain()
-      o.connect(g); g.connect(ctx.destination)
-      o.frequency.value = i === 1 ? 1100 : 880
-      g.gain.setValueAtTime(0.3, ctx.currentTime + t)
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15)
-      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.15)
+    const notes = [
+      { f: 523.25, t: 0,    d: 0.14 },
+      { f: 659.25, t: 0.15, d: 0.14 },
+      { f: 783.99, t: 0.30, d: 0.22 },
+    ]
+    notes.forEach(({ f, t, d }) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain); gain.connect(ctx.destination)
+      osc.type = 'sine'; osc.frequency.value = f
+      const s = ctx.currentTime + t
+      gain.gain.setValueAtTime(0, s)
+      gain.gain.linearRampToValueAtTime(0.38, s + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.001, s + d)
+      osc.start(s); osc.stop(s + d)
     })
   } catch {}
 }
 
-function Timer({ createdAt }: { createdAt: string }) {
-  const [mins, setMins] = useState(0)
-  useEffect(() => {
-    const calc = () => Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000)
-    setMins(calc()); const id = setInterval(() => setMins(calc()), 30000)
-    return () => clearInterval(id)
-  }, [createdAt])
-  const late = mins >= 20
-  return (
-    <span className={`flex items-center gap-1 text-xs font-black font-mono ${late ? 'animate-pulse' : ''}`}
-      style={{ color: late ? '#EF4444' : '#9A8A7A' }}>
-      <Clock size={11} /> {mins}m
-    </span>
-  )
-}
-
+// ─────────────────────────────────────────────
+// COLUMN CONFIG
+// ─────────────────────────────────────────────
 const COLS = [
-  { status: 'pending' as OrderStatus, label: 'BARU',  color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A', nextLabel: '🔥 Mulai Masak', nextStatus: 'cooking' as OrderStatus, btnColor: P },
-  { status: 'cooking' as OrderStatus, label: 'MASAK', color: P,         bg: '#FFF8EE', border: '#FDE0A8', nextLabel: '✅ Siap',         nextStatus: 'ready'   as OrderStatus, btnColor: '#22C55E' },
-  { status: 'ready'   as OrderStatus, label: 'SIAP',  color: '#22C55E', bg: '#F0FDF4', border: '#BBF7D0', nextLabel: '🛎 Selesai',      nextStatus: 'delivered' as OrderStatus, btnColor: '#6366F1' },
+  {
+    status: 'pending' as OrderStatus,
+    label: 'BARU',
+    color: '#FF9F0A',
+    dim: 'rgba(255,159,10,0.10)',
+    border: 'rgba(255,159,10,0.28)',
+    glow: 'rgba(255,159,10,0.22)',
+    nextLabel: 'MULAI MASAK',
+    nextStatus: 'cooking' as OrderStatus,
+    btn: '#FF6B35',
+    btnShadow: '255,107,53',
+    btnText: '#000',
+  },
+  {
+    status: 'cooking' as OrderStatus,
+    label: 'MASAK',
+    color: '#FF6B35',
+    dim: 'rgba(255,107,53,0.10)',
+    border: 'rgba(255,107,53,0.28)',
+    glow: 'rgba(255,107,53,0.20)',
+    nextLabel: 'SIAP SAJI',
+    nextStatus: 'ready' as OrderStatus,
+    btn: '#30D158',
+    btnShadow: '48,209,88',
+    btnText: '#000',
+  },
+  {
+    status: 'ready' as OrderStatus,
+    label: 'SIAP',
+    color: '#30D158',
+    dim: 'rgba(48,209,88,0.09)',
+    border: 'rgba(48,209,88,0.26)',
+    glow: 'rgba(48,209,88,0.18)',
+    nextLabel: 'SELESAI',
+    nextStatus: 'delivered' as OrderStatus,
+    btn: '#A78BFA',
+    btnShadow: '167,139,250',
+    btnText: '#0A0A14',
+  },
 ]
 
-// Extended type to carry delivery_address and source from DB
-type KitchenOrder = Order & { delivery_address?: string | null; source?: string | null }
-
-const SOURCE_CONFIG: Record<string, { label: string; bg: string; color: string; icon: React.ReactNode }> = {
-  hungerstation: { label: 'HungerStation', bg: '#FFF0E6', color: '#FF6000', icon: <span className="font-black text-[9px]">HS</span> },
-  keeta:         { label: 'Keeta',         bg: '#E6FFF3', color: '#00C851', icon: <span className="font-black text-[9px]">KT</span> },
-  qr:            { label: 'QR Scan',       bg: '#FFF8EE', color: '#FF6B35', icon: <QrCode size={9} /> },
-  pos:           { label: 'Kasir',         bg: '#F0F4FF', color: '#6366F1', icon: <Monitor size={9} /> },
+// ─────────────────────────────────────────────
+// SOURCE CONFIG
+// ─────────────────────────────────────────────
+const SOURCE_CFG: Record<string, { label: string; bg: string; color: string }> = {
+  hungerstation: { label: 'HungerStation', bg: 'rgba(255,96,0,0.14)', color: '#FF7020' },
+  keeta:         { label: 'Keeta',         bg: 'rgba(0,200,81,0.14)',  color: '#00C851' },
+  qr:            { label: 'QR Scan',       bg: 'rgba(255,107,53,0.14)', color: '#FF6B35' },
+  pos:           { label: 'Kasir',         bg: 'rgba(167,139,250,0.14)', color: '#A78BFA' },
 }
 
-function SourceBadge({ source }: { source?: string | null }) {
-  const cfg = SOURCE_CONFIG[source ?? 'pos'] ?? SOURCE_CONFIG.pos
+// ─────────────────────────────────────────────
+// TIMER — realtime, 1-second updates, SLA colors
+// ─────────────────────────────────────────────
+function Timer({ createdAt }: { createdAt: string }) {
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    const calc = () => Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
+    setElapsed(calc())
+    const id = setInterval(() => setElapsed(calc()), 1000)
+    return () => clearInterval(id)
+  }, [createdAt])
+
+  const mins = Math.floor(elapsed / 60)
+  const secs = elapsed % 60
+  const isUrgent = mins >= 10
+  const isWarn   = mins >= 5 && mins < 10
+
+  const color  = isUrgent ? '#FF453A' : isWarn ? '#FFD60A' : '#32D74B'
+  const shadow = isUrgent ? '0 0 18px rgba(255,69,58,0.70)'
+                : isWarn  ? '0 0 14px rgba(255,214,10,0.55)'
+                :            '0 0 14px rgba(50,215,75,0.55)'
+
   return (
-    <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full"
-      style={{ background: cfg.bg, color: cfg.color }}>
-      {cfg.icon}{cfg.label}
+    <div
+      className={isUrgent ? 'animate-pulse' : ''}
+      style={{
+        fontFamily: '"JetBrains Mono", monospace',
+        fontWeight: 800,
+        fontSize: '2rem',
+        lineHeight: 1,
+        letterSpacing: '-0.03em',
+        color,
+        textShadow: shadow,
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// LIVE CLOCK
+// ─────────────────────────────────────────────
+function LiveClock() {
+  const [t, setT] = useState('')
+  useEffect(() => {
+    const up = () => setT(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+    up(); const id = setInterval(up, 1000); return () => clearInterval(id)
+  }, [])
+  return (
+    <span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 700, fontSize: '0.875rem', color: 'rgba(240,240,250,0.30)', letterSpacing: '0.05em' }}>
+      {t}
     </span>
   )
 }
 
+// ─────────────────────────────────────────────
+// BADGES
+// ─────────────────────────────────────────────
+function SourceBadge({ source }: { source?: string | null }) {
+  const c = SOURCE_CFG[source ?? 'pos'] ?? SOURCE_CFG.pos
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+      background: c.bg, color: c.color, border: `1px solid ${c.color}35`,
+      borderRadius: 5, padding: '2px 8px',
+      fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase',
+    }}>
+      {c.label}
+    </span>
+  )
+}
+
+function DeliveryBadge() {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      background: 'rgba(96,165,250,0.13)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.25)',
+      borderRadius: 5, padding: '2px 8px',
+      fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase',
+    }}>
+      <Bike size={9} /> DELIVERY
+    </span>
+  )
+}
+
+function NoteChip({ text }: { text: string }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      background: 'rgba(255,107,53,0.13)', color: '#FF8C5A', border: '1px solid rgba(255,107,53,0.28)',
+      borderRadius: 5, padding: '2px 8px',
+      fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
+    }}>
+      ⚑ {text.trim()}
+    </span>
+  )
+}
+
+// ─────────────────────────────────────────────
+// MAIN PAGE
+// ─────────────────────────────────────────────
 export default function KitchenPage() {
   const [orders, setOrders]     = useState<KitchenOrder[]>([])
   const [loading, setLoading]   = useState(true)
   const [advancing, setAdv]     = useState<string | null>(null)
-  const [voiding, setVoiding]   = useState<string | null>(null)
+  const [voiding, setVoid]      = useState<string | null>(null)
   const [soundOn, setSoundOn]   = useState(true)
-  const [alert, setAlert]       = useState<string | null>(null)
+  const [alertMsg, setAlertMsg] = useState<{ text: string; id: string } | null>(null)
+  const [flashOn, setFlashOn]   = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
   const soundRef = useRef(true)
   useEffect(() => { soundRef.current = soundOn }, [soundOn])
 
@@ -119,10 +273,13 @@ export default function KitchenPage() {
     const ch = supabase.channel('kitchen')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, p => {
         if (p.eventType === 'INSERT') {
-          if (soundRef.current) playBeep()
+          if (soundRef.current) playNewOrderSound()
           const o = p.new as KitchenOrder
-          setAlert(`🆕 Pesanan baru — ${o.order_type === 'delivery' ? 'Delivery' : `Meja ${o.table_number}`}`)
-          setTimeout(() => setAlert(null), 4000)
+          const where = o.order_type === 'delivery' ? 'DELIVERY' : `MEJA ${o.table_number}`
+          setAlertMsg({ text: `PESANAN BARU — ${where}`, id: o.id })
+          setFlashOn(true)
+          setTimeout(() => setAlertMsg(null), 5000)
+          setTimeout(() => setFlashOn(false), 700)
           fetchOrders()
         } else if (p.eventType === 'UPDATE') {
           const u = p.new as KitchenOrder
@@ -139,7 +296,8 @@ export default function KitchenPage() {
   async function advance(orderId: string, nextStatus: OrderStatus) {
     setAdv(orderId)
     await fetch(`/api/order/${orderId}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: nextStatus }),
     })
     setAdv(null)
@@ -147,191 +305,495 @@ export default function KitchenPage() {
 
   async function voidOrder(orderId: string, tableNum: string) {
     if (!confirm(`Void order Meja ${tableNum}? Tindakan ini tidak bisa dibatalkan.`)) return
-    setVoiding(orderId)
+    setVoid(orderId)
     await fetch(`/api/order/${orderId}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'cancelled' }),
     })
-    setVoiding(null)
+    setVoid(null)
   }
 
-  return (
-    <div className="min-h-dvh bg-[#FAFAF8]">
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {})
+      setFullscreen(true)
+    } else {
+      document.exitFullscreen().catch(() => {})
+      setFullscreen(false)
+    }
+  }
 
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-white"
-        style={{ boxShadow: '0 1px 12px rgba(0,0,0,0.07)' }}>
-        <div className="flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="relative w-[90px] h-[32px]">
-              <Image src="/logof22.png" alt="Serasa" fill className="object-contain object-left" sizes="90px" />
+  const pendingCount = orders.filter(o => o.status === 'pending').length
+
+  return (
+    <>
+      {/* ── GLOBAL STYLES ── */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap');
+
+        .kds { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+
+        .kds-flash {
+          animation: kdsFlash 0.7s ease-out;
+        }
+        @keyframes kdsFlash {
+          0%   { background-color: rgba(255,159,10,0.18); }
+          100% { background-color: #08080F; }
+        }
+
+        .kds-card { transition: box-shadow 0.2s ease; }
+        .kds-card:hover { box-shadow: 0 12px 48px rgba(0,0,0,0.7) !important; }
+
+        .kds-btn { transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.12s ease; }
+        .kds-btn:active { transform: scale(0.965) translateY(2px) !important; }
+        .kds-btn:disabled { opacity: 0.45 !important; transform: none !important; }
+
+        .kds-col { max-height: calc(100dvh - 120px); overflow-y: auto; }
+        .kds-col::-webkit-scrollbar { width: 3px; }
+        .kds-col::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+        /* Noise texture overlay */
+        .kds-noise::after {
+          content: '';
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          opacity: 0.025;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+          background-repeat: repeat;
+          background-size: 128px;
+          z-index: 9999;
+        }
+      `}</style>
+
+      <div
+        className={`kds kds-noise min-h-dvh flex flex-col ${flashOn ? 'kds-flash' : ''}`}
+        style={{ background: '#08080F', color: '#F0F0FA' }}
+      >
+        {/* ━━━━━━━━━━━━━━ HEADER ━━━━━━━━━━━━━━ */}
+        <header
+          className="sticky top-0 z-40 flex items-center justify-between px-5 h-[58px] flex-shrink-0"
+          style={{
+            background: 'rgba(8,8,15,0.94)',
+            backdropFilter: 'blur(28px) saturate(160%)',
+            borderBottom: '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
+          {/* Logo + title */}
+          <div className="flex items-center gap-3.5">
+            <div className="relative w-[88px] h-[30px]">
+              <Image src="/logof22.png" alt="Serasa" fill className="object-contain object-left" sizes="88px" />
             </div>
-            <div className="h-5 w-px bg-gray-200" />
+            <div style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.10)' }} />
             <div>
-              <p className="font-black text-gray-900 text-sm">Kitchen Display</p>
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-gray-400 text-xs">{orders.length} aktif</span>
+              <p style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 800, fontSize: 14, letterSpacing: '0.18em',
+                textTransform: 'uppercase', color: '#F0F0FA', lineHeight: 1.1,
+              }}>
+                Kitchen Display
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#30D158', boxShadow: '0 0 8px rgba(48,209,88,0.8)', animation: 'pulse 2s infinite' }} />
+                <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: 'rgba(240,240,250,0.38)' }}>
+                  {orders.length} aktif
+                </span>
+                {pendingCount > 0 && (
+                  <span style={{
+                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900,
+                    fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
+                    background: 'rgba(255,159,10,0.18)', color: '#FF9F0A',
+                    border: '1px solid rgba(255,159,10,0.35)',
+                    borderRadius: 5, padding: '1px 8px',
+                    animation: 'pulse 1.5s infinite',
+                  }}>
+                    {pendingCount} BARU
+                  </span>
+                )}
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => setSoundOn(s => !s)}
-              className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-              {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
-            </button>
-            <button onClick={fetchOrders}
-              className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-            </button>
+
+          {/* Live indicator */}
+          <div
+            className="hidden md:flex items-center gap-2 px-4 py-1.5 rounded-full"
+            style={{
+              background: 'rgba(48,209,88,0.09)',
+              border: '1px solid rgba(48,209,88,0.22)',
+            }}
+          >
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: '#30D158', boxShadow: '0 0 10px rgba(48,209,88,0.9)',
+              animation: 'pulse 1.8s ease-in-out infinite',
+            }} />
+            <span style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 900, fontSize: 12, letterSpacing: '0.18em',
+              textTransform: 'uppercase', color: '#30D158',
+            }}>
+              LIVE
+            </span>
           </div>
-        </div>
-      </header>
 
-      {/* Alert */}
-      <AnimatePresence>
-        {alert && (
-          <motion.div
-            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-            className="mx-4 mt-4 flex items-center gap-3 px-5 py-3.5 rounded-2xl"
-            style={{ background: `${P}15`, border: `1px solid ${P}40` }}>
-            <span className="text-xl animate-bounce">🔔</span>
-            <span className="font-bold text-sm" style={{ color: P }}>{alert}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {/* Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {[
+              {
+                icon: soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />,
+                onClick: () => setSoundOn(s => !s),
+                active: soundOn,
+                activeColor: 'rgba(255,107,53,0.18)',
+                activeBorder: 'rgba(255,107,53,0.28)',
+                activeIcon: '#FF6B35',
+              },
+              {
+                icon: <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />,
+                onClick: fetchOrders,
+                active: false,
+              },
+              {
+                icon: fullscreen ? <Minimize size={15} /> : <Maximize size={15} />,
+                onClick: toggleFullscreen,
+                active: false,
+              },
+            ].map((btn, i) => (
+              <button
+                key={i}
+                onClick={btn.onClick}
+                style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: btn.active ? btn.activeColor : 'rgba(255,255,255,0.05)',
+                  color: btn.active ? btn.activeIcon : 'rgba(255,255,255,0.30)',
+                  border: `1px solid ${btn.active ? btn.activeBorder : 'rgba(255,255,255,0.07)'}`,
+                  cursor: 'pointer', transition: 'all 0.15s ease',
+                }}
+              >
+                {btn.icon}
+              </button>
+            ))}
+          </div>
+        </header>
 
-      {loading ? (
-        <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl h-48 animate-pulse"
-              style={{ border: '1px solid #F0EAE0' }} />
-          ))}
-        </div>
-      ) : orders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-32 text-center px-4">
-          <CheckCircle2 size={52} style={{ color: `${P}50` }} className="mb-4" />
-          <h2 className="font-black text-gray-900 text-xl mb-1">Semua Beres!</h2>
-          <p className="text-gray-400 text-sm">Tidak ada pesanan aktif.</p>
-        </div>
-      ) : (
-        <div className="p-4 space-y-6 md:space-y-0 md:grid md:grid-cols-3 md:gap-5 md:items-start mt-2">
-          {COLS.map(col => {
-            const colOrders = orders.filter(o => o.status === col.status)
-            return (
-              <div key={col.status}>
-                {/* Column label */}
-                <div className="flex items-center gap-2.5 mb-3 px-1">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                    style={{ background: col.bg }}>
-                    <ChefHat size={16} style={{ color: col.color }} />
+        {/* ━━━━━━━━━━━━━━ ALERT BANNER ━━━━━━━━━━━━━━ */}
+        <AnimatePresence>
+          {alertMsg && (
+            <motion.div
+              key={alertMsg.id}
+              initial={{ opacity: 0, y: -20, scaleY: 0.8 }}
+              animate={{ opacity: 1, y: 0, scaleY: 1 }}
+              exit={{ opacity: 0, y: -16, scaleY: 0.9 }}
+              transition={{ type: 'spring', stiffness: 440, damping: 30 }}
+              style={{
+                margin: '12px 16px 0',
+                display: 'flex', alignItems: 'center', gap: 16,
+                padding: '14px 20px',
+                borderRadius: 16,
+                background: 'rgba(255,159,10,0.11)',
+                border: '1px solid rgba(255,159,10,0.42)',
+                boxShadow: '0 0 40px rgba(255,159,10,0.16), inset 0 1px 0 rgba(255,159,10,0.22)',
+              }}
+            >
+              <span style={{ fontSize: 24, animation: 'bounce 1s infinite' }}>🔔</span>
+              <span style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 900, fontSize: 20,
+                letterSpacing: '0.12em', textTransform: 'uppercase',
+                color: '#FF9F0A',
+              }}>
+                {alertMsg.text}
+              </span>
+              <button
+                onClick={() => setAlertMsg(null)}
+                style={{ marginLeft: 'auto', color: 'rgba(255,159,10,0.45)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <X size={16} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ━━━━━━━━━━━━━━ CONTENT ━━━━━━━━━━━━━━ */}
+        {loading ? (
+          /* Skeleton */
+          <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 12 }}>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} style={{
+                borderRadius: 20, height: 260,
+                background: '#0F0F1A',
+                border: '1px solid rgba(255,255,255,0.05)',
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }} />
+            ))}
+          </div>
+        ) : orders.length === 0 ? (
+          /* Empty state */
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '80px 0', textAlign: 'center' }}>
+            <div style={{ fontSize: 72, marginBottom: 20, opacity: 0.6 }}>✅</div>
+            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 40, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#F0F0FA', marginBottom: 8 }}>
+              SEMUA BERES
+            </h2>
+            <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: 'rgba(240,240,250,0.28)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+              Tidak ada pesanan aktif
+            </p>
+          </div>
+        ) : (
+          /* 3-column grid */
+          <div style={{ padding: '16px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, alignItems: 'start', flex: 1 }}>
+            {COLS.map(col => {
+              const colOrders = orders.filter(o => o.status === col.status)
+              return (
+                <div key={col.status} className="kds-col" style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 80 }}>
+
+                  {/* ── Column Header ── */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 14px',
+                    borderRadius: 14, marginBottom: 4,
+                    background: col.dim,
+                    border: `1px solid ${col.border}`,
+                  }}>
+                    {/* Status accent bar */}
+                    <div style={{
+                      width: 6, height: 52, borderRadius: 4, flexShrink: 0,
+                      background: col.color,
+                      boxShadow: `0 0 20px ${col.color}, 0 0 44px ${col.glow}`,
+                    }} />
+                    <span style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 900, fontSize: 36,
+                      letterSpacing: '0.14em', textTransform: 'uppercase',
+                      color: col.color,
+                      textShadow: `0 0 36px ${col.glow}`,
+                      lineHeight: 1,
+                    }}>
+                      {col.label}
+                    </span>
+                    <span style={{
+                      marginLeft: 'auto',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: 36, height: 36, borderRadius: 10,
+                      fontFamily: '"JetBrains Mono", monospace', fontWeight: 900, fontSize: 18,
+                      color: col.color,
+                    }}>
+                      {colOrders.length}
+                    </span>
                   </div>
-                  <span className="font-black text-sm" style={{ color: '#1A1208' }}>{col.label}</span>
-                  <span className="ml-auto w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
-                    style={{ background: col.bg, color: col.color }}>{colOrders.length}</span>
-                </div>
 
-                <div className="space-y-3">
+                  {/* ── Empty Column ── */}
                   {colOrders.length === 0 ? (
-                    <div className="border-2 border-dashed rounded-2xl py-10 flex items-center justify-center"
-                      style={{ borderColor: col.border }}>
-                      <p className="text-xs font-bold" style={{ color: col.color }}>Kosong</p>
+                    <div style={{
+                      borderRadius: 18, padding: '52px 0',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                      background: 'rgba(255,255,255,0.018)',
+                      border: `1px dashed ${col.border}`,
+                    }}>
+                      <span style={{ fontSize: 24, opacity: 0.2 }}>
+                        {col.status === 'pending' ? '📭' : col.status === 'cooking' ? '🍳' : '✅'}
+                      </span>
+                      <p style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 800, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase',
+                        color: col.color, opacity: 0.35,
+                      }}>
+                        Kosong
+                      </p>
                     </div>
                   ) : (
-                    <AnimatePresence>
+                    <AnimatePresence mode="popLayout">
                       {colOrders.map(order => (
-                        <motion.div key={order.id} layout
-                          initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                        <motion.div
+                          key={order.id}
+                          layout
+                          layoutId={order.id}
+                          initial={{ opacity: 0, scale: 0.92, y: 28 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.92 }}
-                          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-                          className="bg-white rounded-2xl overflow-hidden"
-                          style={{ boxShadow: '0 2px 14px rgba(0,0,0,0.06)', border: `1px solid ${col.border}` }}
+                          exit={{ opacity: 0, scale: 0.88, y: -16 }}
+                          transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+                          className="kds-card"
+                          style={{
+                            borderRadius: 20, overflow: 'hidden', position: 'relative',
+                            background: '#0F0F1A',
+                            border: `1px solid ${col.border}`,
+                            boxShadow: `0 8px 36px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.025), inset 0 1px 0 rgba(255,255,255,0.04)`,
+                          }}
                         >
-                          {/* Top stripe */}
-                          <div className="h-1" style={{ background: col.color }} />
+                          {/* Top glow stripe */}
+                          <div style={{
+                            height: 3, background: col.color,
+                            boxShadow: `0 0 18px ${col.color}, 0 0 40px ${col.glow}`,
+                          }} />
 
-                          {/* Header */}
-                          <div className="px-4 pt-4 pb-3 border-b border-gray-50">
-                            <div className="flex items-start justify-between mb-1">
+                          {/* Inner radial glow overlay */}
+                          <div style={{
+                            position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 20,
+                            background: `radial-gradient(ellipse 80% 50% at 5% 5%, ${col.dim} 0%, transparent 65%)`,
+                          }} />
+
+                          {/* ── CARD HEADER ── */}
+                          <div style={{ position: 'relative', padding: '20px 20px 14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+
+                              {/* Table number — DOMINANT */}
                               <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-black text-2xl" style={{ color: '#1A1208' }}>
-                                    {order.order_type === 'delivery' ? 'Delivery' : `Meja ${order.table_number}`}
-                                  </span>
-                                  <span className="text-[9px] font-black px-2 py-1 rounded-full"
-                                    style={{ background: col.bg, color: col.color }}>
-                                    {col.label}
-                                  </span>
-                                  <SourceBadge source={order.source} />
-                                  {order.order_type === 'delivery' && (
-                                    <span className="flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full bg-blue-50 text-blue-600">
-                                      <Bike size={9} /> DELIVERY
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-gray-400 text-xs">{order.customer_name}</p>
+                                {order.order_type === 'dine_in' ? (
+                                  <>
+                                    <div style={{
+                                      fontFamily: "'Barlow Condensed', sans-serif",
+                                      fontWeight: 900, fontSize: '6.5rem', lineHeight: 0.82,
+                                      letterSpacing: '-0.01em', color: '#FFFFFF',
+                                      textShadow: `0 0 70px ${col.glow}, 0 2px 0 rgba(0,0,0,0.6)`,
+                                    }}>
+                                      {order.table_number}
+                                    </div>
+                                    <div style={{
+                                      fontFamily: '"JetBrains Mono", monospace',
+                                      fontWeight: 700, fontSize: 11, letterSpacing: '0.28em',
+                                      textTransform: 'uppercase', color: col.color,
+                                      opacity: 0.6, marginTop: 8,
+                                    }}>
+                                      MEJA
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div style={{
+                                      fontFamily: "'Barlow Condensed', sans-serif",
+                                      fontWeight: 900, fontSize: '2.8rem', lineHeight: 1,
+                                      letterSpacing: '0.04em', color: '#FFFFFF',
+                                      textShadow: `0 0 50px ${col.glow}`,
+                                    }}>
+                                      DELIVERY
+                                    </div>
+                                    <div style={{
+                                      fontFamily: '"JetBrains Mono", monospace',
+                                      fontWeight: 700, fontSize: 10, letterSpacing: '0.22em',
+                                      textTransform: 'uppercase', color: col.color,
+                                      opacity: 0.5, marginTop: 6,
+                                    }}>
+                                      {order.source?.toUpperCase() ?? 'ONLINE'}
+                                    </div>
+                                  </>
+                                )}
                               </div>
-                              <div className="flex items-center gap-2">
+
+                              {/* Timer + void button */}
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, paddingTop: 2 }}>
                                 <Timer createdAt={order.created_at} />
-                                {/* Void button — only on pending */}
                                 {col.status === 'pending' && (
                                   <button
                                     onClick={() => voidOrder(order.id, order.table_number)}
                                     disabled={voiding === order.id}
-                                    className="w-7 h-7 flex items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors disabled:opacity-40"
-                                    title="Void/Cancel order"
+                                    style={{
+                                      width: 28, height: 28, borderRadius: 8,
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      background: 'rgba(255,69,58,0.13)', color: '#FF453A',
+                                      border: '1px solid rgba(255,69,58,0.25)',
+                                      cursor: 'pointer', transition: 'all 0.15s ease',
+                                    }}
+                                    title="Void order"
                                   >
-                                    {voiding === order.id
-                                      ? <span className="text-[9px] font-black">...</span>
-                                      : <XCircle size={14} />
-                                    }
+                                    {voiding === order.id ? <span style={{ fontSize: 9 }}>…</span> : <X size={12} />}
                                   </button>
                                 )}
                               </div>
                             </div>
-                            {order.order_number && (
-                              <p className="text-[10px] font-mono" style={{ color: '#C0B0A0' }}>
-                                {order.order_number}
-                              </p>
-                            )}
+
+                            {/* Customer + order number */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(240,240,250,0.38)' }}>
+                                {order.customer_name}
+                              </span>
+                              {order.order_number && (
+                                <>
+                                  <span style={{ color: 'rgba(240,240,250,0.15)' }}>·</span>
+                                  <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: 'rgba(240,240,250,0.20)' }}>
+                                    {order.order_number}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+
+                            {/* Badges */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                              <SourceBadge source={order.source} />
+                              {order.order_type === 'delivery' && <DeliveryBadge />}
+                            </div>
+
                             {/* Delivery address */}
                             {order.order_type === 'delivery' && order.delivery_address && (
-                              <div className="flex items-start gap-1.5 mt-2 bg-blue-50 rounded-lg px-2.5 py-1.5">
-                                <MapPin size={10} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                                <p className="text-[10px] text-blue-700 font-semibold leading-tight">{order.delivery_address}</p>
+                              <div style={{
+                                display: 'flex', alignItems: 'flex-start', gap: 8,
+                                marginTop: 10, padding: '8px 12px', borderRadius: 12,
+                                background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.18)',
+                              }}>
+                                <span style={{ color: '#60A5FA', fontSize: 12, flexShrink: 0, marginTop: 1 }}>📍</span>
+                                <p style={{ fontSize: 11, color: '#93C5FD', fontWeight: 600, lineHeight: 1.4, margin: 0 }}>
+                                  {order.delivery_address}
+                                </p>
                               </div>
                             )}
                           </div>
 
-                          {/* Items */}
-                          <div className="px-4 py-3 space-y-2.5">
+                          {/* Divider */}
+                          <div style={{ margin: '0 20px', height: 1, background: 'rgba(255,255,255,0.055)' }} />
+
+                          {/* ── ITEMS ── */}
+                          <div style={{ padding: '14px 20px 12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                             {order.order_items?.map(item => (
-                              <div key={item.id}>
-                                <div className="flex items-center gap-3">
-                                  <span className="font-black text-lg w-7 text-center flex-shrink-0" style={{ color: P }}>
-                                    {item.qty}×
-                                  </span>
-                                  <span className="text-gray-800 font-semibold text-sm">{item.name}</span>
+                              <div key={item.id} style={{ display: 'flex', gap: 12 }}>
+                                {/* Qty */}
+                                <span style={{
+                                  fontFamily: "'Barlow Condensed', sans-serif",
+                                  fontWeight: 900, fontSize: '1.7rem', lineHeight: 1.1,
+                                  width: 44, textAlign: 'center', flexShrink: 0,
+                                  color: col.color,
+                                  textShadow: `0 0 12px ${col.glow}`,
+                                }}>
+                                  {item.qty}×
+                                </span>
+                                {/* Name + notes */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 15, fontWeight: 700, color: 'rgba(240,240,250,0.92)', lineHeight: 1.3 }}>
+                                    {item.name}
+                                  </div>
+                                  {item.notes && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                                      {item.notes.split(',').map((n, i) => (
+                                        <NoteChip key={i} text={n} />
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
-                                {item.notes && (
-                                  <p className="text-[10px] text-orange-500 font-bold pl-10 mt-0.5 flex items-center gap-1">
-                                    ⚠ {item.notes}
-                                  </p>
-                                )}
                               </div>
                             ))}
                           </div>
 
-                          {/* Action */}
-                          <div className="px-4 pb-4">
+                          {/* ── ACTION BUTTON ── */}
+                          <div style={{ padding: '2px 14px 16px' }}>
                             <motion.button
-                              whileTap={{ scale: 0.96 }}
+                              className="kds-btn"
+                              whileTap={{ scale: 0.965 }}
                               onClick={() => advance(order.id, col.nextStatus)}
                               disabled={advancing === order.id}
-                              className="w-full py-3.5 rounded-full text-white font-black text-sm disabled:opacity-50"
-                              style={{ background: col.btnColor, boxShadow: `0 4px 14px ${col.btnColor}40` }}>
-                              {advancing === order.id ? '...' : col.nextLabel}
+                              style={{
+                                width: '100%',
+                                padding: '17px 0',
+                                borderRadius: 14,
+                                fontFamily: "'Barlow Condensed', sans-serif",
+                                fontWeight: 900, fontSize: '1.35rem',
+                                letterSpacing: '0.12em', textTransform: 'uppercase',
+                                color: col.btnText,
+                                background: col.btn,
+                                border: 'none', cursor: 'pointer',
+                                boxShadow: `0 0 32px rgba(${col.btnShadow},0.55), 0 6px 24px rgba(0,0,0,0.55)`,
+                              }}
+                            >
+                              {advancing === order.id ? (
+                                <span style={{ display: 'inline-block', animation: 'spin 0.8s linear infinite' }}>⟳</span>
+                              ) : col.nextLabel}
                             </motion.button>
                           </div>
                         </motion.div>
@@ -339,11 +801,45 @@ export default function KitchenPage() {
                     </AnimatePresence>
                   )}
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* ━━━━━━━━━━━━━━ STATUS BAR ━━━━━━━━━━━━━━ */}
+        <footer
+          className="sticky bottom-0 flex-shrink-0 flex items-center justify-between px-5 h-10"
+          style={{
+            background: 'rgba(8,8,15,0.95)',
+            backdropFilter: 'blur(20px)',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(240,240,250,0.22)' }}>
+            {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            {COLS.map(col => {
+              const count = orders.filter(o => o.status === col.status).length
+              return (
+                <div key={col.status} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: col.color }} />
+                  <span style={{
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontWeight: 800, fontSize: 11,
+                    color: col.color, letterSpacing: '0.06em',
+                  }}>
+                    {col.label} {count}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          <LiveClock />
+        </footer>
+      </div>
+    </>
   )
 }
