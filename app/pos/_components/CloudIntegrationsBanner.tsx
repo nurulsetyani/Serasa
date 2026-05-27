@@ -8,20 +8,21 @@ const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
 interface Props {
   onOpenQR: () => void
-  onOpenDelivery: () => void
+  onOpenDelivery: (source: string) => void
 }
 
 interface Counts {
   qr: number
-  delivery: number // HS + Keeta combined
+  hs: number
+  keeta: number
 }
 
 export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Props) {
-  const [counts, setCounts] = useState<Counts>({ qr: 0, delivery: 0 })
+  const [counts, setCounts] = useState<Counts>({ qr: 0, hs: 0, keeta: 0 })
 
   useEffect(() => {
     if (IS_MOCK_MODE) {
-      setCounts({ qr: 2, delivery: 1 })
+      setCounts({ qr: 2, hs: 1, keeta: 0 })
       return
     }
 
@@ -38,8 +39,9 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
           .eq('restaurant_id', RESTAURANT_ID).eq('source', 'keeta').eq('status', 'new'),
       ])
       setCounts({
-        qr: qrRes.count ?? 0,
-        delivery: (hsRes.count ?? 0) + (ktRes.count ?? 0),
+        qr:    qrRes.count ?? 0,
+        hs:    hsRes.count ?? 0,
+        keeta: ktRes.count ?? 0,
       })
     }
 
@@ -77,13 +79,33 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
           color="#FF6B35"
           onClick={onOpenQR}
         />
-        <CountButton
-          icon={<Truck size={12} />}
-          label="Delivery Apps"
-          count={counts.delivery}
-          color="#3B82F6"
-          onClick={onOpenDelivery}
-        />
+        {/* Show separate buttons if both have orders, otherwise one combined button */}
+        {counts.hs > 0 && counts.keeta > 0 ? (
+          <>
+            <CountButton
+              icon={<span className="font-black text-[10px]">HS</span>}
+              label="HungerStation"
+              count={counts.hs}
+              color="#FF6000"
+              onClick={() => onOpenDelivery('hungerstation')}
+            />
+            <CountButton
+              icon={<span className="font-black text-[10px]">KT</span>}
+              label="Keeta"
+              count={counts.keeta}
+              color="#00C851"
+              onClick={() => onOpenDelivery('keeta')}
+            />
+          </>
+        ) : (
+          <CountButton
+            icon={<Truck size={12} />}
+            label={counts.keeta > 0 ? 'Keeta' : 'Delivery Apps'}
+            count={counts.hs + counts.keeta}
+            color={counts.keeta > 0 ? '#00C851' : '#3B82F6'}
+            onClick={() => onOpenDelivery(counts.keeta > 0 ? 'keeta' : 'hungerstation')}
+          />
+        )}
       </div>
     </div>
   )

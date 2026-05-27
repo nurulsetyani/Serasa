@@ -65,7 +65,7 @@ function POSInner() {
   }, [])
 
   // Open correct delivery panel by source
-  function handleOpenDelivery(source?: string) {
+  function handleOpenDelivery(source: string) {
     if (source === 'keeta') setShowKeeta(true)
     else setShowHungerStation(true)
   }
