@@ -65,7 +65,7 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
       .select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
       .eq('source', 'qr')
-      .eq('status', 'pending')
+      .eq('status', 'new')
       .order('created_at', { ascending: true })
     setOrders((data as QROrder[]) ?? [])
     setLoading(false)
@@ -85,11 +85,11 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
   }, [open, fetchOrders])
 
   async function handleLoad(order: QROrder) {
-    // Mark as cooking immediately so badge disappears and kitchen sees it
+    // Advance new → pending so order appears in KDS as BARU (confirmed by cashier)
     fetch(`/api/order/${order.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'cooking' }),
+      body: JSON.stringify({ status: 'pending' }),
     }).catch(() => {})
 
     loadFromQROrder({

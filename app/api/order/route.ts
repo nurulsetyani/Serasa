@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         notes: body.notes?.trim() || null,
         total_price: body.total_price,
         source: 'qr',
-        status: 'pending',
+        status: 'new',
       })
       .select()
       .single()
