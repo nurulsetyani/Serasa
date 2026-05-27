@@ -5,6 +5,7 @@ import { useLang } from '@/context/LanguageContext'
 import { TranslationKey } from '@/lib/i18n'
 
 const STATUS_CONFIG: Record<OrderStatus, { icon: string; className: string; labelKey: TranslationKey }> = {
+  new:       { icon: '🕐', className: 'status-pending',   labelKey: 'pending' },
   pending:   { icon: '⏳', className: 'status-pending',   labelKey: 'pending' },
   cooking:   { icon: '🔥', className: 'status-cooking',   labelKey: 'cooking' },
   ready:     { icon: '✅', className: 'status-ready',     labelKey: 'ready' },

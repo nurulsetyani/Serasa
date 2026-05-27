@@ -29,7 +29,7 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
       const [qrRes, hsRes, ktRes] = await Promise.all([
         supabase
           .from('orders').select('id', { count: 'exact', head: true })
-          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'qr').eq('status', 'pending'),
+          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'qr').eq('status', 'new'),
         supabase
           .from('orders').select('id', { count: 'exact', head: true })
           .eq('restaurant_id', RESTAURANT_ID).eq('source', 'hungerstation').eq('status', 'pending'),

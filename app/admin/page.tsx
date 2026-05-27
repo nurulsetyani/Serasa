@@ -64,12 +64,13 @@ const MOCK_ORDERS: Order[] = [
 ]
 
 const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
-  pending: 'cooking', cooking: 'ready', ready: 'delivered', delivered: null, cancelled: null,
+  new: 'pending', pending: 'cooking', cooking: 'ready', ready: 'delivered', delivered: null, cancelled: null,
 }
 
 const STATUS_CONFIG: Record<OrderStatus, {
   label: string; dot: string; badge: string; btnLabel: string; btnClass: string; icon: React.ElementType
 }> = {
+  new:       { label: 'Menunggu',  dot: 'bg-[#A78BFA]', badge: 'bg-[#A78BFA]/10 text-[#A78BFA] border-[#A78BFA]/20', btnLabel: '',             btnClass: '', icon: Clock },
   pending:   { label: 'Pending',   dot: 'bg-[#F59E0B]', badge: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20', btnLabel: 'Start Cooking', btnClass: 'bg-[#EF4444] hover:bg-[#DC2626] text-white', icon: Clock },
   cooking:   { label: 'Cooking',   dot: 'bg-[#EF4444]', badge: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20', btnLabel: 'Mark Ready',    btnClass: 'bg-[#22C55E] hover:bg-[#16A34A] text-white', icon: Flame },
   ready:     { label: 'Ready',     dot: 'bg-[#22C55E]', badge: 'bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/20', btnLabel: 'Mark Delivered', btnClass: 'bg-[#6366F1] hover:bg-[#4F46E5] text-white', icon: CircleCheck },
@@ -237,7 +238,7 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
           <div>
             <p className="text-sm font-medium mb-3" style={{ color: C.text }}>Status Pesanan</p>
             <div className="grid grid-cols-4 gap-2">
-              {(['pending', 'cooking', 'ready', 'delivered'] as OrderStatus[]).map(s => {
+              {(['new', 'pending', 'cooking', 'ready', 'delivered'] as OrderStatus[]).map(s => {
                 const count = filtered.filter(o => o.status === s).length
                 const cfg = STATUS_CONFIG[s]
                 return (
@@ -616,6 +617,7 @@ export default function AdminPage() {
           <div className="flex gap-2 px-4 lg:px-6 py-2.5 overflow-x-auto scrollbar-hide border-t" style={{ borderColor: C.border }}>
             {[
               { value: 'all',       label: 'Semua' },
+              { value: 'new',       label: 'Menunggu' },
               { value: 'pending',   label: 'Pending' },
               { value: 'cooking',   label: 'Cooking' },
               { value: 'ready',     label: 'Ready' },

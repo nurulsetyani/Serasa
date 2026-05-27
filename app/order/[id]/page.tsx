@@ -29,7 +29,7 @@ const MOCK_ORDER: Order = {
 
 // Cook times from menu (approximate)
 const EST_MINS: Record<OrderStatus, number> = {
-  pending: 20, cooking: 12, ready: 0, delivered: 0, cancelled: 0,
+  new: 25, pending: 20, cooking: 12, ready: 0, delivered: 0, cancelled: 0,
 }
 
 const STEPS: { status: OrderStatus; labelKey: TranslationKey; icon: React.ElementType }[] = [
