@@ -192,6 +192,9 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
           <span>التاريخ (Date):</span><span>${dateStr}, ${timeStr}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
+          <span>العميل (Customer):</span><span>${customerName || 'Guest'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
           <span>نوع الطلب (Order Type):</span><span>${ORDER_TYPE_LABELS[orderType] || orderType}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
@@ -320,7 +323,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                   <div className="space-y-0.5 mb-1">
                     <MetaRow arLabel="الرقم الضريبي (VAT Reg):" value={VAT_REG} />
                     <MetaRow arLabel="التاريخ (Date):" value={`${dateStr}, ${timeStr}`} />
-                    <MetaRow arLabel="الموظف (Operator):" value={customerName || 'Cashier'} />
+                    <MetaRow arLabel="العميل (Customer):" value={customerName || 'Guest'} />
                     <MetaRow arLabel="نوع الطلب (Order Type):" value={ORDER_TYPE_LABELS[orderType] || orderType} />
                     <MetaRow arLabel="رقم الطاولة (Table No):" value={tableNumber || '—'} highlight />
                   </div>
