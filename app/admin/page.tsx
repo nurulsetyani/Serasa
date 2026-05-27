@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
-  RefreshCw, FileText, Printer, X, UtensilsCrossed,
+  RefreshCw, FileText, X, UtensilsCrossed,
   ClipboardList, ChefHat, BarChart3, Clock, CheckCircle2,
   Flame, CircleCheck, TrendingUp, ShoppingBag, AlertCircle,
   Bell
@@ -199,11 +199,6 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
                 </button>
               ))}
             </div>
-            <button onClick={() => window.print()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-              style={{ background: C.accent, color: '#000' }}>
-              <Printer size={13} /> Print
-            </button>
             <button onClick={onClose} className="p-1.5 rounded-lg transition-colors hover:bg-white/5"
               style={{ color: C.muted }}>
               <X size={16} />
@@ -408,15 +403,6 @@ function OrderCard({
             {order.order_items?.length ?? 0} item
           </span>
           <div className="flex items-center gap-2">
-            {/* Print invoice */}
-            <button
-              onClick={() => window.open(`/receipt/${order.id}?print=1`, '_blank')}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold border transition-colors hover:bg-white/5"
-              style={{ borderColor: C.border, color: C.muted }}
-              title="Cetak Invoice"
-            >
-              <Printer size={11} /> Print
-            </button>
             <span className="text-sm font-bold" style={{ color: C.text }}>
               {formatPrice(order.total_price)}
             </span>

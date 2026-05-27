@@ -160,7 +160,7 @@ export default function CheckoutPage() {
           items: items.map(i => ({
             menu_id: i.id,
             name: getItemName(i, 'en'),
-            price: i.price,
+            price: discountedPrice(i.price, i.discount_percent), // apply menu discount
             qty: i.qty,
             notes: i.itemNotes ?? null,
           })),
