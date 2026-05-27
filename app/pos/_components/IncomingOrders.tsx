@@ -85,12 +85,8 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
   }, [open, fetchOrders])
 
   async function handleLoad(order: QROrder) {
-    // Advance new → pending so order appears in KDS as BARU (confirmed by cashier)
-    fetch(`/api/order/${order.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'pending' }),
-    }).catch(() => {})
+    // Do NOT advance status here — Cart will send to KDS (pending) only after
+    // the cashier clicks "Check & Sign E-Invoice". This prevents double orders.
 
     loadFromQROrder({
       orderId: order.id,
