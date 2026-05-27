@@ -258,7 +258,7 @@ interface DownloadButtonProps {
 export function PDFDownloadButton({ data, orderNumber }: DownloadButtonProps) {
   const logoUrl = typeof window !== 'undefined' ? `${window.location.origin}/logof22.png` : undefined
   const restoName = process.env.NEXT_PUBLIC_RESTO_NAME || 'SERASA RESTAURANT'
-  const branchName = process.env.NEXT_PUBLIC_BRANCH_NAME || 'Al Khobar Branch (Saudi Arabia)'
+  const branchName = process.env.NEXT_PUBLIC_BRANCH_NAME || 'Kuday, Mekkah - Saudi Arabia'
   const vatReg = process.env.NEXT_PUBLIC_VAT_REG || '310000000000003'
   const filename = `invoice-${orderNumber || data.tableNumber}-${Date.now()}.pdf`
 

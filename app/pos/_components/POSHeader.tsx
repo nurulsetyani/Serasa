@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase'
 import { IS_MOCK_MODE } from '@/lib/mock-data'
 import { formatPrice } from '@/lib/utils'
 
-const P = '#FF6B35'
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
 interface DailySummary {
@@ -61,14 +60,12 @@ export default function POSHeader() {
   }, [])
 
   const restoName = process.env.NEXT_PUBLIC_RESTO_NAME || 'Serasa POS'
-  const branchName = process.env.NEXT_PUBLIC_BRANCH_NAME || 'Al Khobar · ZATCA 2026 ACTIVE'
+  const branchName = process.env.NEXT_PUBLIC_BRANCH_NAME || 'Kuday, Mekkah - Saudi Arabia'
 
   return (
     <div className="flex items-center justify-between px-4 py-2.5 bg-[#1A1208] text-white flex-shrink-0">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0" style={{ background: P }}>
-          <Image src="/logof22.png" alt="Logo" width={32} height={32} style={{ objectFit: 'contain', maxHeight: 32 }} />
-        </div>
+        <Image src="/logof22.png" alt="Logo" width={44} height={44} className="flex-shrink-0" style={{ objectFit: 'contain' }} />
         <div>
           <p className="font-black text-sm leading-none">{restoName}</p>
           <p className="text-[9px] text-gray-400 mt-0.5">{branchName}</p>

@@ -33,7 +33,7 @@ class PDFErrorBoundary extends Component<{ children: ReactNode }, { failed: bool
 }
 
 const RESTO_NAME = process.env.NEXT_PUBLIC_RESTO_NAME || 'SERASA RESTAURANT'
-const BRANCH_NAME = process.env.NEXT_PUBLIC_BRANCH_NAME || 'Al Khobar Branch (Saudi Arabia)'
+const BRANCH_NAME = process.env.NEXT_PUBLIC_BRANCH_NAME || 'Kuday, Mekkah - Saudi Arabia'
 const VAT_REG = process.env.NEXT_PUBLIC_VAT_REG || '310000000000003'
 
 const ORDER_TYPE_LABELS: Record<string, string> = {
@@ -179,6 +179,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
       </style></head>
       <body>
         <div class="center" style="margin-bottom:6px">
+          <img src="/logof22.png" alt="Logo" style="max-height:48px;max-width:120px;object-fit:contain;display:block;margin:0 auto 4px" />
           <div style="font-size:14px;font-weight:900;color:#CC0000">${RESTO_NAME}</div>
           <div style="font-size:10px;margin-top:2px">${BRANCH_NAME}</div>
           <div style="font-size:9px;color:#666">${invoiceNo}</div>
@@ -304,6 +305,8 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                 <div className="px-5 py-4">
                   {/* Resto name */}
                   <div className="text-center mb-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/logof22.png" alt="Logo" style={{ height: 48, maxWidth: 140, objectFit: 'contain', margin: '0 auto 6px' }} />
                     <p className="font-black text-base leading-tight" style={{ color: '#CC0000' }}>
                       {RESTO_NAME}
                     </p>

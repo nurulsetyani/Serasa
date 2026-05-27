@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
         restaurant_name_ar: 'مطعم سيراسا',
         restaurant_sub: 'Authentic Indonesian Cuisine',
         restaurant_sub_ar: 'مأكولات إندونيسية أصيلة',
-        restaurant_addr: 'Al Khobar, Saudi Arabia',
-        restaurant_addr_ar: 'الخبر، المملكة العربية السعودية',
+        restaurant_addr: 'Kuday, Mekkah - Saudi Arabia',
+        restaurant_addr_ar: 'كداي، مكة المكرمة - المملكة العربية السعودية',
       },
     }
 
