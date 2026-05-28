@@ -1,15 +1,15 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ChevronRight, Globe, X } from 'lucide-react'
+import { ChevronRight, Globe, X, Star, Zap, Leaf } from 'lucide-react'
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
 import { Language } from '@/types'
 
 const STORAGE_KEY = 'serasa_lang'
-const P = '#FF6B35'
-const GOLD = '#C9924A'
+const P  = '#FF6B35'
+const BG = '#F5F2EE'
 
 type LangCfg = { code: Language; flag: string; native: string; greeting: string; dir: 'ltr' | 'rtl' }
 
@@ -19,21 +19,38 @@ const LANGUAGES: LangCfg[] = [
   { code: 'ar', flag: '🇸🇦', native: 'العربية',           greeting: 'أهلاً وسهلاً',   dir: 'rtl' },
 ]
 
-const GREETING:     Record<Language, string> = { id: 'Selamat Datang', en: 'Welcome',           ar: 'أهلاً وسهلاً'  }
-const TAGLINE:      Record<Language, string> = { id: 'Dari Indonesia untuk dunia', en: 'From Indonesia, with love', ar: 'من إندونيسيا بكل محبة' }
-const CTA:          Record<Language, string> = { id: 'Mulai Memesan',  en: 'Begin Your Journey', ar: 'ابدأ رحلتك'   }
-const CHANGE_LANG:  Record<Language, string> = { id: 'Ganti Bahasa',   en: 'Language',           ar: 'اللغة'        }
-const SELECT_LANG:  Record<Language, string> = { id: 'Pilih Bahasa',   en: 'Select Language',    ar: 'اختر اللغة'   }
+const GREETING:    Record<Language, string> = { id: 'Selamat Datang',            en: 'Welcome',                   ar: 'أهلاً وسهلاً'          }
+const TAGLINE:     Record<Language, string> = { id: 'Masakan Indonesia Autentik', en: 'Authentic Indonesian Cuisine', ar: 'مطبخ إندونيسي أصيل' }
+const CTA:         Record<Language, string> = { id: 'Mulai Memesan',             en: 'Start Ordering',            ar: 'ابدأ الطلب'            }
+const CHANGE_LANG: Record<Language, string> = { id: 'Bahasa',                    en: 'Language',                  ar: 'اللغة'                  }
+const SELECT_LANG: Record<Language, string> = { id: 'Pilih Bahasa',              en: 'Select Language',           ar: 'اختر اللغة'            }
+
+const TRUST_EN = [
+  { icon: <Leaf size={12} strokeWidth={2} />,  label: 'Halal Certified' },
+  { icon: <Star size={12} strokeWidth={2} />,  label: '4.9 · 500+ Reviews' },
+  { icon: <Zap  size={12} strokeWidth={2} />,  label: 'Quick Table Ordering' },
+]
+const TRUST_ID = [
+  { icon: <Leaf size={12} strokeWidth={2} />,  label: 'Bersertifikat Halal' },
+  { icon: <Star size={12} strokeWidth={2} />,  label: '4.9 · 500+ Ulasan' },
+  { icon: <Zap  size={12} strokeWidth={2} />,  label: 'Pesan di Meja Cepat' },
+]
+const TRUST_AR = [
+  { icon: <Leaf size={12} strokeWidth={2} />,  label: 'حلال معتمد' },
+  { icon: <Star size={12} strokeWidth={2} />,  label: '٤.٩ · ٥٠٠+ تقييم' },
+  { icon: <Zap  size={12} strokeWidth={2} />,  label: 'طلب سريع على الطاولة' },
+]
+const TRUST_MAP: Record<Language, typeof TRUST_EN> = { en: TRUST_EN, id: TRUST_ID, ar: TRUST_AR }
 
 function detectLang(): Language {
   if (typeof window === 'undefined') return 'en'
-  const nav = navigator.language.toLowerCase()
-  if (nav.startsWith('ar')) return 'ar'
-  if (nav.startsWith('id') || nav.startsWith('ms')) return 'id'
+  const n = navigator.language.toLowerCase()
+  if (n.startsWith('ar')) return 'ar'
+  if (n.startsWith('id') || n.startsWith('ms')) return 'id'
   return 'en'
 }
 
-// ── Language bottom sheet ─────────────────────────────────────────────────
+// ── Bottom sheet ─────────────────────────────────────────────────────────
 function LangSheet({ open, onClose, onSelect, current }: {
   open: boolean; onClose: () => void; onSelect: (l: Language) => void; current: Language
 }) {
@@ -43,59 +60,54 @@ function LangSheet({ open, onClose, onSelect, current }: {
       {open && (
         <>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md" onClick={onClose} />
+            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={onClose} />
           <motion.div
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 360, damping: 36 }}
             drag="y" dragConstraints={{ top: 0 }} dragElastic={0.08}
             onDragEnd={(_, i) => { if (i.offset.y > 80) onClose() }}
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[32px]"
-            style={{ background: '#141210', boxShadow: '0 -2px 60px rgba(0,0,0,0.8)', y }}
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[28px]"
+            style={{ background: '#FFFFFF', boxShadow: '0 -4px 60px rgba(0,0,0,0.12)', y }}
           >
-            {/* Drag pill */}
-            <div className="flex justify-center pt-4 pb-2">
-              <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+            <div className="flex justify-center pt-3.5 pb-2">
+              <div className="w-9 h-1 rounded-full bg-gray-200" />
             </div>
-
-            <div className="flex items-center justify-between px-6 py-4">
-              <h2 className="font-bold text-xl" style={{ color: '#F0E8DC', fontFamily: "'Outfit', sans-serif" }}>
+            <div className="flex items-center justify-between px-6 pt-2 pb-5">
+              <h2 className="font-bold text-[19px] text-gray-900"
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
                 {SELECT_LANG[current]}
               </h2>
               <button onClick={onClose}
-                className="w-9 h-9 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.10)' }}>
-                <X size={15} style={{ color: 'rgba(255,255,255,0.5)' }} />
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                <X size={14} className="text-gray-500" />
               </button>
             </div>
-
-            <div className="px-5 pb-12 space-y-3">
+            <div className="px-5 pb-10 space-y-3">
               {LANGUAGES.map(l => {
                 const active = l.code === current
                 return (
-                  <motion.button key={l.code} whileTap={{ scale: 0.97 }}
+                  <motion.button key={l.code} whileTap={{ scale: 0.975 }}
                     onClick={() => onSelect(l.code)} dir={l.dir}
-                    className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all"
+                    className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 transition-colors"
                     style={{
-                      background: active ? 'rgba(201,146,74,0.12)' : 'rgba(255,255,255,0.04)',
-                      border: `1.5px solid ${active ? GOLD : 'rgba(255,255,255,0.08)'}`,
+                      background: active ? `${P}0D` : '#FAFAF8',
+                      borderColor: active ? P : '#EDEAE5',
                     }}>
                     <span className="text-3xl leading-none flex-shrink-0">{l.flag}</span>
                     <div className={`flex-1 ${l.dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                      <p className="font-bold text-[16px]"
+                      <p className="font-bold text-[15px]"
                         style={{
-                          color: active ? GOLD : '#F0E8DC',
-                          fontFamily: l.code === 'ar' ? 'var(--font-noto-arabic),serif' : "'Outfit', sans-serif",
+                          color: active ? P : '#1C1917',
+                          fontFamily: l.code === 'ar' ? 'var(--font-noto-arabic),serif' : "'Bricolage Grotesque', sans-serif",
                         }}>
                         {l.native}
                       </p>
-                      <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{l.greeting}</p>
+                      <p className="text-[13px] mt-0.5 text-stone-400">{l.greeting}</p>
                     </div>
-                    <motion.div
-                      animate={{ scale: active ? 1 : 0.85, opacity: active ? 1 : 0.4 }}
-                      className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                      style={{ borderColor: active ? GOLD : 'rgba(255,255,255,0.2)', background: active ? GOLD : 'transparent' }}>
+                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                      style={{ borderColor: active ? P : '#D1CDC7', background: active ? P : 'transparent' }}>
                       {active && <div className="w-2 h-2 bg-white rounded-full" />}
-                    </motion.div>
+                    </div>
                   </motion.button>
                 )
               })}
@@ -104,21 +116,6 @@ function LangSheet({ open, onClose, onSelect, current }: {
         </>
       )}
     </AnimatePresence>
-  )
-}
-
-// ── Ambient floating particle ─────────────────────────────────────────────
-function Particle({ x, y, size, delay, duration }: {
-  x: number; y: number; size: number; delay: number; duration: number
-}) {
-  return (
-    <motion.div
-      className="absolute rounded-full pointer-events-none"
-      style={{ left: `${x}%`, top: `${y}%`, width: size, height: size,
-        background: `radial-gradient(circle, rgba(201,146,74,0.35) 0%, transparent 70%)` }}
-      animate={{ y: [-6, 6, -6], opacity: [0.3, 0.7, 0.3] }}
-      transition={{ duration, delay, repeat: Infinity, ease: 'easeInOut' }}
-    />
   )
 }
 
@@ -159,306 +156,281 @@ export default function EntryPage() {
 
   if (!mounted) return null
   const isRTL = lang === 'ar'
+  const trust = TRUST_MAP[lang]
 
   return (
-    <div
-      className="min-h-dvh overflow-hidden relative select-none"
-      style={{ background: '#0C0A08', fontFamily: "'Outfit', sans-serif" }}
-      dir={isRTL ? 'rtl' : 'ltr'}
-    >
-      {/* ── Google Fonts ─────────────────────────────────────────────── */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300;1,9..144,600&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+    <div className="min-h-dvh overflow-hidden"
+      style={{ background: BG, fontFamily: "'DM Sans', sans-serif" }}
+      dir={isRTL ? 'rtl' : 'ltr'}>
 
-        @keyframes grain {
-          0%, 100% { transform: translate(0, 0) }
-          10%  { transform: translate(-2%, -2%) }
-          20%  { transform: translate(2%, 2%) }
-          30%  { transform: translate(-1%, 1%) }
-          40%  { transform: translate(1%, -1%) }
-          50%  { transform: translate(-2%, 2%) }
-          60%  { transform: translate(2%, -2%) }
-          70%  { transform: translate(-1%, -1%) }
-          80%  { transform: translate(1%, 1%) }
-          90%  { transform: translate(-2%, -1%) }
+      {/* Fonts */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
+
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0px) }
+          50%       { transform: translateY(-8px) }
         }
-        @keyframes shimmer {
-          0%   { transform: translateX(-120%) }
-          100% { transform: translateX(220%) }
+        @keyframes cta-pulse {
+          0%, 100% { box-shadow: 0 8px 28px rgba(255,107,53,0.36), 0 2px 8px rgba(255,107,53,0.20) }
+          50%       { box-shadow: 0 12px 36px rgba(255,107,53,0.45), 0 4px 12px rgba(255,107,53,0.28) }
         }
-        .cta-shimmer { animation: shimmer 3.2s ease-in-out infinite; animation-delay: 0.8s; }
+        @keyframes badge-shimmer {
+          0%   { transform: translateX(-100%) }
+          100% { transform: translateX(400%) }
+        }
+        .hero-float { animation: float-slow 9s ease-in-out infinite; }
+        .cta-pulse  { animation: cta-pulse 3.2s ease-in-out infinite; }
       `}</style>
 
-      {/* ── SVG GRAIN overlay ──────────────────────────────────────────── */}
-      <div className="fixed inset-0 z-10 pointer-events-none" style={{ opacity: 0.028 }}>
-        <svg width="100%" height="100%">
-          <filter id="grain">
-            <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch" />
-            <feColorMatrix type="saturate" values="0" />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#grain)" />
-        </svg>
-      </div>
+      {/* ── HERO — editorial food stage ────────────────────────────────── */}
+      <div className="relative overflow-hidden" style={{ height: '58dvh', background: '#1A1410' }}>
 
-      {/* ── HERO — cinematic food stage ──────────────────────────────── */}
-      <div className="relative overflow-hidden" style={{ height: '62dvh', background: '#0C0A08' }}>
-
-        {/* Food image — floating, slightly pulled back */}
+        {/* Food image — editorial framing, slight pull-back */}
         <motion.div
-          className="absolute inset-0"
-          style={{ scale: 0.92 }}  /* breathing room — shows dark bg at edges */
-          animate={{ y: [0, -10, 0], scale: [0.92, 0.93, 0.92] }}
-          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute inset-0 hero-float"
+          style={{ scale: 0.94 }}
         >
           <Image
             src={heroImg || '/hero-food.png'}
-            alt="Indonesian cuisine" fill priority
+            alt="Indonesian Cuisine" fill priority
             className="object-cover object-center"
-            style={{ filter: 'brightness(0.88) saturate(1.18) contrast(1.04)' }}
+            style={{ filter: 'brightness(0.90) saturate(1.12) contrast(1.05)' }}
             sizes="100vw"
           />
         </motion.div>
 
-        {/* Cinematic gradient — dark edges, preserves food centre */}
+        {/* Cinematic dark gradient — NOT white fade, preserves food */}
         <div className="absolute inset-0 pointer-events-none" style={{
           background: `
-            linear-gradient(180deg,
-              rgba(12,10,8,0.60) 0%,
-              rgba(12,10,8,0.20) 25%,
-              rgba(12,10,8,0.10) 45%,
-              rgba(12,10,8,0.45) 70%,
-              rgba(12,10,8,0.92) 90%,
-              #0C0A08 100%
-            ),
-            radial-gradient(ellipse 80% 60% at 50% 30%, transparent 40%, rgba(12,10,8,0.30) 100%)
+            linear-gradient(
+              180deg,
+              rgba(20,16,12,0.55) 0%,
+              rgba(20,16,12,0.15) 30%,
+              rgba(20,16,12,0.05) 52%,
+              rgba(20,16,12,0.28) 72%,
+              rgba(245,242,238,0.72) 88%,
+              ${BG} 100%
+            )
           `,
         }} />
 
-        {/* Subtle vignette */}
+        {/* Soft vignette edges */}
         <div className="absolute inset-0 pointer-events-none" style={{
-          background: 'radial-gradient(ellipse 120% 100% at 50% 50%, transparent 50%, rgba(12,10,8,0.45) 100%)',
+          background: 'radial-gradient(ellipse 110% 100% at 50% 50%, transparent 55%, rgba(20,16,12,0.22) 100%)',
         }} />
 
-        {/* ── LOGO — glass pill ── */}
+        {/* ── LOGO — glassmorphism pill ── */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute top-8 left-0 right-0 flex justify-center z-20"
+          initial={{ opacity: 0, y: -18, scale: 0.92 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute top-10 left-0 right-0 flex justify-center z-10"
         >
-          <motion.div
-            animate={{ y: [0, -3, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-            style={{
-              background: 'rgba(255,255,255,0.07)',
-              backdropFilter: 'blur(16px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-              borderRadius: 100,
-              padding: '10px 28px',
-              border: '1px solid rgba(255,255,255,0.14)',
-              boxShadow: `
-                0 4px 32px rgba(0,0,0,0.4),
-                0 1px 0 rgba(255,255,255,0.12) inset,
-                0 0 48px rgba(201,146,74,0.06)
-              `,
-            }}
-          >
-            <div style={{ position: 'relative', width: 160, height: 58 }}>
-              <Image src="/logof22.png" alt="Serasa" fill className="object-contain" priority sizes="160px"
-                style={{ filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5)) brightness(1.05)' }} />
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Ambient warm glow behind logo */}
-        <div className="absolute top-0 left-0 right-0 flex justify-center pointer-events-none" style={{ height: 140 }}>
           <div style={{
-            width: 280, height: 80, marginTop: 20,
-            background: `radial-gradient(ellipse, rgba(201,146,74,0.10) 0%, transparent 70%)`,
-            filter: 'blur(24px)',
-          }} />
-        </div>
+            background: 'rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(20px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+            borderRadius: 100,
+            padding: '9px 26px 9px',
+            border: '1px solid rgba(255,255,255,0.22)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18)',
+          }}>
+            <div style={{ position: 'relative', width: 150, height: 54 }}>
+              <Image src="/logof22.png" alt="Serasa" fill className="object-contain" priority sizes="150px"
+                style={{ filter: 'brightness(1.08) drop-shadow(0 2px 10px rgba(0,0,0,0.35))' }} />
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      {/* ── CONTENT ──────────────────────────────────────────────────── */}
-      <div className="relative px-6 pt-6 pb-16 flex flex-col items-center text-center" style={{ zIndex: 2 }}>
-
-        {/* Ambient radial glow — warm from below food */}
-        <div className="absolute top-0 left-0 right-0 pointer-events-none" style={{ height: 160 }}>
-          <div style={{
-            position: 'absolute', top: -40, left: '50%', transform: 'translateX(-50%)',
-            width: '120%', height: 160,
-            background: 'radial-gradient(ellipse 70% 100% at 50% 0%, rgba(255,107,53,0.08) 0%, transparent 70%)',
-            filter: 'blur(20px)',
-          }} />
-        </div>
-
-        {/* Floating ambient particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <Particle x={12} y={8}  size={4} delay={0}   duration={7} />
-          <Particle x={85} y={15} size={3} delay={1.5} duration={9} />
-          <Particle x={22} y={40} size={2} delay={3}   duration={11} />
-          <Particle x={75} y={55} size={4} delay={0.8} duration={8} />
-          <Particle x={50} y={72} size={2} delay={2.2} duration={10} />
-          <Particle x={90} y={80} size={3} delay={4}   duration={7.5} />
+      {/* ── CONTENT — warm luxury cream ───────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="px-6 pt-5 pb-14 flex flex-col items-center text-center relative"
+        style={{ background: BG }}
+      >
+        {/* ── TRUST BADGES ── */}
+        <div className="flex items-center gap-2.5 mb-5 flex-wrap justify-center">
+          {trust.map((t, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.28 + i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="relative overflow-hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+              style={{
+                background: '#EFEBE6',
+                border: '1px solid rgba(180,160,135,0.30)',
+              }}
+            >
+              {/* Subtle shimmer on badge */}
+              <div
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.5) 50%, transparent 65%)',
+                  animation: `badge-shimmer ${6 + i * 1.2}s ease-in-out infinite`,
+                  animationDelay: `${i * 0.8}s`,
+                }}
+              />
+              <span style={{ color: '#8A7A65' }}>{t.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#6B5A47', letterSpacing: '0.02em' }}>
+                {t.label}
+              </span>
+            </motion.div>
+          ))}
         </div>
 
         {/* TAGLINE */}
         <motion.p
           key={`tag-${lang}`}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ delay: 0.22 }}
           style={{
-            fontFamily: "'Outfit', sans-serif",
-            fontWeight: 500,
-            fontSize: 11,
-            letterSpacing: '0.22em',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 12, fontWeight: 500,
+            letterSpacing: '0.16em',
             textTransform: 'uppercase',
-            color: GOLD,
-            marginBottom: 10,
+            color: '#A08060',
+            marginBottom: 8,
           }}
         >
           {TAGLINE[lang]}
         </motion.p>
 
-        {/* GREETING — cinematic serif */}
+        {/* GREETING — bold modern display */}
         <motion.h1
           key={`h-${lang}`}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           style={{
-            fontFamily: isRTL ? 'var(--font-noto-arabic),serif' : "'Fraunces', serif",
-            fontWeight: isRTL ? 700 : 300,
-            fontStyle: isRTL ? 'normal' : 'italic',
-            fontSize: isRTL ? 'clamp(36px, 10vw, 52px)' : 'clamp(44px, 12vw, 62px)',
-            color: '#F0E6D6',
-            letterSpacing: isRTL ? '0.02em' : '-0.02em',
-            lineHeight: 1.0,
-            marginBottom: 14,
+            fontFamily: isRTL ? 'var(--font-noto-arabic),serif' : "'Bricolage Grotesque', sans-serif",
+            fontWeight: 800,
+            fontSize: isRTL ? 'clamp(34px, 9.5vw, 46px)' : 'clamp(36px, 10vw, 50px)',
+            color: '#1C1917',
+            letterSpacing: isRTL ? '0.01em' : '-0.025em',
+            lineHeight: 1.05,
+            marginBottom: 10,
           }}
         >
           {GREETING[lang]}
         </motion.h1>
 
-        {/* Decorative rule */}
-        <motion.div
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            width: 48, height: 1,
-            background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
-            marginBottom: 14,
-          }}
-        />
-
         {/* Table + location */}
         <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.32 }}
           style={{
-            fontFamily: "'Outfit', sans-serif",
-            fontSize: 13, fontWeight: 400,
-            color: 'rgba(240,230,214,0.35)',
-            letterSpacing: '0.05em',
-            marginBottom: 36,
+            fontSize: 13.5, fontWeight: 400,
+            color: '#A09080',
+            letterSpacing: '0.02em',
+            marginBottom: 28,
           }}
         >
-          {isRTL ? `طاولة #${table}` : `Table #${table}`} · Mekkah, KSA
+          {isRTL ? `طاولة #${table}` : `Table #${table}`}
+          <span style={{ margin: '0 8px', opacity: 0.4 }}>·</span>
+          Mekkah, KSA
         </motion.p>
 
         {/* ── CTA button ── */}
         <motion.button
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.42, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ delay: 0.38, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           whileTap={{ scale: 0.97 }}
           onClick={start}
           disabled={going}
-          className="w-full relative overflow-hidden rounded-full flex items-center justify-between px-7 disabled:opacity-60"
+          className="cta-pulse w-full relative overflow-hidden rounded-[18px] flex items-center justify-between px-7 disabled:opacity-60"
           style={{
-            paddingTop: 19, paddingBottom: 19,
-            background: `linear-gradient(135deg, #FF7A45 0%, ${P} 45%, #E85E1E 100%)`,
+            paddingTop: 20, paddingBottom: 20,
+            background: `linear-gradient(135deg, #FF8147 0%, ${P} 50%, #E85920 100%)`,
             boxShadow: `
-              0 0 0 1px rgba(255,107,53,0.3),
-              0 8px 32px rgba(255,107,53,0.38),
-              0 2px 8px rgba(255,107,53,0.25),
-              inset 0 1px 0 rgba(255,255,255,0.20)
+              0 8px 28px rgba(255,107,53,0.36),
+              0 2px 8px rgba(255,107,53,0.20),
+              inset 0 1px 0 rgba(255,255,255,0.22)
             `,
           }}
         >
-          {/* Shimmer */}
-          <div
-            className="cta-shimmer absolute inset-0 pointer-events-none"
-            style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.16) 50%, transparent 65%)' }}
+          {/* CTA shimmer */}
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)' }}
+            animate={{ x: ['-120%', '220%'] }}
+            transition={{ duration: 3.4, repeat: Infinity, ease: 'linear', repeatDelay: 0.5 }}
           />
+
           <span
-            className="font-bold text-[17px] text-white relative z-10"
+            className="relative z-10 text-white"
             style={{
-              fontFamily: isRTL ? 'var(--font-noto-arabic),serif' : "'Outfit', sans-serif",
+              fontFamily: isRTL ? 'var(--font-noto-arabic),serif' : "'Bricolage Grotesque', sans-serif",
+              fontWeight: 700, fontSize: 17,
               letterSpacing: isRTL ? '0.02em' : '0.01em',
             }}
           >
             {going ? '...' : CTA[lang]}
           </span>
+
           <motion.div
+            className="relative z-10 flex items-center justify-center rounded-full"
+            style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.20)' }}
             animate={{ x: going ? 4 : 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            className="relative z-10"
           >
-            <ChevronRight size={20} strokeWidth={2.5} className="text-white" />
+            <ChevronRight size={18} strokeWidth={2.5} className="text-white" />
           </motion.div>
         </motion.button>
 
-        {/* ── Language switcher — premium pill ── */}
+        {/* ── Language switcher — clean pill ── */}
         <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.50 }}
           whileTap={{ scale: 0.96 }}
           onClick={() => setSheet(true)}
-          className="flex items-center justify-center gap-2.5 mt-5"
+          className="flex items-center justify-center gap-2 mt-5 px-5 py-2.5 rounded-full transition-colors"
           style={{
-            padding: '10px 22px',
-            borderRadius: 100,
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(0,0,0,0.045)',
+            border: '1px solid rgba(0,0,0,0.07)',
           }}
         >
-          <Globe size={13} style={{ color: 'rgba(240,230,214,0.45)' }} />
-          <span
-            style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontSize: 11, fontWeight: 600,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: 'rgba(240,230,214,0.45)',
-            }}
-          >
+          <Globe size={13} style={{ color: '#8A7A6A' }} />
+          <span style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 11, fontWeight: 600,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: '#8A7A6A',
+          }}>
             {CHANGE_LANG[lang]}
           </span>
         </motion.button>
 
-        {/* ── Bottom atmospheric texture ── */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none" style={{ zIndex: -1 }}>
-          {/* Subtle warm radial glow at bottom */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-            width: '100%', height: 120,
-            background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(201,146,74,0.04) 0%, transparent 70%)',
-          }} />
-          {/* Horizontal accent line */}
-          <div style={{
-            position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
-            width: 100, height: 1,
-            background: `linear-gradient(90deg, transparent, rgba(201,146,74,0.15), transparent)`,
-          }} />
-        </div>
-      </div>
+        {/* ── Decorative bottom section ── */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.65 }}
+          className="flex items-center gap-3 mt-8"
+        >
+          {/* Elegant horizontal rule with text */}
+          <div style={{ height: 1, flex: 1, background: 'linear-gradient(90deg, transparent, rgba(160,128,96,0.18))' }} />
+          <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.20em', color: '#BEB0A0', textTransform: 'uppercase' }}>
+            Serasa Restaurant
+          </span>
+          <div style={{ height: 1, flex: 1, background: 'linear-gradient(90deg, rgba(160,128,96,0.18), transparent)' }} />
+        </motion.div>
+
+        {/* Certified/branding micro line */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.72 }}
+          style={{ fontSize: 11, color: '#C8BAA8', marginTop: 6, letterSpacing: '0.05em' }}
+        >
+          Kuday, Mekkah · KSA
+        </motion.p>
+      </motion.div>
 
       <LangSheet open={sheet} onClose={() => setSheet(false)} onSelect={selectLang} current={lang} />
     </div>
