@@ -9,7 +9,7 @@ import { Language } from '@/types'
 
 const STORAGE_KEY = 'serasa_lang'
 const P  = '#FF6B35'
-const BG = '#F5F2EE'
+const BG = '#FAFAF5'
 
 type LangCfg = { code: Language; flag: string; native: string; greeting: string; dir: 'ltr' | 'rtl' }
 
@@ -20,24 +20,10 @@ const LANGUAGES: LangCfg[] = [
 ]
 
 const GREETING:    Record<Language, string> = { id: 'Selamat Datang',            en: 'Welcome',                      ar: 'أهلاً وسهلاً'         }
-const TAGLINE:     Record<Language, string> = { id: 'Masakan Indonesia Autentik', en: 'Authentic Indonesian Cuisine', ar: 'مطبخ إندونيسي أصيل'  }
+const TAGLINE:     Record<Language, string> = { id: 'Dari Indonesia untuk dunia', en: 'From Indonesia, for the world', ar: 'من إندونيسيا للعالم'  }
 const CTA:         Record<Language, string> = { id: 'Mulai Memesan',             en: 'Start Ordering',               ar: 'ابدأ الطلب'           }
-const CHANGE_LANG: Record<Language, string> = { id: 'Bahasa',                    en: 'Language',                     ar: 'اللغة'                 }
+const CHANGE_LANG: Record<Language, string> = { id: 'Ganti Bahasa',              en: 'Change Language',              ar: 'تغيير اللغة'          }
 const SELECT_LANG: Record<Language, string> = { id: 'Pilih Bahasa',              en: 'Select Language',              ar: 'اختر اللغة'           }
-
-const CHIPS: Record<Language, { icon: string; label: string }[]> = {
-  en: [{ icon: '★', label: '4.9 Rating' }, { icon: '✓', label: 'Halal Cert.' }, { icon: '⚡', label: 'Quick Order' }],
-  id: [{ icon: '★', label: '4.9 Ulasan' }, { icon: '✓', label: 'Halal' },       { icon: '⚡', label: 'Pesan Cepat' }],
-  ar: [{ icon: '★', label: '٤.٩ تقييم' }, { icon: '✓', label: 'حلال' },         { icon: '⚡', label: 'طلب سريع'   }],
-}
-
-// Stagger variants helper — returns { variants, initial, animate }
-// Inline stagger helper
-const seq = (delay: number, y = 14) => ({
-  initial: { opacity: 0, y },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.65, delay, ease: 'easeOut' as const },
-})
 
 function detectLang(): Language {
   if (typeof window === 'undefined') return 'en'
@@ -47,7 +33,7 @@ function detectLang(): Language {
   return 'en'
 }
 
-// ── Language bottom sheet ─────────────────────────────────────────────────
+// ── Bottom sheet ─────────────────────────────────────────────────────────
 function LangSheet({ open, onClose, onSelect, current }: {
   open: boolean; onClose: () => void; onSelect: (l: Language) => void; current: Language
 }) {
@@ -70,12 +56,8 @@ function LangSheet({ open, onClose, onSelect, current }: {
               <div className="w-9 h-1 rounded-full bg-gray-200" />
             </div>
             <div className="flex items-center justify-between px-6 pt-2 pb-5">
-              <h2 className="font-bold text-[19px] text-gray-900"
-                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
-                {SELECT_LANG[current]}
-              </h2>
-              <button onClick={onClose}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <h2 className="font-bold text-[19px] text-gray-900">{SELECT_LANG[current]}</h2>
+              <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                 <X size={14} className="text-gray-500" />
               </button>
             </div>
@@ -86,19 +68,10 @@ function LangSheet({ open, onClose, onSelect, current }: {
                   <motion.button key={l.code} whileTap={{ scale: 0.975 }}
                     onClick={() => onSelect(l.code)} dir={l.dir}
                     className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 transition-colors"
-                    style={{
-                      background: active ? `${P}0D` : '#FAFAF8',
-                      borderColor: active ? P : '#EDEAE5',
-                    }}>
+                    style={{ background: active ? `${P}0D` : '#FAFAF8', borderColor: active ? P : '#EDEAE5' }}>
                     <span className="text-3xl leading-none flex-shrink-0">{l.flag}</span>
                     <div className={`flex-1 ${l.dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                      <p className="font-bold text-[15px]"
-                        style={{
-                          color: active ? P : '#1C1917',
-                          fontFamily: l.code === 'ar' ? 'var(--font-noto-arabic),serif' : "'Bricolage Grotesque', sans-serif",
-                        }}>
-                        {l.native}
-                      </p>
+                      <p className="font-bold text-[15px]" style={{ color: active ? P : '#1C1917' }}>{l.native}</p>
                       <p className="text-[13px] mt-0.5 text-stone-400">{l.greeting}</p>
                     </div>
                     <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
@@ -153,303 +126,197 @@ export default function EntryPage() {
 
   if (!mounted) return null
   const isRTL = lang === 'ar'
-  const chips = CHIPS[lang]
 
   return (
     <div
-      className="flex flex-col overflow-hidden relative"
-      style={{ height: '100dvh', background: BG, fontFamily: "'DM Sans', sans-serif" }}
+      className="overflow-hidden flex flex-col"
+      style={{ height: '100dvh', background: BG }}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
+      {/* ── CSS animations ── */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap');
 
-        /* ── Kawung batik (Indonesian geometric lotus) ── */
-        @keyframes batik-drift {
-          0%   { transform: translate(0, 0) rotate(0deg) }
-          33%  { transform: translate(4px, -3px) rotate(0.3deg) }
-          66%  { transform: translate(-3px, 2px) rotate(-0.2deg) }
-          100% { transform: translate(0, 0) rotate(0deg) }
+        /* Ken Burns — slow cinematic zoom */
+        @keyframes ken-burns {
+          0%   { transform: scale(1.10) }
+          100% { transform: scale(1.00) }
         }
 
-        /* ── Ambient warm glow breathing ── */
-        @keyframes glow-breathe {
-          0%,100% { opacity: 0.55; transform: scale(1) }
-          50%     { opacity: 0.80; transform: scale(1.04) }
+        /* Logo drops in from top */
+        @keyframes drop-in {
+          0%   { opacity:0; transform: translateY(-22px) scale(0.92) }
+          100% { opacity:1; transform: translateY(0)    scale(1)    }
         }
 
-        /* ── Hero cinematic zoom ── */
-        @keyframes hero-cinema {
-          0%   { transform: scale(0.95) translateY(4px) }
-          100% { transform: scale(1.00) translateY(0px) }
-        }
-        @keyframes hero-float {
-          0%,100% { transform: scale(1.00) translateY(0px) }
-          50%     { transform: scale(1.01) translateY(-6px) }
+        /* Content elements fade up */
+        @keyframes fade-up {
+          0%   { opacity:0; transform: translateY(18px) }
+          100% { opacity:1; transform: translateY(0)    }
         }
 
-        /* ── CTA pulse ring ── */
-        @keyframes cta-ring {
-          0%   { opacity: 0.5; transform: scale(1) }
-          100% { opacity: 0;   transform: scale(1.08) }
+        /* CTA button breathe */
+        @keyframes cta-breathe {
+          0%,100% { box-shadow: 0 4px 20px rgba(255,107,53,0.32), 0 2px 6px rgba(255,107,53,0.18) }
+          50%     { box-shadow: 0 8px 28px rgba(255,107,53,0.46), 0 3px 9px rgba(255,107,53,0.26) }
         }
-        @keyframes cta-glow-pulse {
-          0%,100% { box-shadow: 0 6px 22px rgba(255,107,53,0.34), 0 2px 7px rgba(255,107,53,0.18), inset 0 1px 0 rgba(255,255,255,0.22) }
-          50%     { box-shadow: 0 10px 30px rgba(255,107,53,0.44), 0 3px 11px rgba(255,107,53,0.26), inset 0 1px 0 rgba(255,255,255,0.22) }
-        }
+
+        /* CTA shimmer sweep */
         @keyframes cta-shimmer {
           0%   { transform: translateX(-120%) }
-          100% { transform: translateX(220%) }
+          100% { transform: translateX(220%)  }
         }
 
-        .hero-cinema { animation: hero-cinema 1.8s cubic-bezier(0.16,1,0.3,1) forwards, hero-float 12s ease-in-out 2s infinite }
-        .cta-pulse   { animation: cta-glow-pulse 3s ease-in-out infinite }
-        .cta-ring    { animation: cta-ring 2.4s ease-out infinite }
-        .cta-shine   { animation: cta-shimmer 3.8s ease-in-out infinite; animation-delay: 1.4s }
-        .glow-breathe { animation: glow-breathe 7s ease-in-out infinite }
-        .batik-drift  { animation: batik-drift 18s ease-in-out infinite }
+        /* Fill mode helper */
+        .anim-fill { animation-fill-mode: both; }
+
+        .hero-img      { animation: ken-burns 9s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .logo-anim     { animation: drop-in  0.75s cubic-bezier(0.16,1,0.3,1) 0.08s both; }
+        .text-1        { animation: fade-up  0.65s ease-out 0.30s both; }
+        .text-2        { animation: fade-up  0.65s ease-out 0.42s both; }
+        .text-3        { animation: fade-up  0.55s ease-out 0.54s both; }
+        .cta-anim      { animation: fade-up  0.65s ease-out 0.66s both,
+                                    cta-breathe 3s ease-in-out 1.8s infinite; }
+        .lang-anim     { animation: fade-up  0.55s ease-out 0.80s both; }
+        .cta-shine     { animation: cta-shimmer 3.5s ease-in-out 2s infinite; }
       `}</style>
 
-      {/* ── LAYER 0: Animated warm amber glow ────────────────────────── */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        <div
-          className="glow-breathe absolute"
-          style={{
-            bottom: '15%', left: '50%', transform: 'translateX(-50%)',
-            width: '110%', height: '55%',
-            background: 'radial-gradient(ellipse 70% 100% at 50% 100%, rgba(210,155,80,0.09) 0%, rgba(255,140,60,0.05) 45%, transparent 75%)',
-            filter: 'blur(28px)',
-          }}
-        />
-        {/* Secondary ambient top-right warm highlight */}
-        <div
-          className="absolute"
-          style={{
-            top: '30%', right: '-10%',
-            width: '55%', height: '35%',
-            background: 'radial-gradient(ellipse, rgba(200,140,70,0.05) 0%, transparent 70%)',
-            filter: 'blur(32px)',
-            animation: 'glow-breathe 9s ease-in-out 2s infinite',
-          }}
-        />
-      </div>
+      {/* ── HERO ──────────────────────────────────────────────────────── */}
+      <div className="relative flex-shrink-0 overflow-hidden"
+        style={{ height: '58dvh', background: '#1A1208' }}>
 
-      {/* ── LAYER 1: Batik kawung texture (ultra-subtle, 3% opacity) ─── */}
-      <div
-        className="batik-drift absolute inset-0 pointer-events-none"
-        style={{
-          zIndex: 1,
-          opacity: 0.062,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='88'%3E%3Ccircle cx='44' cy='13' r='11' fill='none' stroke='%23A07840' stroke-width='0.9'/%3E%3Ccircle cx='75' cy='44' r='11' fill='none' stroke='%23A07840' stroke-width='0.9'/%3E%3Ccircle cx='44' cy='75' r='11' fill='none' stroke='%23A07840' stroke-width='0.9'/%3E%3Ccircle cx='13' cy='44' r='11' fill='none' stroke='%23A07840' stroke-width='0.9'/%3E%3Ccircle cx='44' cy='44' r='8' fill='none' stroke='%23A07840' stroke-width='0.7'/%3E%3Ccircle cx='44' cy='44' r='3' fill='%23A07840' opacity='0.4'/%3E%3C/svg%3E")`,
-          backgroundSize: '88px 88px',
-          backgroundRepeat: 'repeat',
-        }}
-      />
-
-      {/* ── HERO — cinematic food stage ─────────────────────────────── */}
-      <div className="relative flex-shrink-0 overflow-hidden" style={{ height: '42dvh', background: '#1C1510', zIndex: 2 }}>
-
-        {/* Food — cinematic entrance + slow float */}
-        <div className="absolute inset-0 hero-cinema">
+        {/* Ken Burns food image */}
+        <div className="hero-img absolute inset-0" style={{ transformOrigin: 'center 40%' }}>
           <Image
             src={heroImg || '/hero-food.png'}
             alt="Indonesian cuisine" fill priority
             className="object-cover object-center"
-            style={{ filter: 'brightness(0.90) saturate(1.16) contrast(1.05)' }}
+            style={{ filter: 'brightness(0.88) saturate(1.08)' }}
             sizes="100vw"
           />
         </div>
 
-        {/* Cinematic gradient — dark top + side vignette + cream transition */}
+        {/* Soft cream gradient at bottom — matches reference */}
         <div className="absolute inset-0 pointer-events-none" style={{
-          background: `
-            linear-gradient(180deg,
-              rgba(22,16,10,0.60) 0%,
-              rgba(22,16,10,0.18) 26%,
-              rgba(22,16,10,0.04) 46%,
-              rgba(22,16,10,0.16) 62%,
-              rgba(245,241,236,0.60) 82%,
-              ${BG} 100%
-            )
-          `,
-        }} />
-        {/* Side vignette for cinematic depth */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background: 'radial-gradient(ellipse 110% 110% at 50% 50%, transparent 44%, rgba(20,14,8,0.22) 80%, rgba(20,14,8,0.40) 100%)',
-        }} />
-        {/* Warm light bloom center */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background: 'radial-gradient(ellipse 50% 40% at 50% 55%, rgba(255,200,100,0.06) 0%, transparent 70%)',
+          background: `linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.18) 0%,
+            transparent 30%,
+            transparent 50%,
+            rgba(250,250,245,0.55) 80%,
+            ${BG} 100%
+          )`,
         }} />
 
-        {/* ── LOGO — white solid pill, prominent ── */}
-        <motion.div
-          {...seq(0.10, -16)}
-          initial="hidden" animate="show"
-          className="absolute left-0 right-0 flex justify-center z-10"
-          style={{ top: 'clamp(18px, 3.5dvh, 28px)' }}
-        >
+        {/* ── LOGO pill — centered, white, prominent ── */}
+        <div className="logo-anim absolute left-0 right-0 flex justify-center"
+          style={{ top: 'clamp(20px, 5dvh, 36px)' }}>
           <div style={{
-            background: 'rgba(255,255,255,0.93)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
+            background: 'rgba(255,255,255,0.95)',
             borderRadius: 100,
-            padding: '8px 24px',
-            border: '1px solid rgba(255,255,255,1)',
-            boxShadow: '0 4px 28px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,1) inset, 0 0 0 1px rgba(255,255,255,0.6)',
+            padding: '9px 26px',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,1) inset',
           }}>
-            <div style={{ position: 'relative', width: 140, height: 50 }}>
-              <Image src="/logof22.png" alt="Serasa" fill className="object-contain" priority sizes="140px" />
+            <div style={{ position: 'relative', width: 148, height: 52 }}>
+              <Image src="/logof22.png" alt="Serasa" fill className="object-contain" priority sizes="148px" />
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* ── CONTENT ─────────────────────────────────────────────────── */}
+      {/* ── CONTENT ──────────────────────────────────────────────────── */}
       <div
-        className="flex-1 flex flex-col overflow-hidden relative"
-        style={{ padding: '2.5dvh 20px clamp(12px, 2dvh, 20px)', gap: 'clamp(12px, 3.5dvh, 32px)', zIndex: 2 }}
+        className="flex-1 flex flex-col items-center text-center overflow-hidden"
+        style={{ padding: '22px 24px 20px', fontFamily: "'Figtree', sans-serif" }}
       >
-        {/* ── TOP: chips + text ── */}
-        <div className="flex flex-col items-center text-center">
-
-          {/* Trust chips */}
-          <motion.div
-            {...seq(0.38)}
-            initial="hidden" animate="show"
-            className="flex items-center gap-2 mb-3 flex-wrap justify-center"
-          >
-            {chips.map((chip, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 8, scale: 0.92 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 0.40 + i * 0.09, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full relative overflow-hidden"
-                style={{
-                  background: 'rgba(200,170,120,0.10)',
-                  border: '1px solid rgba(180,148,100,0.20)',
-                }}
-              >
-                {/* Subtle shimmer on chip */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.40) 50%, transparent 70%)',
-                  animation: `cta-shimmer ${7 + i * 1.5}s ease-in-out ${i * 0.6}s infinite`,
-                }} />
-                <span style={{ fontSize: 11, color: '#8A7050', position: 'relative' }}>{chip.icon}</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#6B5038', letterSpacing: '0.01em', position: 'relative' }}>
-                  {chip.label}
-                </span>
-              </motion.div>
-            ))}
-          </motion.div>
-
+        {/* Top text group */}
+        <div className="flex flex-col items-center">
           {/* Tagline */}
-          <motion.p
-            key={`tag-${lang}`}
-            {...seq(0.52)}
-            initial="hidden" animate="show"
-            style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#A08060', marginBottom: 6 }}>
+          <p className="text-1"
+            style={{ fontSize: 14, fontWeight: 500, color: '#9A8A7A', marginBottom: 4, letterSpacing: '0.01em' }}>
             {TAGLINE[lang]}
-          </motion.p>
+          </p>
 
           {/* Greeting */}
-          <motion.h1
-            key={`h-${lang}`}
-            {...seq(0.60, 18)}
-            initial="hidden" animate="show"
+          <h1 className="text-2"
             style={{
-              fontFamily: isRTL ? 'var(--font-noto-arabic),serif' : "'Bricolage Grotesque', sans-serif",
-              fontWeight: 800,
-              fontSize: isRTL ? 'clamp(28px, 8vw, 36px)' : 'clamp(30px, 8.5vw, 40px)',
-              color: '#1C1917',
-              letterSpacing: isRTL ? '0.01em' : '-0.025em',
-              lineHeight: 1.05,
-              marginBottom: 6,
+              fontSize: isRTL ? 'clamp(30px, 9vw, 40px)' : 'clamp(32px, 9.5vw, 44px)',
+              fontWeight: 900,
+              color: '#1E1208',
+              letterSpacing: isRTL ? '0.01em' : '-0.02em',
+              lineHeight: 1.08,
+              marginBottom: 8,
+              fontFamily: isRTL ? 'var(--font-noto-arabic), serif' : undefined,
             }}>
             {GREETING[lang]}
-          </motion.h1>
+          </h1>
 
-          {/* Table info */}
-          <motion.p
-            {...seq(0.68)}
-            initial="hidden" animate="show"
-            style={{ fontSize: 12.5, color: '#A09080', letterSpacing: '0.02em' }}>
-            {isRTL ? `طاولة #${table}` : `Table #${table}`}
-            <span style={{ margin: '0 7px', opacity: 0.4 }}>·</span>
+          {/* Table + location */}
+          <p className="text-3"
+            style={{ fontSize: 15, fontWeight: 500, color: '#9A8A7A', letterSpacing: '0.01em' }}>
+            {isRTL ? `مeja #${table}` : `Meja #${table}`}
+            <span style={{ margin: '0 8px', opacity: 0.45 }}>•</span>
             Mekkah, KSA
-          </motion.p>
+          </p>
         </div>
 
-        {/* Spacer — pushes CTA to natural position, not extreme bottom */}
-        <div className="flex-1" style={{ maxHeight: '4dvh' }} />
+        {/* Push CTA down */}
+        <div className="flex-1" />
 
-        {/* ── BOTTOM: CTA + language ── */}
-        <div className="flex flex-col items-center gap-3">
-
-          {/* ── CTA — premium pulse ring + glow ── */}
-          <motion.div
-            {...seq(0.76, 16)}
-            initial="hidden" animate="show"
-            className="w-full relative"
-          >
-            {/* Pulse ring */}
-            <div
-              className="cta-ring absolute inset-0 rounded-[16px] pointer-events-none"
-              style={{ background: `rgba(255,107,53,0.18)` }}
-            />
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={start}
-              disabled={going}
-              className="cta-pulse w-full relative overflow-hidden rounded-[16px] flex items-center justify-between disabled:opacity-60"
-              style={{
-                paddingTop: 17, paddingBottom: 17,
-                paddingLeft: 22, paddingRight: 18,
-                background: `linear-gradient(135deg, #FF8147 0%, ${P} 50%, #E85920 100%)`,
-              }}
-            >
-              <div className="cta-shine absolute inset-0 pointer-events-none"
-                style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.16) 50%, transparent 70%)' }} />
-              <span className="relative z-10 text-white"
-                style={{
-                  fontFamily: isRTL ? 'var(--font-noto-arabic),serif' : "'Bricolage Grotesque', sans-serif",
-                  fontWeight: 700, fontSize: 16, letterSpacing: '0.01em',
-                }}>
-                {going ? '...' : CTA[lang]}
-              </span>
-              <motion.div
-                className="relative z-10 flex items-center justify-center rounded-full flex-shrink-0"
-                animate={{ x: going ? 4 : [0, 2, 0] }}
-                transition={going ? {} : { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.18)' }}
-              >
-                <ChevronRight size={17} strokeWidth={2.5} className="text-white" />
-              </motion.div>
-            </motion.button>
-          </motion.div>
-
-          {/* Language switcher */}
-          <motion.button
-            {...seq(0.86)}
-            initial="hidden" animate="show"
-            whileTap={{ scale: 0.96 }}
-            onClick={() => setSheet(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2"
+        {/* ── CTA button ── */}
+        <div className="cta-anim w-full" style={{ marginBottom: 14 }}>
+          <button
+            onClick={start}
+            disabled={going}
+            className="w-full relative overflow-hidden disabled:opacity-60"
             style={{
-              borderRadius: 100,
-              background: 'rgba(0,0,0,0.04)',
-              border: '1px solid rgba(0,0,0,0.07)',
+              background: P,
+              borderRadius: 16,
+              paddingTop: 19,
+              paddingBottom: 19,
+              paddingLeft: 28,
+              paddingRight: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              border: 'none',
             }}
           >
-            <Globe size={12} style={{ color: '#8A7A6A' }} />
-            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600,
-              letterSpacing: '0.14em', textTransform: 'uppercase', color: '#8A7A6A' }}>
-              {CHANGE_LANG[lang]}
+            {/* Shimmer */}
+            <div className="cta-shine absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)' }} />
+            <span style={{
+              fontFamily: "'Figtree', sans-serif",
+              fontWeight: 800, fontSize: 17, color: 'white',
+              letterSpacing: '0.01em', position: 'relative', zIndex: 1,
+              fontStyle: 'normal',
+            }}>
+              {going ? '...' : CTA[lang]}
             </span>
-          </motion.button>
+            <ChevronRight size={20} strokeWidth={2.5} style={{ color: 'white', flexShrink: 0, position: 'relative', zIndex: 1 }} />
+          </button>
         </div>
+
+        {/* Language switcher */}
+        <button
+          className="lang-anim flex items-center justify-center gap-2"
+          onClick={() => setSheet(true)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '8px 16px',
+          }}
+        >
+          <Globe size={14} style={{ color: '#9A8A7A' }} />
+          <span style={{
+            fontFamily: "'Figtree', sans-serif",
+            fontSize: 12, fontWeight: 700,
+            letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: '#9A8A7A',
+          }}>
+            {CHANGE_LANG[lang]}
+          </span>
+        </button>
       </div>
 
       <LangSheet open={sheet} onClose={() => setSheet(false)} onSelect={selectLang} current={lang} />
