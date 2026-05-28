@@ -9,7 +9,7 @@ import { Language } from '@/types'
 
 const STORAGE_KEY = 'serasa_lang'
 const P  = '#FF6B35'
-const BG = '#EDE8DF'  // test deploy — slightly more amber
+const BG = '#F5F2EE'
 
 type LangCfg = { code: Language; flag: string; native: string; greeting: string; dir: 'ltr' | 'rtl' }
 
@@ -239,7 +239,7 @@ export default function EntryPage() {
         className="batik-drift absolute inset-0 pointer-events-none"
         style={{
           zIndex: 1,
-          opacity: 0.032,
+          opacity: 0.062,
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='88'%3E%3Ccircle cx='44' cy='13' r='11' fill='none' stroke='%23A07840' stroke-width='0.9'/%3E%3Ccircle cx='75' cy='44' r='11' fill='none' stroke='%23A07840' stroke-width='0.9'/%3E%3Ccircle cx='44' cy='75' r='11' fill='none' stroke='%23A07840' stroke-width='0.9'/%3E%3Ccircle cx='13' cy='44' r='11' fill='none' stroke='%23A07840' stroke-width='0.9'/%3E%3Ccircle cx='44' cy='44' r='8' fill='none' stroke='%23A07840' stroke-width='0.7'/%3E%3Ccircle cx='44' cy='44' r='3' fill='%23A07840' opacity='0.4'/%3E%3C/svg%3E")`,
           backgroundSize: '88px 88px',
           backgroundRepeat: 'repeat',
@@ -307,8 +307,8 @@ export default function EntryPage() {
 
       {/* ── CONTENT ─────────────────────────────────────────────────── */}
       <div
-        className="flex-1 flex flex-col justify-between overflow-hidden relative"
-        style={{ padding: '3dvh 20px clamp(14px, 2.5dvh, 22px)', zIndex: 2 }}
+        className="flex-1 flex flex-col overflow-hidden relative"
+        style={{ padding: '2.5dvh 20px clamp(12px, 2dvh, 20px)', gap: 'clamp(12px, 3.5dvh, 32px)', zIndex: 2 }}
       >
         {/* ── TOP: chips + text ── */}
         <div className="flex flex-col items-center text-center">
@@ -381,6 +381,9 @@ export default function EntryPage() {
             Mekkah, KSA
           </motion.p>
         </div>
+
+        {/* Spacer — pushes CTA to natural position, not extreme bottom */}
+        <div className="flex-1" style={{ maxHeight: '4dvh' }} />
 
         {/* ── BOTTOM: CTA + language ── */}
         <div className="flex flex-col items-center gap-3">
