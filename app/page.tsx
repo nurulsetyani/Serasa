@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ChevronRight, Globe, X, Star, Zap, Leaf } from 'lucide-react'
+import { ChevronRight, Globe, X } from 'lucide-react'
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
 import { Language } from '@/types'
 
@@ -11,23 +11,24 @@ const STORAGE_KEY = 'serasa_lang'
 const P  = '#FF6B35'
 const BG = '#F5F2EE'
 
-type LangCfg = { code: Language; flag: string; native: string; label: string; greeting: string; dir: 'ltr' | 'rtl' }
+type LangCfg = { code: Language; flag: string; native: string; greeting: string; dir: 'ltr' | 'rtl' }
 
 const LANGUAGES: LangCfg[] = [
-  { code: 'en', flag: '🇬🇧', native: 'English',          label: 'EN',  greeting: 'Welcome',        dir: 'ltr' },
-  { code: 'id', flag: '🇮🇩', native: 'Bahasa Indonesia', label: 'ID',  greeting: 'Selamat Datang', dir: 'ltr' },
-  { code: 'ar', flag: '🇸🇦', native: 'العربية',           label: 'عر', greeting: 'أهلاً وسهلاً',   dir: 'rtl' },
+  { code: 'en', flag: '🇬🇧', native: 'English',          greeting: 'Welcome',        dir: 'ltr' },
+  { code: 'id', flag: '🇮🇩', native: 'Bahasa Indonesia', greeting: 'Selamat Datang', dir: 'ltr' },
+  { code: 'ar', flag: '🇸🇦', native: 'العربية',           greeting: 'أهلاً وسهلاً',   dir: 'rtl' },
 ]
 
-const GREETING:   Record<Language, string> = { id: 'Selamat Datang', en: 'Welcome',     ar: 'أهلاً وسهلاً' }
-const TAGLINE:    Record<Language, string> = { id: 'Masakan Autentik Indonesia', en: 'Authentic Indonesian Cuisine', ar: 'مطبخ إندونيسي أصيل' }
-const CTA:        Record<Language, string> = { id: 'Mulai Memesan',  en: 'Start Ordering', ar: 'ابدأ الطلب' }
-const SELECT_LANG: Record<Language, string> = { id: 'Pilih Bahasa', en: 'Select Language', ar: 'اختر اللغة' }
+const GREETING:    Record<Language, string> = { id: 'Selamat Datang',           en: 'Welcome',                      ar: 'أهلاً وسهلاً'          }
+const TAGLINE:     Record<Language, string> = { id: 'Masakan Indonesia Autentik',en: 'Authentic Indonesian Cuisine', ar: 'مطبخ إندونيسي أصيل'   }
+const CTA:         Record<Language, string> = { id: 'Mulai Memesan',            en: 'Start Ordering',               ar: 'ابدأ الطلب'            }
+const CHANGE_LANG: Record<Language, string> = { id: 'Bahasa',                   en: 'Language',                     ar: 'اللغة'                  }
+const SELECT_LANG: Record<Language, string> = { id: 'Pilih Bahasa',             en: 'Select Language',              ar: 'اختر اللغة'            }
 
-const CHIPS: Record<Language, string[]> = {
-  en: ['⭐ 4.9 Rating', 'Halal Certified', '⚡ Quick Ordering'],
-  id: ['⭐ 4.9 Ulasan', 'Bersertifikat Halal', '⚡ Pesan Cepat'],
-  ar: ['⭐ ٤.٩ تقييم', 'حلال معتمد', '⚡ طلب سريع'],
+const CHIPS: Record<Language, { icon: string; label: string }[]> = {
+  en: [{ icon: '★', label: '4.9 Rating' }, { icon: '✓', label: 'Halal Cert.' }, { icon: '⚡', label: 'Quick Order' }],
+  id: [{ icon: '★', label: '4.9 Ulasan' }, { icon: '✓', label: 'Halal' },       { icon: '⚡', label: 'Pesan Cepat' }],
+  ar: [{ icon: '★', label: '٤.٩ تقييم' }, { icon: '✓', label: 'حلال' },         { icon: '⚡', label: 'طلب سريع'   }],
 }
 
 function detectLang(): Language {
@@ -38,7 +39,7 @@ function detectLang(): Language {
   return 'en'
 }
 
-// ── Language bottom sheet ─────────────────────────────────────────────────
+// ── Bottom sheet ─────────────────────────────────────────────────────────
 function LangSheet({ open, onClose, onSelect, current }: {
   open: boolean; onClose: () => void; onSelect: (l: Language) => void; current: Language
 }) {
@@ -51,17 +52,17 @@ function LangSheet({ open, onClose, onSelect, current }: {
             className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={onClose} />
           <motion.div
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 380, damping: 38 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 36 }}
             drag="y" dragConstraints={{ top: 0 }} dragElastic={0.08}
-            onDragEnd={(_, i) => { if (i.offset.y > 70) onClose() }}
+            onDragEnd={(_, i) => { if (i.offset.y > 80) onClose() }}
             className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[28px]"
-            style={{ background: '#FFFFFF', boxShadow: '0 -4px 50px rgba(0,0,0,0.10)', y }}
+            style={{ background: '#FFFFFF', boxShadow: '0 -4px 60px rgba(0,0,0,0.12)', y }}
           >
-            <div className="flex justify-center pt-3 pb-1.5">
-              <div className="w-8 h-1 rounded-full bg-gray-200" />
+            <div className="flex justify-center pt-3.5 pb-2">
+              <div className="w-9 h-1 rounded-full bg-gray-200" />
             </div>
-            <div className="flex items-center justify-between px-6 pt-1.5 pb-4">
-              <h2 className="font-bold text-[18px] text-gray-900"
+            <div className="flex items-center justify-between px-6 pt-2 pb-5">
+              <h2 className="font-bold text-[19px] text-gray-900"
                 style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
                 {SELECT_LANG[current]}
               </h2>
@@ -70,13 +71,13 @@ function LangSheet({ open, onClose, onSelect, current }: {
                 <X size={14} className="text-gray-500" />
               </button>
             </div>
-            <div className="px-5 pb-10 space-y-2.5">
+            <div className="px-5 pb-10 space-y-3">
               {LANGUAGES.map(l => {
                 const active = l.code === current
                 return (
                   <motion.button key={l.code} whileTap={{ scale: 0.975 }}
                     onClick={() => onSelect(l.code)} dir={l.dir}
-                    className="w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl border-2 transition-colors"
+                    className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 transition-colors"
                     style={{
                       background: active ? `${P}0D` : '#FAFAF8',
                       borderColor: active ? P : '#EDEAE5',
@@ -139,54 +140,43 @@ export default function EntryPage() {
   function start() {
     if (going) return; setGoing(true)
     try { localStorage.setItem(STORAGE_KEY, lang) } catch {}
-    setTimeout(() => router.push(`/menu?table=${table}`), 200)
+    setTimeout(() => router.push(`/menu?table=${table}`), 220)
   }
 
   if (!mounted) return null
-  const isRTL  = lang === 'ar'
-  const chips  = CHIPS[lang]
-  const curLang = LANGUAGES.find(l => l.code === lang)!
+  const isRTL = lang === 'ar'
+  const chips = CHIPS[lang]
 
   return (
-    // ── ROOT: single viewport, no overflow ──────────────────────────────
     <div
-      className="overflow-hidden flex flex-col"
-      style={{
-        height: '100dvh',
-        maxHeight: '100dvh',
-        background: BG,
-        fontFamily: "'DM Sans', sans-serif",
-      }}
+      className="flex flex-col overflow-hidden"
+      style={{ height: '100dvh', background: BG, fontFamily: "'DM Sans', sans-serif" }}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      {/* Fonts */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap');
-        @keyframes float-hero {
-          0%,100% { transform: scale(0.93) translateY(0px) }
-          50%      { transform: scale(0.93) translateY(-6px) }
+        @keyframes float-food {
+          0%,100% { transform: scale(0.94) translateY(0) }
+          50%      { transform: scale(0.94) translateY(-7px) }
         }
-        @keyframes cta-breathe {
-          0%,100% { box-shadow: 0 6px 22px rgba(255,107,53,0.34), 0 2px 6px rgba(255,107,53,0.18), inset 0 1px 0 rgba(255,255,255,0.22) }
-          50%      { box-shadow: 0 10px 30px rgba(255,107,53,0.44), 0 3px 10px rgba(255,107,53,0.24), inset 0 1px 0 rgba(255,255,255,0.22) }
+        @keyframes cta-glow {
+          0%,100% { box-shadow: 0 7px 24px rgba(255,107,53,0.36), 0 2px 7px rgba(255,107,53,0.18), inset 0 1px 0 rgba(255,255,255,0.22) }
+          50%      { box-shadow: 0 11px 32px rgba(255,107,53,0.46), 0 3px 11px rgba(255,107,53,0.26), inset 0 1px 0 rgba(255,255,255,0.22) }
         }
-        @keyframes shimmer-cta {
+        @keyframes cta-shimmer {
           0%   { transform: translateX(-120%) }
           100% { transform: translateX(220%) }
         }
-        .hero-float { animation: float-hero 11s ease-in-out infinite; }
-        .cta-breathe { animation: cta-breathe 3s ease-in-out infinite; }
-        .shimmer-cta { animation: shimmer-cta 3.6s ease-in-out infinite; animation-delay: 1s; }
-        /* Hide scrollbar on chips row */
-        .chips-row::-webkit-scrollbar { display: none; }
-        .chips-row { -ms-overflow-style: none; scrollbar-width: none; }
+        .food-float { animation: float-food 10s ease-in-out infinite; }
+        .cta-glow   { animation: cta-glow 3s ease-in-out infinite; }
+        .cta-shine  { animation: cta-shimmer 3.5s ease-in-out infinite; animation-delay: 1.2s; }
       `}</style>
 
-      {/* ── HERO — compact 40dvh ────────────────────────────────────────── */}
-      <div className="relative flex-shrink-0 overflow-hidden" style={{ height: '40dvh', background: '#1A1410' }}>
+      {/* ── HERO — compact ──────────────────────────────────────────────── */}
+      <div className="relative flex-shrink-0 overflow-hidden" style={{ height: '42dvh', background: '#1A1410' }}>
 
-        {/* Food — floating, editorial pull-back */}
-        <div className="absolute inset-0 hero-float" style={{ transformOrigin: 'center 45%' }}>
+        {/* Food image — editorial scale, slow float */}
+        <div className="absolute inset-0 food-float">
           <Image
             src={heroImg || '/hero-food.png'}
             alt="Indonesian cuisine" fill priority
@@ -196,201 +186,148 @@ export default function EntryPage() {
           />
         </div>
 
-        {/* Cinematic overlay — dark top + fades to cream at bottom */}
+        {/* Cinematic gradient — dark top, fades to cream */}
         <div className="absolute inset-0 pointer-events-none" style={{
-          background: `linear-gradient(
-            180deg,
-            rgba(20,16,12,0.58) 0%,
-            rgba(20,16,12,0.16) 28%,
+          background: `linear-gradient(180deg,
+            rgba(20,16,12,0.55) 0%,
+            rgba(20,16,12,0.14) 28%,
             rgba(20,16,12,0.04) 50%,
             rgba(20,16,12,0.22) 68%,
-            rgba(245,242,238,0.68) 86%,
-            ${BG} 100%
-          )`,
+            rgba(245,242,238,0.70) 86%,
+            ${BG} 100%)`,
         }} />
 
-        {/* ── LOGO — glassmorphism pill, tight top ── */}
+        {/* ── LOGO — prominent white pill, always visible ── */}
         <motion.div
-          initial={{ opacity: 0, y: -14, scale: 0.94 }}
+          initial={{ opacity: 0, y: -16, scale: 0.92 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
           className="absolute left-0 right-0 flex justify-center z-10"
-          style={{ top: 'clamp(20px, 4dvh, 32px)' }}
+          style={{ top: 'clamp(18px, 3.5dvh, 28px)' }}
         >
+          {/* Solid white pill — maksimal keterbacaan logo */}
           <div style={{
-            background: 'rgba(255,255,255,0.11)',
-            backdropFilter: 'blur(18px) saturate(160%)',
-            WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+            background: 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
             borderRadius: 100,
-            padding: '7px 22px',
-            border: '1px solid rgba(255,255,255,0.20)',
-            boxShadow: '0 3px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.16)',
+            padding: '8px 24px',
+            border: '1px solid rgba(255,255,255,0.98)',
+            boxShadow: '0 4px 28px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,1) inset',
           }}>
-            <div style={{ position: 'relative', width: 130, height: 46 }}>
-              <Image src="/logof22.png" alt="Serasa" fill className="object-contain" priority sizes="130px"
-                style={{ filter: 'brightness(1.06) drop-shadow(0 1px 8px rgba(0,0,0,0.30))' }} />
+            <div style={{ position: 'relative', width: 140, height: 50 }}>
+              <Image src="/logof22.png" alt="Serasa" fill className="object-contain" priority sizes="140px" />
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* ── CONTENT — fills remaining 60dvh ─────────────────────────────── */}
+      {/* ── CONTENT — flex-1, justify-between ───────────────────────────── */}
       <motion.div
-        initial={{ opacity: 0, y: 14 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="flex-1 flex flex-col justify-between px-5 overflow-hidden"
-        style={{ paddingTop: '3.5dvh', paddingBottom: 'clamp(12px, 3dvh, 24px)' }}
+        transition={{ delay: 0.16, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        className="flex-1 flex flex-col justify-between overflow-hidden"
+        style={{ padding: '3dvh 20px clamp(14px, 2.5dvh, 22px)' }}
       >
-        {/* Top group: chips + tagline + greeting + table */}
-        <div className="flex flex-col items-center text-center">
+        {/* ── TOP: chips + text ── */}
+        <div className="flex flex-col items-center text-center gap-0">
 
-          {/* Trust chips — SINGLE horizontal row ── */}
-          <div className="chips-row flex items-center gap-0 overflow-x-auto w-full justify-center mb-3 flex-nowrap">
+          {/* Trust chips — single row */}
+          <div className="flex items-center gap-2 mb-3 flex-wrap justify-center">
             {chips.map((chip, i) => (
-              <div key={chip} className="flex items-center flex-nowrap flex-shrink-0">
-                <span style={{
-                  fontSize: 11, fontWeight: 600,
-                  color: '#7A6A58',
-                  letterSpacing: '0.01em',
-                  whiteSpace: 'nowrap',
-                  padding: '0 6px',
-                }}>
-                  {chip}
+              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                style={{ background: '#EDEAE5', border: '1px solid rgba(180,160,135,0.22)' }}>
+                <span style={{ fontSize: 11, color: '#8A7A65' }}>{chip.icon}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#6B5A47', letterSpacing: '0.01em' }}>
+                  {chip.label}
                 </span>
-                {i < chips.length - 1 && (
-                  <span style={{ color: '#C8BAA8', fontSize: 11, flexShrink: 0 }}>·</span>
-                )}
               </div>
             ))}
           </div>
 
           {/* Tagline */}
-          <motion.p
-            key={`tag-${lang}`}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          <motion.p key={`tag-${lang}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             transition={{ delay: 0.20 }}
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: 10.5, fontWeight: 500,
-              letterSpacing: '0.18em', textTransform: 'uppercase',
-              color: '#A08060',
-              marginBottom: '1.2dvh',
-            }}
-          >
+            style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#A08060', marginBottom: 6 }}>
             {TAGLINE[lang]}
           </motion.p>
 
-          {/* Greeting — bold, compact */}
-          <motion.h1
-            key={`h-${lang}`}
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          {/* Greeting */}
+          <motion.h1 key={`h-${lang}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.24, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             style={{
               fontFamily: isRTL ? 'var(--font-noto-arabic),serif' : "'Bricolage Grotesque', sans-serif",
               fontWeight: 800,
-              fontSize: isRTL ? 'clamp(28px, 8vw, 38px)' : 'clamp(30px, 8.5vw, 40px)',
+              fontSize: isRTL ? 'clamp(28px, 8vw, 36px)' : 'clamp(30px, 8.5vw, 40px)',
               color: '#1C1917',
               letterSpacing: isRTL ? '0.01em' : '-0.025em',
               lineHeight: 1.05,
-              marginBottom: '1dvh',
-            }}
-          >
+              marginBottom: 6,
+            }}>
             {GREETING[lang]}
           </motion.h1>
 
-          {/* Table + location — compact */}
-          <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }}
-            style={{
-              fontSize: 12.5, fontWeight: 400,
-              color: '#B0A090',
-              letterSpacing: '0.02em',
-            }}
-          >
+          {/* Table */}
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }}
+            style={{ fontSize: 12.5, color: '#A09080', letterSpacing: '0.02em' }}>
             {isRTL ? `طاولة #${table}` : `Table #${table}`}
-            <span style={{ margin: '0 6px', opacity: 0.5 }}>·</span>
+            <span style={{ margin: '0 7px', opacity: 0.4 }}>·</span>
             Mekkah, KSA
           </motion.p>
         </div>
 
-        {/* Bottom group: CTA + language switcher */}
-        <div className="flex flex-col items-center gap-2.5">
+        {/* ── BOTTOM: CTA + language ── */}
+        <div className="flex flex-col items-center gap-3">
 
-          {/* ── CTA button — compact, dominant ── */}
+          {/* CTA */}
           <motion.button
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.34, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ delay: 0.32, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             whileTap={{ scale: 0.97 }}
             onClick={start}
             disabled={going}
-            className="cta-breathe w-full relative overflow-hidden rounded-[16px] flex items-center justify-between disabled:opacity-60"
+            className="cta-glow w-full relative overflow-hidden rounded-[16px] flex items-center justify-between disabled:opacity-60"
             style={{
               paddingTop: 17, paddingBottom: 17,
-              paddingLeft: 24, paddingRight: 20,
+              paddingLeft: 22, paddingRight: 18,
               background: `linear-gradient(135deg, #FF8147 0%, ${P} 50%, #E85920 100%)`,
             }}
           >
-            {/* Shimmer */}
-            <div
-              className="shimmer-cta absolute inset-0 pointer-events-none"
-              style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.16) 50%, transparent 70%)' }}
-            />
-            <span
-              className="relative z-10 text-white"
+            <div className="cta-shine absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.16) 50%, transparent 70%)' }} />
+            <span className="relative z-10 text-white"
               style={{
                 fontFamily: isRTL ? 'var(--font-noto-arabic),serif' : "'Bricolage Grotesque', sans-serif",
-                fontWeight: 700, fontSize: 16,
-                letterSpacing: '0.01em',
-              }}
-            >
+                fontWeight: 700, fontSize: 16, letterSpacing: '0.01em',
+              }}>
               {going ? '...' : CTA[lang]}
             </span>
-            <div
-              className="relative z-10 flex items-center justify-center rounded-full flex-shrink-0"
-              style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.18)' }}
-            >
+            <div className="relative z-10 flex items-center justify-center rounded-full flex-shrink-0"
+              style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.18)' }}>
               <ChevronRight size={17} strokeWidth={2.5} className="text-white" />
             </div>
           </motion.button>
 
-          {/* ── Language switcher — compact inline pill row ── */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.44 }}
-            className="flex items-center gap-1"
+          {/* Language switcher */}
+          <motion.button
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.42 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setSheet(true)}
+            className="flex items-center justify-center gap-2 px-5 py-2"
             style={{
-              padding: '6px 14px',
               borderRadius: 100,
-              background: 'rgba(0,0,0,0.04)',
-              border: '1px solid rgba(0,0,0,0.06)',
+              background: 'rgba(0,0,0,0.045)',
+              border: '1px solid rgba(0,0,0,0.07)',
             }}
           >
-            <Globe size={11} style={{ color: '#A09080', flexShrink: 0 }} />
-            {LANGUAGES.map((l, i) => (
-              <div key={l.code} className="flex items-center gap-1">
-                {i > 0 && <span style={{ color: '#D0C8C0', fontSize: 11, lineHeight: 1 }}>|</span>}
-                <button
-                  onClick={() => l.code === lang ? setSheet(true) : selectLang(l.code)}
-                  style={{
-                    fontFamily: l.code === 'ar' ? 'var(--font-noto-arabic),serif' : "'DM Sans', sans-serif",
-                    fontSize: l.code === 'ar' ? 12 : 11,
-                    fontWeight: lang === l.code ? 700 : 500,
-                    color: lang === l.code ? '#1C1917' : '#A09080',
-                    letterSpacing: '0.04em',
-                    padding: '2px 5px',
-                    borderRadius: 4,
-                    background: lang === l.code ? 'rgba(0,0,0,0.05)' : 'transparent',
-                    minWidth: 28, textAlign: 'center',
-                  }}
-                >
-                  {l.label}
-                </button>
-              </div>
-            ))}
-          </motion.div>
+            <Globe size={12} style={{ color: '#8A7A6A' }} />
+            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600,
+              letterSpacing: '0.14em', textTransform: 'uppercase', color: '#8A7A6A' }}>
+              {CHANGE_LANG[lang]}
+            </span>
+          </motion.button>
         </div>
       </motion.div>
 
