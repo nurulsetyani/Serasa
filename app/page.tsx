@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { ChevronRight, Globe, X, Star, Zap, Check } from 'lucide-react'
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
 import { Language } from '@/types'
 
 const STORAGE_KEY = 'serasa_lang'
 const P  = '#FF6B35'
-const BG = '#F3E4BE'
+const BG = '#E9D38E'
 
 type LangCfg = { code: Language; flag: string; native: string; greeting: string; dir: 'ltr' | 'rtl' }
 
@@ -238,31 +237,31 @@ export default function EntryPage() {
       <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         {/* Large warm amber — top-left */}
         <div className="bokeh-1 absolute rounded-full" style={{
-          width: 260, height: 260,
-          background: 'radial-gradient(circle, rgba(255,185,55,0.68) 0%, rgba(255,145,30,0.30) 45%, transparent 68%)',
-          top: '-8%', left: '-12%',
-          filter: 'blur(3px)',
+          width: 300, height: 300,
+          background: 'radial-gradient(circle, rgba(255,185,55,0.88) 0%, rgba(255,145,30,0.50) 42%, transparent 65%)',
+          top: '-10%', left: '-14%',
+          filter: 'blur(4px)',
         }} />
         {/* Medium gold — top-right */}
         <div className="bokeh-2 absolute rounded-full" style={{
-          width: 190, height: 190,
-          background: 'radial-gradient(circle, rgba(255,205,80,0.60) 0%, rgba(255,170,40,0.25) 50%, transparent 70%)',
-          top: '5%', right: '-6%',
-          filter: 'blur(2px)',
+          width: 220, height: 220,
+          background: 'radial-gradient(circle, rgba(255,210,70,0.82) 0%, rgba(255,175,35,0.42) 48%, transparent 68%)',
+          top: '4%', right: '-8%',
+          filter: 'blur(3px)',
         }} />
         {/* Small bright — right-middle */}
         <div className="bokeh-3 absolute rounded-full" style={{
-          width: 90, height: 90,
-          background: 'radial-gradient(circle, rgba(255,220,100,0.80) 0%, rgba(255,190,60,0.35) 55%, transparent 75%)',
-          top: '28%', right: '8%',
-          filter: 'blur(0.5px)',
+          width: 110, height: 110,
+          background: 'radial-gradient(circle, rgba(255,228,100,0.95) 0%, rgba(255,195,55,0.50) 52%, transparent 72%)',
+          top: '26%', right: '6%',
+          filter: 'blur(1px)',
         }} />
         {/* Tiny bright accent — left-middle */}
         <div className="bokeh-4 absolute rounded-full" style={{
-          width: 60, height: 60,
-          background: 'radial-gradient(circle, rgba(255,230,130,0.90) 0%, transparent 65%)',
-          top: '22%', left: '12%',
-          filter: 'blur(0px)',
+          width: 75, height: 75,
+          background: 'radial-gradient(circle, rgba(255,235,130,1.0) 0%, rgba(255,210,60,0.5) 55%, transparent 72%)',
+          top: '20%', left: '10%',
+          filter: 'blur(0.5px)',
         }} />
       </div>
 
@@ -339,43 +338,26 @@ export default function EntryPage() {
       </div>
 
       {/* ── BADGE PILLS ─────────────────────────────────────────────────── */}
-      <div className="relative flex-shrink-0 flex items-center justify-center gap-2 px-5"
+      <div className="relative flex-shrink-0 flex flex-col items-center gap-2"
         style={{ zIndex: 1, marginTop: 10, marginBottom: 2 }}>
-        {/* Rating */}
-        <div className="badge-1 flex items-center gap-1.5 px-3.5 py-[7px] rounded-full"
-          style={{
-            background: 'rgba(255,255,255,0.90)',
-            boxShadow: '0 2px 14px rgba(0,0,0,0.10)',
-            backdropFilter: 'blur(10px)',
-          }}>
-          <Star size={12} fill="#FFB020" color="transparent" />
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1208', fontFamily: "'Figtree', sans-serif", letterSpacing: '0.01em' }}>
-            4.9 Rating
-          </span>
+        {/* Row 1: Rating + Halal */}
+        <div className="flex items-center gap-2">
+          <div className="badge-1 flex items-center gap-1.5 px-3.5 py-[7px] rounded-full"
+            style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 2px 14px rgba(0,0,0,0.12)', backdropFilter: 'blur(10px)' }}>
+            <Star size={12} fill="#FFB020" color="transparent" />
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1208', fontFamily: "'Figtree', sans-serif", letterSpacing: '0.01em' }}>4.9 Rating</span>
+          </div>
+          <div className="badge-2 flex items-center gap-1.5 px-3.5 py-[7px] rounded-full"
+            style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 2px 14px rgba(0,0,0,0.12)', backdropFilter: 'blur(10px)' }}>
+            <Check size={12} strokeWidth={3} color="#22C55E" />
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1208', fontFamily: "'Figtree', sans-serif", letterSpacing: '0.01em' }}>Halal Cert.</span>
+          </div>
         </div>
-        {/* Halal */}
-        <div className="badge-2 flex items-center gap-1.5 px-3.5 py-[7px] rounded-full"
-          style={{
-            background: 'rgba(255,255,255,0.90)',
-            boxShadow: '0 2px 14px rgba(0,0,0,0.10)',
-            backdropFilter: 'blur(10px)',
-          }}>
-          <Check size={12} strokeWidth={3} color="#22C55E" />
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1208', fontFamily: "'Figtree', sans-serif", letterSpacing: '0.01em' }}>
-            Halal Cert.
-          </span>
-        </div>
-        {/* Quick Order */}
+        {/* Row 2: Quick Order centered */}
         <div className="badge-3 flex items-center gap-1.5 px-3.5 py-[7px] rounded-full"
-          style={{
-            background: 'rgba(255,255,255,0.90)',
-            boxShadow: '0 2px 14px rgba(0,0,0,0.10)',
-            backdropFilter: 'blur(10px)',
-          }}>
+          style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 2px 14px rgba(0,0,0,0.12)', backdropFilter: 'blur(10px)' }}>
           <Zap size={12} fill={P} color="transparent" />
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1208', fontFamily: "'Figtree', sans-serif", letterSpacing: '0.01em' }}>
-            Quick Order
-          </span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1208', fontFamily: "'Figtree', sans-serif", letterSpacing: '0.01em' }}>Quick Order</span>
         </div>
       </div>
 
