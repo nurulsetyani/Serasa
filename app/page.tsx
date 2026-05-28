@@ -9,7 +9,7 @@ import { Language } from '@/types'
 
 const STORAGE_KEY = 'serasa_lang'
 const P  = '#FF6B35'
-const BG = '#F6F3EE'
+const BG = '#EDE8DF'  // test deploy — slightly more amber
 
 type LangCfg = { code: Language; flag: string; native: string; greeting: string; dir: 'ltr' | 'rtl' }
 
