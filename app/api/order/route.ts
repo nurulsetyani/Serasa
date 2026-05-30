@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
+import { sendOwnerWhatsApp } from '@/lib/whatsapp'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
@@ -26,52 +27,6 @@ function generateOrderNumber(): string {
   return result
 }
 
-async function sendWhatsApp(order: {
-  order_number: string
-  table_number: string
-  customer_name: string
-  order_type: string
-  payment_method: string
-  total_price: number
-  items: { name: string; qty: number }[]
-}) {
-  const token   = process.env.FONNTE_TOKEN
-  const adminWa = process.env.NEXT_PUBLIC_ADMIN_WA
-  if (!token || !adminWa) return
-
-  const orderTypeLabel   = order.order_type === 'dine_in' ? 'Dine In' : 'Take Away'
-  const paymentLabel     = order.payment_method === 'cash' ? 'Tunai' : order.payment_method === 'qris' ? 'QRIS' : 'Transfer Bank'
-  const itemLines        = order.items.map(i => `  ${i.qty}× ${i.name}`).join('\n')
-
-  const message = `🔔 *PESANAN BARU — Serasa Restaurant*
-
-📋 No: ${order.order_number}
-🪑 Meja: ${order.table_number}
-👤 Nama: ${order.customer_name}
-🍽 Jenis: ${orderTypeLabel}
-💳 Bayar: ${paymentLabel}
-
-*Item Pesanan:*
-${itemLines}
-
-💰 *Total: ${order.total_price} SR*
-
-_Segera proses di dapur_ 👨‍🍳`
-
-  try {
-    await fetch('https://api.fonnte.com/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ target: adminWa, message }),
-    })
-  } catch (err) {
-    // WA gagal tidak menghentikan order
-    console.error('WhatsApp notification failed:', err)
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -132,13 +87,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create order items' }, { status: 500 })
     }
 
-    // Kirim notif WA — tidak menghentikan response meski gagal
-    sendWhatsApp({
+    sendOwnerWhatsApp({
       order_number: order.order_number ?? orderNumber,
+      source: 'qr',
       table_number: order.table_number,
       customer_name: order.customer_name,
       order_type: order.order_type ?? 'dine_in',
-      payment_method: order.payment_method ?? 'cash',
       total_price: order.total_price,
       items: body.items,
     })

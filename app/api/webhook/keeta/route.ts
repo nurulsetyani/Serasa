@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createAdminClient } from '@/lib/supabase'
+import { sendOwnerWhatsApp } from '@/lib/whatsapp'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
@@ -145,6 +146,15 @@ export async function POST(req: NextRequest) {
         }))
       )
     }
+
+    sendOwnerWhatsApp({
+      order_number: order.order_number ?? '',
+      source: 'keeta',
+      customer_name: norm.customerName,
+      order_type: 'delivery',
+      total_price: norm.total,
+      items: norm.items,
+    })
 
     return NextResponse.json({ ok: true, order_id: order.id }, { status: 201 })
   } catch (err) {
