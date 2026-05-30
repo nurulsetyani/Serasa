@@ -23,7 +23,7 @@ export function calculateEstimatedTime(items: CartItem[], queueCount = 0): numbe
 }
 
 export function getStatusStep(status: OrderStatus): number {
-  const steps: OrderStatus[] = ['pending', 'cooking', 'ready', 'delivered']
+  const steps: OrderStatus[] = ['new', 'pending', 'cooking', 'ready', 'delivered']
   return steps.indexOf(status)
 }
 

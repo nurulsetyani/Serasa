@@ -114,7 +114,7 @@ export default function Cart({ tableParam }: Props) {
         fetch(`/api/order/${sourceQrOrderId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'delivered' }),
+          body: JSON.stringify({ status: 'delivered', total_price: total }),
         }).catch(() => {})
       }
       fetch('/api/print', {

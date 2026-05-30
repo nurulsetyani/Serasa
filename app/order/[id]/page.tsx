@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, ChefHat, Package, CheckCircle, Copy, Printer, MessageCircle } from 'lucide-react'
+import { Clock, ChefHat, Package, CheckCircle, Copy, Printer, MessageCircle, Hourglass } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -27,15 +27,16 @@ const MOCK_ORDER: Order = {
   ],
 }
 
-// Cook times from menu (approximate)
+// Cook times from menu (approximate) — 'new' shows TBD so use 0
 const EST_MINS: Record<OrderStatus, number> = {
-  new: 25, pending: 20, cooking: 12, ready: 0, delivered: 0, cancelled: 0,
+  new: 0, pending: 20, cooking: 12, ready: 0, delivered: 0, cancelled: 0,
 }
 
 const STEPS: { status: OrderStatus; labelKey: TranslationKey; icon: React.ElementType }[] = [
-  { status: 'pending',   labelKey: 'pending',   icon: CheckCircle },
-  { status: 'cooking',   labelKey: 'cooking',   icon: ChefHat },
-  { status: 'ready',     labelKey: 'ready',     icon: Package },
+  { status: 'new',       labelKey: 'orderWaiting', icon: Hourglass },
+  { status: 'pending',   labelKey: 'pending',      icon: CheckCircle },
+  { status: 'cooking',   labelKey: 'cooking',      icon: ChefHat },
+  { status: 'ready',     labelKey: 'ready',        icon: Package },
 ]
 
 const PAY = {
@@ -320,8 +321,29 @@ export default function OrderTrackingPage() {
           </div>
         </motion.div>
 
-        {/* ESTIMATED TIME */}
-        {estMins > 0 && (
+        {/* ESTIMATED TIME — hidden for 'new', shown for pending/cooking */}
+        {order.status === 'new' ? (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            className="rounded-2xl p-4 flex items-center gap-3"
+            style={{ background: 'rgba(255,107,53,0.06)', border: '1.5px solid rgba(255,107,53,0.20)' }}
+          >
+            <motion.div
+              animate={{ rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Hourglass size={22} style={{ color: PRIMARY }} />
+            </motion.div>
+            <div>
+              <p className="font-black text-sm" style={{ color: PRIMARY }}>
+                {t('orderWaiting')}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Kasir akan segera konfirmasi pesananmu
+              </p>
+            </div>
+          </motion.div>
+        ) : estMins > 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
             className="bg-white rounded-2xl p-5 flex items-center gap-4"
@@ -342,7 +364,7 @@ export default function OrderTrackingPage() {
               </div>
             </div>
           </motion.div>
-        )}
+        ) : null}
 
         {/* HORIZONTAL PROGRESS STEPPER */}
         <motion.div
@@ -353,8 +375,9 @@ export default function OrderTrackingPage() {
           <div className="flex items-start">
             {STEPS.map((step, idx) => {
               const Icon = step.icon
-              const done = idx <= currentStep
-              const isLast = idx === STEPS.length - 1
+              const completed = idx < currentStep   // done, show checkmark
+              const active    = idx === currentStep // current, show icon + pulse
+              const isLast    = idx === STEPS.length - 1
               return (
                 <div key={step.status} className="flex-1 flex flex-col items-center">
                   <div className="flex items-center w-full">
@@ -365,17 +388,18 @@ export default function OrderTrackingPage() {
                     )}
                     {/* Circle */}
                     <motion.div
-                      animate={done ? { scale: [1, 1.15, 1] } : {}}
-                      transition={{ duration: 0.4 }}
+                      animate={active ? { scale: [1, 1.1, 1] } : {}}
+                      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                       className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
                       style={{
-                        background: done ? PRIMARY : '#F0EAE4',
-                        boxShadow: done ? `0 4px 14px rgba(255,107,53,0.35)` : 'none',
+                        background: completed ? PRIMARY : active ? PRIMARY : '#F0EAE4',
+                        boxShadow: completed || active ? `0 4px 14px rgba(255,107,53,0.35)` : 'none',
+                        opacity: active ? 0.9 : 1,
                       }}
                     >
-                      {done
+                      {completed
                         ? <CheckCircle size={20} className="text-white" strokeWidth={2.5} />
-                        : <Icon size={18} style={{ color: '#C0B0A0' }} />
+                        : <Icon size={18} style={{ color: active ? 'white' : '#C0B0A0' }} />
                       }
                     </motion.div>
                     {/* Right connector */}
@@ -385,7 +409,7 @@ export default function OrderTrackingPage() {
                     )}
                   </div>
                   <p className="text-[10px] font-black tracking-[1px] uppercase mt-2 text-center"
-                    style={{ color: done ? PRIMARY : '#C0B0A0' }}>
+                    style={{ color: completed || active ? PRIMARY : '#C0B0A0' }}>
                     {t(step.labelKey)}
                   </p>
                 </div>

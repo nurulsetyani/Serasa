@@ -43,7 +43,7 @@ export async function PATCH(
 ) {
   try {
     const body = await req.json()
-    const { status } = body as { status: OrderStatus }
+    const { status, total_price } = body as { status: OrderStatus; total_price?: number }
 
     if (!VALID_STATUSES.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
@@ -52,9 +52,14 @@ export async function PATCH(
     const { client, error } = getClient()
     if (!client) return NextResponse.json({ error }, { status: 503 })
 
+    const updateData: Record<string, unknown> = { status, updated_at: new Date().toISOString() }
+    if (typeof total_price === 'number' && total_price > 0) {
+      updateData.total_price = total_price
+    }
+
     const { data, error: dbError } = await client
       .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', params.id)
       .select()
       .single()
