@@ -1,12 +1,14 @@
-// WhatsApp notification via Fonnte (https://fonnte.com)
-// Setup: daftar fonnte.com → connect WA → copy token
-// Env vars: FONNTE_TOKEN, NEXT_PUBLIC_ADMIN_WA (format: 62812xxxx)
-
-const FONNTE_URL = 'https://api.fonnte.com/send'
+// WhatsApp notification via self-hosted Baileys bot (wa-bot/)
+// Bot dihost di Render.com (gratis), dijaga hidup oleh UptimeRobot (gratis)
+//
+// Env vars yang dibutuhkan di Vercel:
+//   WA_BOT_URL    = https://serasa-wa-bot.onrender.com   (URL Render kamu)
+//   WA_BOT_SECRET = password-rahasia-sama-dengan-BOT_SECRET-di-bot
+//   NEXT_PUBLIC_ADMIN_WA = 62812xxxxxxx  (nomor HP owner, tanpa + atau spasi)
 
 export interface WAOrderPayload {
   order_number: string
-  source: string          // 'qr' | 'pos' | 'hungerstation' | 'keeta'
+  source: string          // 'qr' | 'hungerstation' | 'keeta'
   table_number?: string
   customer_name: string
   order_type: string
@@ -22,18 +24,20 @@ const SOURCE_LABEL: Record<string, string> = {
 }
 
 export async function sendOwnerWhatsApp(order: WAOrderPayload): Promise<void> {
-  const token   = process.env.FONNTE_TOKEN
-  const adminWa = process.env.NEXT_PUBLIC_ADMIN_WA
-  if (!token || !adminWa) return  // silently skip if not configured
+  const botUrl    = process.env.WA_BOT_URL
+  const botSecret = process.env.WA_BOT_SECRET
+  const adminWa   = process.env.NEXT_PUBLIC_ADMIN_WA
 
-  const srcLabel   = SOURCE_LABEL[order.source] ?? order.source
-  const typeLabel  = order.order_type === 'dine_in' ? 'Dine In'
-                   : order.order_type === 'take_away' ? 'Take Away'
-                   : 'Delivery'
-  const tableInfo  = order.order_type === 'delivery' || !order.table_number
-                   ? `📦 ${typeLabel}`
-                   : `🪑 Meja ${order.table_number} (${typeLabel})`
-  const itemLines  = order.items.map(i => `  • ${i.qty}× ${i.name}`).join('\n')
+  if (!botUrl || !adminWa) return  // skip jika belum dikonfigurasi
+
+  const srcLabel  = SOURCE_LABEL[order.source] ?? order.source
+  const typeLabel = order.order_type === 'dine_in'  ? 'Dine In'
+                  : order.order_type === 'take_away' ? 'Take Away'
+                  : 'Delivery'
+  const tableInfo = order.order_type === 'delivery' || !order.table_number
+                  ? `📦 ${typeLabel}`
+                  : `🪑 Meja ${order.table_number} (${typeLabel})`
+  const itemLines = order.items.map(i => `  • ${i.qty}× ${i.name}`).join('\n')
 
   const message = `🔔 *ORDER BARU — Serasa Restaurant*
 
@@ -50,17 +54,20 @@ ${itemLines}
 _Segera proses di POS / dapur_ 👨‍🍳`
 
   try {
-    const res = await fetch(FONNTE_URL, {
+    const res = await fetch(`${botUrl}/send`, {
       method: 'POST',
-      headers: { 'Authorization': token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target: adminWa, message }),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-bot-secret': botSecret ?? '',
+      },
+      body: JSON.stringify({ phone: adminWa, message }),
     })
     if (!res.ok) {
       const text = await res.text()
-      console.warn('[WA] Fonnte error:', res.status, text)
+      console.warn('[WA] Bot error:', res.status, text)
     }
   } catch (err) {
-    // WA gagal tidak menghentikan proses order
+    // Gagal kirim WA tidak menghentikan proses order
     console.error('[WA] sendOwnerWhatsApp failed:', err)
   }
 }
