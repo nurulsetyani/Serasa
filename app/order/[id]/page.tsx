@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, ChefHat, Package, CheckCircle, Copy, Printer, MessageCircle, Hourglass } from 'lucide-react'
+import { Clock, ChefHat, Package, CheckCircle, Copy, Printer, MessageCircle, Hourglass, CreditCard } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -34,11 +34,11 @@ const EST_MINS: Record<OrderStatus, number> = {
 }
 
 const STEPS: { status: OrderStatus; labelKey: TranslationKey; icon: React.ElementType }[] = [
-  { status: 'new',              labelKey: 'orderWaiting', icon: Hourglass    },
-  { status: 'accepted',         labelKey: 'pending',      icon: CheckCircle  },
-  { status: 'preparing',        labelKey: 'cooking',      icon: ChefHat      },
-  { status: 'ready',            labelKey: 'ready',        icon: Package      },
-  { status: 'awaiting_payment', labelKey: 'pending',      icon: CheckCircle  },
+  { status: 'new',              labelKey: 'orderWaiting',   icon: Hourglass   },
+  { status: 'accepted',         labelKey: 'accepted',       icon: CheckCircle },
+  { status: 'preparing',        labelKey: 'cooking',        icon: ChefHat     },
+  { status: 'ready',            labelKey: 'ready',          icon: Package     },
+  { status: 'awaiting_payment', labelKey: 'awaitingPayment', icon: CreditCard },
 ]
 
 
@@ -342,7 +342,7 @@ export default function OrderTrackingPage() {
                 {t('orderWaiting')}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">
-                Kasir akan segera konfirmasi pesananmu
+                Pesananmu masuk ke dapur, segera diproses
               </p>
             </div>
           </motion.div>
