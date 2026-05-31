@@ -39,7 +39,7 @@ const PLATFORM_CFG: Record<string, { label: string; color: string }> = {
   hungerstation: { label: 'HungerStation',  color: '#FF6000' },
   keeta:         { label: 'Keeta',          color: '#00C851' },
 }
-const ORDER_TYPE_CFG = {
+const ORDER_TYPE_CFG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   dine_in:   { label: 'Dine-In',   icon: UtensilsCrossed, color: '#6366F1' },
   take_away: { label: 'Take Away', icon: ShoppingBag,     color: '#F59E0B' },
   delivery:  { label: 'Delivery',  icon: Bike,            color: '#22C55E' },
