@@ -5,12 +5,19 @@ import { useLang } from '@/context/LanguageContext'
 import { TranslationKey } from '@/lib/i18n'
 
 const STATUS_CONFIG: Record<OrderStatus, { icon: string; className: string; labelKey: TranslationKey }> = {
-  new:       { icon: '🕐', className: 'status-pending',   labelKey: 'pending' },
-  pending:   { icon: '⏳', className: 'status-pending',   labelKey: 'pending' },
-  cooking:   { icon: '🔥', className: 'status-cooking',   labelKey: 'cooking' },
-  ready:     { icon: '✅', className: 'status-ready',     labelKey: 'ready' },
-  delivered: { icon: '🎉', className: 'status-delivered', labelKey: 'delivered' },
-  cancelled: { icon: '❌', className: 'status-pending',   labelKey: 'pending' },
+  // New flow
+  new:              { icon: '🕐', className: 'status-pending',   labelKey: 'orderWaiting'   },
+  accepted:         { icon: '👨‍🍳', className: 'status-pending',   labelKey: 'accepted'       },
+  preparing:        { icon: '🔥', className: 'status-cooking',   labelKey: 'cooking'        },
+  ready:            { icon: '✅', className: 'status-ready',     labelKey: 'ready'          },
+  served:           { icon: '🍽️', className: 'status-ready',    labelKey: 'ready'          },
+  awaiting_payment: { icon: '💳', className: 'status-pending',   labelKey: 'awaitingPayment'},
+  paid:             { icon: '🎉', className: 'status-delivered', labelKey: 'delivered'      },
+  // Legacy
+  pending:          { icon: '⏳', className: 'status-pending',   labelKey: 'pending'        },
+  cooking:          { icon: '🔥', className: 'status-cooking',   labelKey: 'cooking'        },
+  delivered:        { icon: '🎉', className: 'status-delivered', labelKey: 'delivered'      },
+  cancelled:        { icon: '❌', className: 'status-pending',   labelKey: 'pending'        },
 }
 
 interface Props {
