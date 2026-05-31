@@ -7,6 +7,7 @@ import { Printer } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Order, MenuItem, Language } from '@/types'
 import { formatPrice } from '@/lib/utils'
+import { buildOrderZATCAQR, calcVAT } from '@/lib/zatca'
 import dynamic from 'next/dynamic'
 
 const PDFDownloadButton = dynamic(
@@ -77,9 +78,11 @@ export default function ReceiptPage() {
   const [menuMap, setMenuMap] = useState<Record<string, MenuItem>>({})
   const [loading, setLoading] = useState(true)
   const [lang, setLang]       = useState<Language>('id')
-  const [receiptUrl, setReceiptUrl] = useState('')
+  const [zatcaQR, setZatcaQR] = useState('')
 
-  useEffect(() => { setReceiptUrl(window.location.href) }, [])
+  useEffect(() => {
+    if (order) setZatcaQR(buildOrderZATCAQR(order))
+  }, [order])
 
   useEffect(() => {
     try {
@@ -191,9 +194,12 @@ export default function ReceiptPage() {
           </p>
         </div>
 
-        {/* Orange label */}
+        {/* ZATCA label — فاتورة ضريبية مبسطة */}
         <div className="px-6 py-2 text-center" style={{ background: '#FF6B35' }}>
           <p className="text-white text-[11px] font-black tracking-[3px] uppercase">{lbl.receipt}</p>
+          <p className="text-white/80 text-[10px] mt-0.5" style={{ fontFamily: 'serif' }}>
+            فاتورة ضريبية مبسطة
+          </p>
         </div>
 
         {/* Order info */}
@@ -236,14 +242,35 @@ export default function ReceiptPage() {
           })}
         </div>
 
-        {/* Total */}
+        {/* Total + VAT breakdown (ZATCA required) */}
         <div className="px-6 py-4" style={{ borderBottom: '1px dashed #E5E7EB' }}>
-          <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <span className="text-gray-600 font-semibold text-sm">{lbl.total}</span>
-            <span className="font-black text-xl" style={{ color: '#FF6B35' }}>{formatPrice(order.total_price)}</span>
-          </div>
+          {(() => {
+            const vatPct = Number(process.env.NEXT_PUBLIC_VAT_PERCENT ?? 15)
+            const { subtotal, vatAmount } = calcVAT(order.total_price, vatPct)
+            return (
+              <div className="space-y-1.5">
+                <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <span className="text-gray-400 text-[11px]">
+                    {isRTL ? 'المجموع قبل الضريبة' : 'Subtotal (excl. VAT)'}
+                  </span>
+                  <span className="text-gray-600 text-[11px] font-semibold">{formatPrice(subtotal)}</span>
+                </div>
+                <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <span className="text-gray-400 text-[11px]">
+                    {isRTL ? `ضريبة القيمة المضافة ${vatPct}%` : `VAT ${vatPct}%`}
+                  </span>
+                  <span className="text-gray-600 text-[11px] font-semibold">{formatPrice(vatAmount)}</span>
+                </div>
+                <div className={`flex items-center justify-between pt-1.5 border-t border-dashed ${isRTL ? 'flex-row-reverse' : ''}`}
+                  style={{ borderColor: '#E5E7EB' }}>
+                  <span className="text-gray-900 font-black text-sm">{lbl.total}</span>
+                  <span className="font-black text-xl" style={{ color: '#FF6B35' }}>{formatPrice(order.total_price)}</span>
+                </div>
+              </div>
+            )
+          })()}
           {(order.payment_method === 'online' || order.payment_method === 'qris') && (
-            <div className={`flex items-center justify-between mt-1.5 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className={`flex items-center justify-between mt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <span className="text-gray-300 text-[11px]">{lbl.status}</span>
               <span className="text-green-500 text-[11px] font-semibold">✓ {paymentLabel} {lbl.paid}</span>
             </div>
@@ -263,14 +290,19 @@ export default function ReceiptPage() {
           <p className="text-gray-300 text-[9px] mt-3">Serasa Indonesian Restaurant · Saudi Arabia</p>
         </div>
 
-        {/* QR Code — link to this receipt */}
-        {receiptUrl && (
+        {/* ZATCA QR Code */}
+        {zatcaQR && (
           <div className="px-6 py-4 flex flex-col items-center gap-2"
             style={{ borderTop: '1px dashed #E5E7EB' }}>
-            <QRCodeSVG value={receiptUrl} size={96} level="M"
+            <QRCodeSVG value={zatcaQR} size={96} level="M"
               fgColor="#1A1208" bgColor="transparent" />
-            <p className="text-gray-300 text-[9px] text-center">
-              Scan untuk struk digital · Scan for digital receipt
+            <p className="text-gray-400 text-[9px] text-center">
+              {isRTL ? 'رمز ZATCA الضريبي' : 'ZATCA Tax QR Code'}
+            </p>
+            <p className="text-gray-300 text-[8px] text-center">
+              {process.env.NEXT_PUBLIC_VAT_NUMBER
+                ? `VAT: ${process.env.NEXT_PUBLIC_VAT_NUMBER}`
+                : 'Set NEXT_PUBLIC_VAT_NUMBER in Vercel'}
             </p>
           </div>
         )}
