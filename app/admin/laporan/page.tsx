@@ -39,11 +39,17 @@ const PLATFORM_CFG: Record<string, { label: string; color: string }> = {
   hungerstation: { label: 'HungerStation',  color: '#FF6000' },
   keeta:         { label: 'Keeta',          color: '#00C851' },
 }
-const ORDER_TYPE_CFG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  dine_in:   { label: 'Dine-In',   icon: UtensilsCrossed, color: '#6366F1' },
-  take_away: { label: 'Take Away', icon: ShoppingBag,     color: '#F59E0B' },
-  delivery:  { label: 'Delivery',  icon: Bike,            color: '#22C55E' },
+const ORDER_TYPE_CFG: Record<string, { label: string; color: string }> = {
+  dine_in:   { label: 'Dine-In',   color: '#6366F1' },
+  take_away: { label: 'Take Away', color: '#F59E0B' },
+  delivery:  { label: 'Delivery',  color: '#22C55E' },
 }
+const ORDER_TYPE_ICON = {
+  dine_in:   UtensilsCrossed,
+  take_away: ShoppingBag,
+  delivery:  Bike,
+} as const
+type OrderTypeKey = keyof typeof ORDER_TYPE_ICON
 
 const OPERATION_HOURS = Array.from({ length: 14 }, (_, i) => i + 10) // 10–23
 
@@ -431,7 +437,7 @@ export default function LaporanPage() {
             ) : (
               <div className="space-y-3">
                 {Object.entries(ORDER_TYPE_CFG).map(([key, cfg]) => {
-                  const Icon = cfg.icon
+                  const Icon = ORDER_TYPE_ICON[key as OrderTypeKey] ?? UtensilsCrossed
                   const d = typeMap[key] ?? { count: 0, revenue: 0 }
                   const pct = totalOrders > 0 ? Math.round((d.count / totalOrders) * 100) : 0
                   return (
