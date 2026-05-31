@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { OrderStatus } from '@/types'
 
-const VALID_STATUSES: OrderStatus[] = ['new', 'pending', 'cooking', 'ready', 'delivered', 'cancelled']
+const VALID_STATUSES: OrderStatus[] = [
+  'new', 'accepted', 'preparing', 'ready', 'served', 'awaiting_payment', 'paid',
+  'pending', 'cooking', 'delivered', 'cancelled',
+]
 
 function getClient() {
   try {
