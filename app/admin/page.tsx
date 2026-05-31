@@ -64,18 +64,29 @@ const MOCK_ORDERS: Order[] = [
 ]
 
 const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
-  new: 'pending', pending: 'cooking', cooking: 'ready', ready: 'delivered', delivered: null, cancelled: null,
+  // New flow
+  new: 'accepted', accepted: 'preparing', preparing: 'ready', ready: 'served',
+  served: 'awaiting_payment', awaiting_payment: 'paid', paid: null,
+  // Legacy
+  pending: 'cooking', cooking: 'ready', delivered: null, cancelled: null,
 }
 
 const STATUS_CONFIG: Record<OrderStatus, {
   label: string; dot: string; badge: string; btnLabel: string; btnClass: string; icon: React.ElementType
 }> = {
-  new:       { label: 'Menunggu',  dot: 'bg-[#A78BFA]', badge: 'bg-[#A78BFA]/10 text-[#A78BFA] border-[#A78BFA]/20', btnLabel: '',             btnClass: '', icon: Clock },
-  pending:   { label: 'Pending',   dot: 'bg-[#F59E0B]', badge: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20', btnLabel: 'Start Cooking', btnClass: 'bg-[#EF4444] hover:bg-[#DC2626] text-white', icon: Clock },
-  cooking:   { label: 'Cooking',   dot: 'bg-[#EF4444]', badge: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20', btnLabel: 'Mark Ready',    btnClass: 'bg-[#22C55E] hover:bg-[#16A34A] text-white', icon: Flame },
-  ready:     { label: 'Ready',     dot: 'bg-[#22C55E]', badge: 'bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/20', btnLabel: 'Mark Delivered', btnClass: 'bg-[#6366F1] hover:bg-[#4F46E5] text-white', icon: CircleCheck },
-  delivered: { label: 'Delivered', dot: 'bg-[#6366F1]', badge: 'bg-[#6366F1]/10 text-[#6366F1] border-[#6366F1]/20', btnLabel: '',             btnClass: '', icon: CheckCircle2 },
-  cancelled: { label: 'Cancelled', dot: 'bg-gray-400',  badge: 'bg-gray-100 text-gray-500 border-gray-200',           btnLabel: '',             btnClass: '', icon: CheckCircle2 },
+  // New flow
+  new:              { label: 'Menunggu',       dot: 'bg-[#A78BFA]', badge: 'bg-[#A78BFA]/10 text-[#A78BFA] border-[#A78BFA]/20', btnLabel: 'Terima',        btnClass: 'bg-[#F59E0B] hover:bg-[#D97706] text-black', icon: Clock },
+  accepted:         { label: 'Diterima',       dot: 'bg-[#F59E0B]', badge: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20', btnLabel: 'Mulai Masak',   btnClass: 'bg-[#EF4444] hover:bg-[#DC2626] text-white', icon: Clock },
+  preparing:        { label: 'Dimasak',        dot: 'bg-[#EF4444]', badge: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20', btnLabel: 'Siap Saji',     btnClass: 'bg-[#22C55E] hover:bg-[#16A34A] text-white', icon: Flame },
+  ready:            { label: 'Siap',           dot: 'bg-[#22C55E]', badge: 'bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/20', btnLabel: 'Sajikan',       btnClass: 'bg-[#06B6D4] hover:bg-[#0891B2] text-white', icon: CircleCheck },
+  served:           { label: 'Disajikan',      dot: 'bg-[#06B6D4]', badge: 'bg-[#06B6D4]/10 text-[#06B6D4] border-[#06B6D4]/20', btnLabel: 'Minta Bayar',  btnClass: 'bg-[#EF4444] hover:bg-[#DC2626] text-white', icon: CircleCheck },
+  awaiting_payment: { label: 'Tagih',          dot: 'bg-[#EF4444]', badge: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20', btnLabel: 'Tandai Lunas', btnClass: 'bg-[#6366F1] hover:bg-[#4F46E5] text-white', icon: CheckCircle2 },
+  paid:             { label: 'Lunas',          dot: 'bg-[#6366F1]', badge: 'bg-[#6366F1]/10 text-[#6366F1] border-[#6366F1]/20', btnLabel: '',             btnClass: '', icon: CheckCircle2 },
+  // Legacy
+  pending:          { label: 'Pending',        dot: 'bg-[#F59E0B]', badge: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20', btnLabel: 'Start Cooking', btnClass: 'bg-[#EF4444] hover:bg-[#DC2626] text-white', icon: Clock },
+  cooking:          { label: 'Cooking',        dot: 'bg-[#EF4444]', badge: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20', btnLabel: 'Mark Ready',    btnClass: 'bg-[#22C55E] hover:bg-[#16A34A] text-white', icon: Flame },
+  delivered:        { label: 'Delivered',      dot: 'bg-[#6366F1]', badge: 'bg-[#6366F1]/10 text-[#6366F1] border-[#6366F1]/20', btnLabel: '',             btnClass: '', icon: CheckCircle2 },
+  cancelled:        { label: 'Cancelled',      dot: 'bg-gray-400',  badge: 'bg-gray-100 text-gray-500 border-gray-200',           btnLabel: '',             btnClass: '', icon: CheckCircle2 },
 }
 
 // ── Sub-components ───────────────────────────────────────────
