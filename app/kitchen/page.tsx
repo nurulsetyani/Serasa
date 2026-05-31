@@ -148,8 +148,7 @@ const COLS: ColDef[] = [
     glow:  'rgba(48,209,88,0.18)',
     emoji: '✅',
     actions: [
-      { forStatuses: ['ready'],  label: 'SAJIKAN', nextStatus: 'served',           btn: '#A78BFA', btnShadow: '167,139,250', btnText: '#0A0A14' },
-      { forStatuses: ['served'], label: 'TAGIH',   nextStatus: 'awaiting_payment', btn: '#60A5FA', btnShadow: '96,165,250',  btnText: '#0A0A14' },
+      { forStatuses: ['ready'], label: 'SAJIKAN', nextStatus: 'served', btn: '#A78BFA', btnShadow: '167,139,250', btnText: '#0A0A14' },
     ],
   },
 ]

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         order_type: order_type ?? 'dine_in',
         delivery_address,
         payment_method: 'cash',
-        status: 'pending',
+        status: 'awaiting_payment',
         source: 'pos',
         total_price,
         subtotal: subtotal ?? total_price,

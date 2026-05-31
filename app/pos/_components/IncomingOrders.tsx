@@ -220,25 +220,15 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
 
                           {/* Actions */}
                           <div className="flex gap-2">
-                            {/* Served → request payment */}
-                            {isServed && (
-                              <motion.button whileTap={{ scale: 0.97 }}
-                                onClick={() => handleRequestPayment(order.id)}
-                                disabled={patching === order.id}
-                                className="flex-1 py-2.5 rounded-xl text-white font-black text-xs flex items-center justify-center gap-1.5"
-                                style={{ background: '#EF4444' }}>
-                                <CreditCard size={12} />
-                                {patching === order.id ? '...' : 'Minta Bayar'}
-                              </motion.button>
-                            )}
-                            {/* awaiting_payment → checkout */}
-                            {order.status === 'awaiting_payment' && (
+                            {/* served or awaiting_payment → checkout langsung */}
+                            {(order.status === 'served' || order.status === 'awaiting_payment') && (
                               <motion.button whileTap={{ scale: 0.97 }}
                                 onClick={() => handleLoadForCheckout(order)}
+                                disabled={patching === order.id}
                                 className="flex-1 py-2.5 rounded-xl text-white font-black text-xs flex items-center justify-center gap-1.5"
                                 style={{ background: '#EF4444', boxShadow: '0 4px 16px rgba(239,68,68,0.40)' }}>
                                 <CreditCard size={12} />
-                                Checkout &amp; Bayar
+                                {patching === order.id ? '...' : 'Checkout & Bayar'}
                                 <ChevronRight size={11} />
                               </motion.button>
                             )}
