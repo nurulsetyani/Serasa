@@ -81,6 +81,23 @@ export default function Cart({ tableParam }: Props) {
     if (loading || isEmpty) return
     setLoading(true); setError('')
     try {
+      // ── QR checkout: update original order, don't create a new one ──
+      if (sourceQrOrderId) {
+        const res = await fetch(`/api/order/${sourceQrOrderId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'paid', total_price: total }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? 'Failed to update order')
+        setLastOrderNumber(data.order_number)
+        setLastOrderId(sourceQrOrderId)
+        setShowPayment(false)
+        setShowReceipt(true)
+        return
+      }
+
+      // ── POS walk-in order: create new order ──
       const res = await fetch('/api/pos/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -99,12 +116,8 @@ export default function Cart({ tableParam }: Props) {
           tax_amount: taxAmount,
           total_price: total,
           items: lines.map(l => ({
-            menu_id: l.menuId,
-            name: l.name,
-            price: l.unitPrice,
-            qty: l.qty,
-            notes: l.note || null,
-            modifiers: l.modifiers,
+            menu_id: l.menuId, name: l.name, price: l.unitPrice,
+            qty: l.qty, notes: l.note || null, modifiers: l.modifiers,
           })),
         }),
       })
@@ -112,32 +125,6 @@ export default function Cart({ tableParam }: Props) {
       if (!res.ok) throw new Error(data.error ?? 'Failed to create order')
       setLastOrderNumber(data.order_number)
       setLastOrderId(data.id)
-      if (sourceQrOrderId) {
-        fetch(`/api/order/${sourceQrOrderId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'delivered', total_price: total }),
-        }).catch(() => {})
-      }
-      fetch('/api/print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'kitchen',
-          order: {
-            id: data.id,
-            order_number: data.order_number,
-            table_number: tableNumber || tableParam || '1',
-            customer_name: customerName || 'Guest',
-            order_type: orderType,
-            created_at: new Date().toISOString(),
-            order_items: lines.map(l => ({
-              id: l.lineId, name: l.name, price: l.unitPrice,
-              qty: l.qty, notes: l.note || null,
-            })),
-          },
-        }),
-      }).catch(() => {})
       setShowPayment(false)
       setShowReceipt(true)
     } catch (e) {
