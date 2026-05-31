@@ -1,5 +1,15 @@
 export type Language = 'id' | 'en' | 'ar'
-export type OrderStatus = 'new' | 'pending' | 'cooking' | 'ready' | 'delivered' | 'cancelled'
+export type OrderStatus =
+  // ── New status machine (Foodics-style) ──────────────────────────────
+  | 'new'               // QR order masuk, menunggu dapur
+  | 'accepted'          // Chef terima di KDS
+  | 'preparing'         // Sedang dimasak
+  | 'ready'             // Siap di counter dapur
+  | 'served'            // Sudah diantar ke meja
+  | 'awaiting_payment'  // Menunggu pembayaran
+  | 'paid'              // Lunas
+  // ── Legacy statuses (order lama, tetap berjalan) ────────────────────
+  | 'pending' | 'cooking' | 'delivered' | 'cancelled'
 
 export interface Restaurant {
   id: string

@@ -29,15 +29,18 @@ const MOCK_ORDER: Order = {
 
 // Cook times from menu (approximate) — 'new' shows TBD so use 0
 const EST_MINS: Record<OrderStatus, number> = {
-  new: 0, pending: 20, cooking: 12, ready: 0, delivered: 0, cancelled: 0,
+  new: 0, accepted: 20, preparing: 12, ready: 0, served: 0, awaiting_payment: 0, paid: 0,
+  pending: 20, cooking: 12, delivered: 0, cancelled: 0,
 }
 
 const STEPS: { status: OrderStatus; labelKey: TranslationKey; icon: React.ElementType }[] = [
-  { status: 'new',       labelKey: 'orderWaiting', icon: Hourglass },
-  { status: 'pending',   labelKey: 'pending',      icon: CheckCircle },
-  { status: 'cooking',   labelKey: 'cooking',      icon: ChefHat },
-  { status: 'ready',     labelKey: 'ready',        icon: Package },
+  { status: 'new',              labelKey: 'orderWaiting', icon: Hourglass    },
+  { status: 'accepted',         labelKey: 'pending',      icon: CheckCircle  },
+  { status: 'preparing',        labelKey: 'cooking',      icon: ChefHat      },
+  { status: 'ready',            labelKey: 'ready',        icon: Package      },
+  { status: 'awaiting_payment', labelKey: 'pending',      icon: CheckCircle  },
 ]
+
 
 const PAY = {
   stcNumber: process.env.NEXT_PUBLIC_STC_PAY_NUMBER    ?? '05XXXXXXXX',

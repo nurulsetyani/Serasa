@@ -23,8 +23,15 @@ export function calculateEstimatedTime(items: CartItem[], queueCount = 0): numbe
 }
 
 export function getStatusStep(status: OrderStatus): number {
-  const steps: OrderStatus[] = ['new', 'pending', 'cooking', 'ready', 'delivered']
-  return steps.indexOf(status)
+  // New flow
+  const newSteps: OrderStatus[] = ['new', 'accepted', 'preparing', 'ready', 'served', 'awaiting_payment', 'paid']
+  const ni = newSteps.indexOf(status)
+  if (ni !== -1) return ni
+  // Legacy flow mapping
+  const legacyMap: Partial<Record<OrderStatus, number>> = {
+    pending: 1, cooking: 2, delivered: 6, cancelled: -1,
+  }
+  return legacyMap[status] ?? 0
 }
 
 export function formatTime(dateString: string): string {

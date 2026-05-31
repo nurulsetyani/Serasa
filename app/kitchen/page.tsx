@@ -90,45 +90,67 @@ function playNewOrderSound() {
 // ─────────────────────────────────────────────
 // COLUMN CONFIG
 // ─────────────────────────────────────────────
-const COLS = [
+interface ColAction {
+  forStatuses: OrderStatus[]
+  label:       string
+  nextStatus:  OrderStatus
+  btn:         string
+  btnShadow:   string
+  btnText:     string
+}
+interface ColDef {
+  id:       string
+  statuses: OrderStatus[]
+  label:    string
+  color:    string
+  dim:      string
+  border:   string
+  glow:     string
+  emoji:    string
+  actions:  ColAction[]
+}
+
+const COLS: ColDef[] = [
   {
-    status: 'pending' as OrderStatus,
+    id: 'baru',
+    statuses: ['new'] as OrderStatus[],
     label: 'BARU',
     color: '#FF9F0A',
-    dim: 'rgba(255,159,10,0.10)',
-    border: 'rgba(255,159,10,0.28)',
-    glow: 'rgba(255,159,10,0.22)',
-    nextLabel: 'MULAI MASAK',
-    nextStatus: 'cooking' as OrderStatus,
-    btn: '#FF6B35',
-    btnShadow: '255,107,53',
-    btnText: '#000',
+    dim:   'rgba(255,159,10,0.10)',
+    border:'rgba(255,159,10,0.28)',
+    glow:  'rgba(255,159,10,0.22)',
+    emoji: '📭',
+    actions: [
+      { forStatuses: ['new'], label: 'TERIMA', nextStatus: 'accepted', btn: '#FF6B35', btnShadow: '255,107,53', btnText: '#000' },
+    ],
   },
   {
-    status: 'cooking' as OrderStatus,
+    id: 'masak',
+    statuses: ['accepted', 'preparing', 'pending', 'cooking'] as OrderStatus[],
     label: 'MASAK',
     color: '#FF6B35',
-    dim: 'rgba(255,107,53,0.10)',
-    border: 'rgba(255,107,53,0.28)',
-    glow: 'rgba(255,107,53,0.20)',
-    nextLabel: 'SIAP SAJI',
-    nextStatus: 'ready' as OrderStatus,
-    btn: '#30D158',
-    btnShadow: '48,209,88',
-    btnText: '#000',
+    dim:   'rgba(255,107,53,0.10)',
+    border:'rgba(255,107,53,0.28)',
+    glow:  'rgba(255,107,53,0.20)',
+    emoji: '🍳',
+    actions: [
+      { forStatuses: ['accepted', 'pending'], label: 'MULAI MASAK', nextStatus: 'preparing', btn: '#FF6B35', btnShadow: '255,107,53', btnText: '#000' },
+      { forStatuses: ['preparing', 'cooking'], label: 'SIAP SAJI',  nextStatus: 'ready',     btn: '#30D158', btnShadow: '48,209,88',  btnText: '#000' },
+    ],
   },
   {
-    status: 'ready' as OrderStatus,
+    id: 'siap',
+    statuses: ['ready', 'served'] as OrderStatus[],
     label: 'SIAP',
     color: '#30D158',
-    dim: 'rgba(48,209,88,0.09)',
-    border: 'rgba(48,209,88,0.26)',
-    glow: 'rgba(48,209,88,0.18)',
-    nextLabel: 'SELESAI',
-    nextStatus: 'delivered' as OrderStatus,
-    btn: '#A78BFA',
-    btnShadow: '167,139,250',
-    btnText: '#0A0A14',
+    dim:   'rgba(48,209,88,0.09)',
+    border:'rgba(48,209,88,0.26)',
+    glow:  'rgba(48,209,88,0.18)',
+    emoji: '✅',
+    actions: [
+      { forStatuses: ['ready'],  label: 'SAJIKAN', nextStatus: 'served',           btn: '#A78BFA', btnShadow: '167,139,250', btnText: '#0A0A14' },
+      { forStatuses: ['served'], label: 'TAGIH',   nextStatus: 'awaiting_payment', btn: '#60A5FA', btnShadow: '96,165,250',  btnText: '#0A0A14' },
+    ],
   },
 ]
 
@@ -272,7 +294,7 @@ export default function KitchenPage() {
     const { data } = await supabase
       .from('orders').select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
-      .in('status', ['pending', 'cooking', 'ready'])
+      .in('status', ['new', 'accepted', 'preparing', 'ready', 'served', 'pending', 'cooking'])
       .order('created_at', { ascending: true })
     if (data) setOrders(data as KitchenOrder[])
     setLoading(false)
@@ -293,7 +315,7 @@ export default function KitchenPage() {
           fetchOrders()
         } else if (p.eventType === 'UPDATE') {
           const u = p.new as KitchenOrder
-          if (u.status === 'delivered' || u.status === 'cancelled') {
+          if (['delivered', 'paid', 'awaiting_payment', 'cancelled'].includes(u.status)) {
             setOrders(prev => prev.filter(o => o.id !== u.id))
           } else {
             setOrders(prev => prev.map(o => o.id === u.id ? { ...o, ...u } : o))
@@ -334,7 +356,7 @@ export default function KitchenPage() {
     }
   }
 
-  const pendingCount = orders.filter(o => o.status === 'pending').length
+  const pendingCount = orders.filter(o => o.status === 'new').length
 
   return (
     <>
@@ -551,9 +573,9 @@ export default function KitchenPage() {
           /* 3-column grid — page scrolls, no column overflow clipping */
           <div style={{ padding: '16px 16px 70px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, alignItems: 'start' }}>
             {COLS.map(col => {
-              const colOrders = orders.filter(o => o.status === col.status)
+              const colOrders = orders.filter(o => (col.statuses as string[]).includes(o.status))
               return (
-                <div key={col.status} className="kds-col" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div key={col.id} className="kds-col" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
                   {/* ── Column Header ── */}
                   <div style={{
@@ -599,7 +621,7 @@ export default function KitchenPage() {
                       border: `1px dashed ${col.border}`,
                     }}>
                       <span style={{ fontSize: 24, opacity: 0.2 }}>
-                        {col.status === 'pending' ? '📭' : col.status === 'cooking' ? '🍳' : '✅'}
+                        {col.emoji}
                       </span>
                       <p style={{
                         fontFamily: "'Barlow Condensed', sans-serif",
@@ -690,7 +712,7 @@ export default function KitchenPage() {
                               {/* Timer + void button */}
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, paddingTop: 2 }}>
                                 <Timer createdAt={order.created_at} />
-                                {col.status === 'pending' && (
+                                {order.status === 'new' && (
                                   <button
                                     onClick={() => voidOrder(order.id, order.table_number)}
                                     disabled={voiding === order.id}
@@ -780,30 +802,35 @@ export default function KitchenPage() {
                           </div>
 
                           {/* ── ACTION BUTTON ── */}
-                          <div style={{ padding: '2px 12px 14px' }}>
-                            <motion.button
-                              className="kds-btn"
-                              whileTap={{ scale: 0.965 }}
-                              onClick={() => advance(order.id, col.nextStatus)}
-                              disabled={advancing === order.id}
-                              style={{
-                                width: '100%',
-                                padding: '14px 0',
-                                borderRadius: 14,
-                                fontFamily: "'Barlow Condensed', sans-serif",
-                                fontWeight: 900, fontSize: '1.35rem',
-                                letterSpacing: '0.12em', textTransform: 'uppercase',
-                                color: col.btnText,
-                                background: col.btn,
-                                border: 'none', cursor: 'pointer',
-                                boxShadow: `0 0 32px rgba(${col.btnShadow},0.55), 0 6px 24px rgba(0,0,0,0.55)`,
-                              }}
-                            >
-                              {advancing === order.id ? (
-                                <span style={{ display: 'inline-block', animation: 'spin 0.8s linear infinite' }}>⟳</span>
-                              ) : col.nextLabel}
-                            </motion.button>
-                          </div>
+                          {(() => {
+                            const act = col.actions.find(a =>
+                              (a.forStatuses as string[]).includes(order.status)
+                            )
+                            if (!act) return null
+                            return (
+                              <div style={{ padding: '2px 12px 14px' }}>
+                                <motion.button
+                                  className="kds-btn"
+                                  whileTap={{ scale: 0.965 }}
+                                  onClick={() => advance(order.id, act.nextStatus)}
+                                  disabled={advancing === order.id}
+                                  style={{
+                                    width: '100%', padding: '14px 0', borderRadius: 14,
+                                    fontFamily: "'Barlow Condensed', sans-serif",
+                                    fontWeight: 900, fontSize: '1.35rem',
+                                    letterSpacing: '0.12em', textTransform: 'uppercase',
+                                    color: act.btnText, background: act.btn,
+                                    border: 'none', cursor: 'pointer',
+                                    boxShadow: `0 0 32px rgba(${act.btnShadow},0.55), 0 6px 24px rgba(0,0,0,0.55)`,
+                                  }}
+                                >
+                                  {advancing === order.id
+                                    ? <span style={{ display: 'inline-block', animation: 'spin 0.8s linear infinite' }}>⟳</span>
+                                    : act.label}
+                                </motion.button>
+                              </div>
+                            )
+                          })()}
                         </motion.div>
                       ))}
                     </AnimatePresence>
@@ -829,9 +856,9 @@ export default function KitchenPage() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             {COLS.map(col => {
-              const count = orders.filter(o => o.status === col.status).length
+              const count = orders.filter(o => (col.statuses as string[]).includes(o.status)).length
               return (
-                <div key={col.status} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div key={col.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: col.color }} />
                   <span style={{
                     fontFamily: '"JetBrains Mono", monospace',
