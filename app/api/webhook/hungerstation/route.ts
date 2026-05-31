@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
     }
 
     sendOwnerWhatsApp({
-      order_number: order.order_number ?? '',
+      order_number: orderNumber,
       source: 'hungerstation',
       customer_name: norm.customerName,
       order_type: 'delivery',
