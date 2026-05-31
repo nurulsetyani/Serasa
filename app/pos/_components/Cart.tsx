@@ -1,6 +1,6 @@
 'use client'
 import { AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, Unlink, UtensilsCrossed, ShoppingBag } from 'lucide-react'
+import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, Unlink, UtensilsCrossed, ShoppingBag, LayoutGrid } from 'lucide-react'
 import { useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -8,6 +8,7 @@ import CartLine from './CartLine'
 import PaymentModal from './PaymentModal'
 import SplitBillModal from './SplitBillModal'
 import ReceiptModal from './ReceiptModal'
+import TablePicker from './TablePicker'
 
 const P = '#FF6B35'
 
@@ -47,6 +48,7 @@ export default function Cart({ tableParam }: Props) {
   const [showPayment, setShowPayment] = useState(false)
   const [showSplit, setShowSplit] = useState(false)
   const [showReceipt, setShowReceipt] = useState(false)
+  const [showTables, setShowTables] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [lastOrderNumber, setLastOrderNumber] = useState<string | undefined>()
@@ -218,15 +220,22 @@ export default function Cart({ tableParam }: Props) {
         {/* Table & Customer */}
         <div className="grid grid-cols-2 gap-2">
           {orderType !== 'delivery' ? (
-            <div className="bg-[#F5F2EE] rounded-xl px-3 py-2">
-              <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">Table No.</p>
-              <input
-                type="text"
-                value={tableNumber}
-                onChange={e => setTable(e.target.value)}
-                placeholder={tableParam ?? '–'}
-                className="w-full text-sm font-black text-gray-900 bg-transparent outline-none placeholder:text-gray-400"
-              />
+            <div className="bg-[#F5F2EE] rounded-xl px-3 py-2 cursor-pointer"
+              onClick={() => setShowTables(true)}>
+              <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1 flex items-center justify-between">
+                Table No.
+                <LayoutGrid size={9} className="text-gray-400" />
+              </p>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={tableNumber}
+                  onChange={e => setTable(e.target.value)}
+                  onClick={e => e.stopPropagation()}
+                  placeholder={tableParam ?? '–'}
+                  className="w-full text-sm font-black text-gray-900 bg-transparent outline-none placeholder:text-gray-400"
+                />
+              </div>
             </div>
           ) : (
             <div className="bg-[#F5F2EE] rounded-xl px-3 py-2 flex items-center gap-1.5">
@@ -430,6 +439,7 @@ export default function Cart({ tableParam }: Props) {
       )}
 
       {/* Modals */}
+      <TablePicker open={showTables} onClose={() => setShowTables(false)} />
       <PaymentModal
         open={showPayment}
         onClose={() => setShowPayment(false)}
