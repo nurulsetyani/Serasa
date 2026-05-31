@@ -27,16 +27,18 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
     }
 
     async function fetchCounts() {
+      // Count ALL active orders per source (new through awaiting_payment)
+      const ACTIVE = ['new', 'accepted', 'preparing', 'ready', 'served', 'awaiting_payment', 'pending', 'cooking']
       const [qrRes, hsRes, ktRes] = await Promise.all([
         supabase
           .from('orders').select('id', { count: 'exact', head: true })
-          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'qr').eq('status', 'new'),
+          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'qr').in('status', ACTIVE),
         supabase
           .from('orders').select('id', { count: 'exact', head: true })
-          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'hungerstation').eq('status', 'new'),
+          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'hungerstation').in('status', ACTIVE),
         supabase
           .from('orders').select('id', { count: 'exact', head: true })
-          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'keeta').eq('status', 'new'),
+          .eq('restaurant_id', RESTAURANT_ID).eq('source', 'keeta').in('status', ACTIVE),
       ])
       setCounts({
         qr:    qrRes.count ?? 0,
@@ -74,7 +76,7 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
       <div className="flex items-center gap-2">
         <CountButton
           icon={<QrCode size={12} />}
-          label="Dine-In/Takeaway QR"
+          label="Monitor Pesanan"
           count={counts.qr}
           color="#FF6B35"
           onClick={onOpenQR}

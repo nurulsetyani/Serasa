@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { MenuItem } from '@/types'
 import { supabase } from '@/lib/supabase'
+const RESTAURANT_ID_POS = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 import { MOCK_MENU, IS_MOCK_MODE } from '@/lib/mock-data'
 import { usePOSStore } from '@/stores/pos.store'
 
@@ -30,6 +31,7 @@ function POSInner() {
   const [showHungerStation, setShowHungerStation] = useState(false)
   const [showKeeta, setShowKeeta] = useState(false)
   const [alertSound, setAlertSound] = useState(true)
+  const [checkoutCount, setCheckoutCount] = useState(0)
 
   useEffect(() => {
     if (!tableNumber) setTable(tableParam)
@@ -64,6 +66,22 @@ function POSInner() {
     return () => clearInterval(id)
   }, [])
 
+  // Realtime checkout queue counter — orders needing payment
+  useEffect(() => {
+    async function fetchCheckout() {
+      const { count } = await supabase
+        .from('orders').select('id', { count: 'exact', head: true })
+        .eq('restaurant_id', RESTAURANT_ID_POS)
+        .in('status', ['served', 'awaiting_payment'])
+      setCheckoutCount(count ?? 0)
+    }
+    fetchCheckout()
+    const ch = supabase.channel('pos-checkout-counter')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, fetchCheckout)
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [])
+
   // Open correct delivery panel by source
   function handleOpenDelivery(source: string) {
     if (source === 'keeta') setShowKeeta(true)
@@ -82,6 +100,23 @@ function POSInner() {
           onOpenQR={() => setShowIncoming(true)}
           onOpenDelivery={handleOpenDelivery}
         />
+
+        {/* Checkout queue alert — orders served/awaiting payment */}
+        {checkoutCount > 0 && (
+          <button
+            onClick={() => setShowIncoming(true)}
+            className="flex items-center justify-between px-5 py-2.5 flex-shrink-0 w-full text-left"
+            style={{ background: '#EF444415', borderBottom: '1px solid #EF444430' }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-xs font-black text-red-500">
+                {checkoutCount} pesanan menunggu bayar
+              </span>
+            </div>
+            <span className="text-[10px] font-bold text-red-400">Checkout →</span>
+          </button>
+        )}
 
         {!loadingMenu && <CategoryTabs menu={menu} />}
 

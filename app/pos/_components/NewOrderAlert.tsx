@@ -186,7 +186,7 @@ export default function NewOrderAlert({ soundEnabled, onOpenQR, onOpenDelivery }
                     className="text-[11px] font-black uppercase tracking-wider"
                     style={{ color: cfg.color }}
                   >
-                    Proses →
+                    Monitor →
                   </span>
                   <button
                     onClick={e => { e.stopPropagation(); dismiss(a.id) }}
