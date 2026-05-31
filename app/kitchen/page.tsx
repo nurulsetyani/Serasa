@@ -306,8 +306,10 @@ export default function KitchenPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, p => {
         if (p.eventType === 'INSERT') {
           const o = p.new as KitchenOrder
-          // POS checkout orders (source: pos) don't ring the KDS bell
-          if (o.source === 'pos') return
+          // Skip orders that don't belong in KDS
+          const SKIP_SOURCES   = ['pos']
+          const SKIP_STATUSES  = ['awaiting_payment', 'paid', 'delivered', 'cancelled']
+          if (SKIP_SOURCES.includes(o.source ?? '') || SKIP_STATUSES.includes(o.status)) return
           if (soundRef.current) playNewOrderSound()
           const where = o.order_type === 'delivery' ? 'DELIVERY' : `MEJA ${o.table_number}`
           setAlertMsg({ text: `PESANAN BARU — ${where}`, id: o.id })
