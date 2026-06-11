@@ -37,6 +37,7 @@ export default function Cart({ tableParam }: Props) {
   const newOrder = usePOSStore(s => s.newOrder)
   const setOrderType = usePOSStore(s => s.setOrderType)
   const clearPayments = usePOSStore(s => s.clearPayments)
+  const payments = usePOSStore(s => s.payments)
   const sourceQrOrderId = usePOSStore(s => s.sourceQrOrderId)
   const setSourceQrOrderId = usePOSStore(s => s.setSourceQrOrderId)
 
@@ -77,6 +78,52 @@ export default function Cart({ tableParam }: Props) {
     // Unknown code — no-op (could show error)
   }
 
+  function queueCashierPrint(order: {
+    id: string
+    order_number?: string
+    table_number?: string
+    customer_name?: string
+    order_type?: string
+    payment_method?: string
+    created_at?: string
+  }) {
+    fetch('/api/print', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'cashier',
+        order: {
+          id: order.id,
+          order_number: order.order_number,
+          table_number: order.table_number ?? tableNumber ?? tableParam ?? '1',
+          customer_name: order.customer_name ?? customerName ?? 'Guest',
+          order_type: order.order_type ?? orderType,
+          payment_method: payments[0]?.method ?? order.payment_method ?? 'cash',
+          total_price: total,
+          subtotal,
+          discount_type: discountType,
+          discount_value: discountValue,
+          discount_amount: discountAmount,
+          tax_percent: taxPercent,
+          tax_amount: taxAmount,
+          payments,
+          created_at: order.created_at ?? new Date().toISOString(),
+          order_items: lines.map(l => {
+            const modSum = l.modifiers.reduce((s, m) => s + m.priceAdj, 0)
+            return {
+              id: l.lineId,
+              name: l.name,
+              name_ar: l.name_ar,
+              price: l.unitPrice + modSum,
+              qty: l.qty,
+              notes: l.note || null,
+            }
+          }),
+        },
+      }),
+    }).catch(() => {})
+  }
+
   async function handleConfirmOrder() {
     if (loading || isEmpty) return
     setLoading(true); setError('')
@@ -92,6 +139,7 @@ export default function Cart({ tableParam }: Props) {
         if (!res.ok) throw new Error(data.error ?? 'Failed to update order')
         setLastOrderNumber(data.order_number)
         setLastOrderId(sourceQrOrderId)
+        queueCashierPrint(data)
         setShowPayment(false)
         setShowReceipt(true)
         return
@@ -125,6 +173,7 @@ export default function Cart({ tableParam }: Props) {
       if (!res.ok) throw new Error(data.error ?? 'Failed to create order')
       setLastOrderNumber(data.order_number)
       setLastOrderId(data.id)
+      queueCashierPrint(data)
       setShowPayment(false)
       setShowReceipt(true)
     } catch (e) {

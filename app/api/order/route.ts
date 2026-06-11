@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { sendOwnerWhatsApp } from '@/lib/whatsapp'
+import { queuePrintJob } from '@/lib/print-jobs'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
@@ -95,6 +96,17 @@ export async function POST(req: NextRequest) {
       order_type: order.order_type ?? 'dine_in',
       total_price: order.total_price,
       items: body.items,
+    })
+
+    // Auto-print kitchen ticket
+    await queuePrintJob(supabase, RESTAURANT_ID, 'kitchen', {
+      id: order.id,
+      order_number: order.order_number,
+      table_number: order.table_number,
+      customer_name: order.customer_name,
+      order_type: order.order_type ?? 'dine_in',
+      created_at: order.created_at,
+      order_items: orderItems.map(i => ({ name: i.name, qty: i.qty, notes: i.notes })),
     })
 
     return NextResponse.json(

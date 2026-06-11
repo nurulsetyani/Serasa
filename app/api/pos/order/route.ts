@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
+import { queuePrintJob } from '@/lib/print-jobs'
 
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
@@ -84,8 +85,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Gagal menyimpan item' }, { status: 500 })
     }
 
+    // Auto-print kitchen ticket
+    await queuePrintJob(supabase, RESTAURANT_ID, 'kitchen', {
+      id: order.id,
+      order_number: order.order_number,
+      table_number: order.table_number,
+      customer_name: order.customer_name,
+      order_type: order.order_type ?? 'dine_in',
+      created_at: order.created_at,
+      order_items: orderItems.map((i: { name: string; qty: number; notes?: string | null }) => ({
+        name: i.name, qty: i.qty, notes: i.notes,
+      })),
+    })
+
     return NextResponse.json(
-      { id: order.id, order_number: order.order_number, status: order.status },
+      { id: order.id, order_number: order.order_number, status: order.status, created_at: order.created_at },
       { status: 201 }
     )
   } catch (err) {
