@@ -47,6 +47,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database not configured yet' }, { status: 503 })
     }
 
+    // Idempotency guard: if an identical order (same table, name, total) was
+    // just placed in the last 60s — e.g. double-tap or browser back+resubmit —
+    // return that order instead of creating a duplicate.
+    const sixtySecondsAgo = new Date(Date.now() - 60_000).toISOString()
+    const { data: recentOrder } = await supabase
+      .from('orders')
+      .select('id, order_number, status')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .eq('table_number', body.table_number)
+      .eq('customer_name', body.customer_name.trim())
+      .eq('total_price', body.total_price)
+      .eq('source', 'qr')
+      .gte('created_at', sixtySecondsAgo)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (recentOrder) {
+      return NextResponse.json(
+        { id: recentOrder.id, order_number: recentOrder.order_number, status: recentOrder.status },
+        { status: 200 }
+      )
+    }
+
     const orderNumber = generateOrderNumber()
 
     const { data: order, error: orderError } = await supabase
