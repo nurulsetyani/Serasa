@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { MenuItem } from '@/types'
 import { supabase } from '@/lib/supabase'
+import { MOCK_MENU, IS_MOCK_MODE } from '@/lib/mock-data'
 
 // ── Design tokens ─────────────────────────────────────────────
 const C = {
@@ -217,6 +218,7 @@ export default function MenuManagerPage() {
 
   async function fetchMenu() {
     setLoading(true)
+    if (IS_MOCK_MODE) { setMenu(MOCK_MENU); setLoading(false); return }
     const res = await fetch('/api/menu')
     if (res.ok) setMenu(await res.json())
     setLoading(false)
@@ -243,6 +245,11 @@ export default function MenuManagerPage() {
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (IS_MOCK_MODE) {
+      showToast('Mode demo — hubungkan Supabase untuk upload foto', false)
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
     setUploading(true)
     try {
       const ext = file.name.split('.').pop()
@@ -259,6 +266,7 @@ export default function MenuManagerPage() {
 
   async function handleSave() {
     if (!form.name_id.trim() || !form.price) { showToast('Nama & harga wajib diisi', false); return }
+    if (IS_MOCK_MODE) { showToast('Mode demo — hubungkan Supabase untuk simpan perubahan', false); return }
     setSaving(true)
     const payload = {
       name_id: form.name_id.trim(), name_en: form.name_en.trim() || form.name_id.trim(), name_ar: form.name_ar.trim() || form.name_id.trim(),
@@ -280,6 +288,7 @@ export default function MenuManagerPage() {
   }
 
   async function handleDelete(item: MenuItem) {
+    if (IS_MOCK_MODE) { showToast('Mode demo — hubungkan Supabase untuk simpan perubahan', false); setConfirmDelete(null); return }
     setDeleting(item.id)
     const res = await fetch(`/api/menu/${item.id}`, { method: 'DELETE' })
     if (res.ok) { showToast('Menu dihapus!'); setMenu(prev => prev.filter(m => m.id !== item.id)) }
