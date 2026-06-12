@@ -46,6 +46,16 @@ async function buildKitchenReceipt(printer, payload) {
     { text: formatTime(order.created_at), align: 'RIGHT', width: 0.4 },
   ])
 
+  // ── Order-level notes — prominent ──────────────────────
+  if (order.notes) {
+    printer.alignCenter()
+    printer.invert(true)
+    printer.bold(true)
+    printer.println(` ⚠ CATATAN: ${order.notes} `)
+    printer.bold(false)
+    printer.invert(false)
+  }
+
   printer.drawLine()
 
   // ── Items ─────────────────────────────────────────────

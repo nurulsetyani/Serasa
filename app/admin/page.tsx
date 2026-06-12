@@ -389,6 +389,16 @@ function OrderCard({
         </div>
       )}
 
+      {/* Order notes */}
+      {order.notes && (
+        <div className="px-4 pb-2">
+          <p className="text-[11px] italic px-2.5 py-1.5 rounded-lg"
+            style={{ background: `${C.warning}10`, color: C.warning }}>
+            📝 {order.notes}
+          </p>
+        </div>
+      )}
+
       {/* Items */}
       <div className="px-4 py-3 space-y-2">
         {order.order_items?.map(item => (

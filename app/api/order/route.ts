@@ -91,13 +91,21 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (orderError || !order) {
-      console.error('Order creation error:', orderError)
+      console.error('Order creation error:', orderError?.message, orderError?.details, orderError?.hint)
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
     }
 
+    // Drop menu_id references that no longer exist (e.g. menu item edited/recreated
+    // while customer had it in their cart) so a stale FK can't block the whole order.
+    const menuIds = Array.from(new Set(body.items.map(i => i.menu_id).filter(Boolean)))
+    const { data: existingMenu } = menuIds.length
+      ? await supabase.from('menu').select('id').in('id', menuIds)
+      : { data: [] }
+    const validMenuIds = new Set((existingMenu ?? []).map(m => m.id))
+
     const orderItems = body.items.map(item => ({
       order_id: order.id,
-      menu_id: item.menu_id,
+      menu_id: validMenuIds.has(item.menu_id) ? item.menu_id : null,
       name: item.name,
       price: item.price,
       qty: item.qty,
@@ -108,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     if (itemsError) {
       await supabase.from('orders').delete().eq('id', order.id)
-      console.error('Order items error:', itemsError)
+      console.error('Order items error:', itemsError.message, itemsError.details, itemsError.hint)
       return NextResponse.json({ error: 'Failed to create order items' }, { status: 500 })
     }
 
@@ -129,6 +137,7 @@ export async function POST(req: NextRequest) {
       table_number: order.table_number,
       customer_name: order.customer_name,
       order_type: order.order_type ?? 'dine_in',
+      notes: order.notes,
       created_at: order.created_at,
       order_items: orderItems.map(i => ({ name: i.name, qty: i.qty, notes: i.notes })),
     })
