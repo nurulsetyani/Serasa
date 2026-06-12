@@ -14,7 +14,6 @@ interface QROrder {
   id: string; order_number: string; customer_name: string; table_number: string
   order_type: 'dine_in' | 'take_away' | 'delivery'; total_price: number
   status: string; created_at: string; order_items: QROrderItem[]
-  notes?: string | null
 }
 
 // Status display config
@@ -207,14 +206,6 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
                               <p className="text-[10px] font-mono text-gray-400 mt-0.5">{order.order_number}</p>
                             </div>
                           </div>
-
-                          {/* Order notes */}
-                          {order.notes && (
-                            <div className="mb-3 px-2.5 py-1.5 rounded-lg"
-                              style={{ background: '#FFF8EE', border: '1px solid #FDE0A8' }}>
-                              <p className="text-[11px] text-orange-700 font-semibold italic">📝 {order.notes}</p>
-                            </div>
-                          )}
 
                           {/* Items */}
                           <div className="space-y-1 mb-3">

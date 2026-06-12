@@ -55,7 +55,6 @@ export interface Order {
   status: OrderStatus
   source?: string | null
   total_price: number
-  notes?: string | null
   delivery_address?: string | null
   platform_order_id?: string | null
   created_at: string

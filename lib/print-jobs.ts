@@ -27,7 +27,6 @@ export interface PrintOrder {
   customer_name: string
   order_type: string
   payment_method?: string
-  notes?: string | null
   total_price?: number
   subtotal?: number
   discount_type?: string | null

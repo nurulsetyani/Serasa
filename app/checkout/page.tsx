@@ -66,6 +66,9 @@ function EditableOrderSummary({ lang, P, t, items, total, onAdd, onUpdate }: {
                           <span className="text-[9px] text-gray-400 line-through">{formatPrice(item.price)}</span>
                         )}
                       </div>
+                      {item.itemNotes && (
+                        <p className="text-gray-400 text-[11px] mt-0.5 italic line-clamp-1">📝 {item.itemNotes}</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <motion.button whileTap={{ scale: 0.8 }}
@@ -127,7 +130,6 @@ export default function CheckoutPage() {
   const [table, setTable]         = useState('1')
   const [name, setName]           = useState('')
   const [orderType, setOrderType] = useState<OrderType>('dine_in')
-  const [notes, setNotes]         = useState('')
   const [loading, setLoading]     = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError]         = useState('')
@@ -157,7 +159,6 @@ export default function CheckoutPage() {
           table_number: table,
           order_type: orderType,
           payment_method: null,
-          notes: notes.trim() || undefined,
           total_price: total,
           items: items.map(i => ({
             menu_id: i.id,
@@ -262,21 +263,6 @@ export default function CheckoutPage() {
         <EditableOrderSummary lang={lang} P={P} t={t}
           items={items} total={total}
           onAdd={addItem} onUpdate={updateQty} />
-
-        {/* Order notes */}
-        <div className="bg-white rounded-2xl px-5 py-4"
-          style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #F0EAE0' }}>
-          <p className="text-[10px] font-black tracking-[2px] uppercase mb-3" style={{ color: '#9A8A7A' }}>
-            {t('notesOptional')}
-          </p>
-          <textarea
-            value={notes} onChange={e => setNotes(e.target.value)}
-            placeholder={t('notesPlaceholder')}
-            rows={2}
-            className="w-full text-sm font-medium text-gray-900 outline-none bg-transparent placeholder:text-gray-300 placeholder:font-normal resize-none"
-          />
-          <div className="h-px mt-3" style={{ background: notes ? P : '#E8E0D8', transition: 'background 0.2s' }} />
-        </div>
 
         {error && (
           <div className="px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-red-500 text-sm text-center">

@@ -769,20 +769,6 @@ export default function KitchenPage() {
                                 </p>
                               </div>
                             )}
-
-                            {/* Order notes */}
-                            {order.notes && (
-                              <div style={{
-                                display: 'flex', alignItems: 'flex-start', gap: 8,
-                                marginTop: 7, padding: '6px 10px', borderRadius: 10,
-                                background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.22)',
-                              }}>
-                                <span style={{ color: '#F59E0B', fontSize: 12, flexShrink: 0, marginTop: 1 }}>📝</span>
-                                <p style={{ fontSize: 11, color: '#FCD34D', fontWeight: 600, lineHeight: 1.4, margin: 0 }}>
-                                  {order.notes}
-                                </p>
-                              </div>
-                            )}
                           </div>
 
                           {/* Divider */}

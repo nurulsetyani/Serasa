@@ -137,7 +137,6 @@ export async function POST(req: NextRequest) {
       table_number: order.table_number,
       customer_name: order.customer_name,
       order_type: order.order_type ?? 'dine_in',
-      notes: order.notes,
       created_at: order.created_at,
       order_items: orderItems.map(i => ({ name: i.name, qty: i.qty, notes: i.notes })),
     })
