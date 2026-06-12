@@ -1,6 +1,6 @@
 'use client'
 import { AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, Unlink, UtensilsCrossed, ShoppingBag, LayoutGrid } from 'lucide-react'
+import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, UtensilsCrossed, ShoppingBag, LayoutGrid } from 'lucide-react'
 import { useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -39,7 +39,6 @@ export default function Cart({ tableParam }: Props) {
   const clearPayments = usePOSStore(s => s.clearPayments)
   const payments = usePOSStore(s => s.payments)
   const sourceQrOrderId = usePOSStore(s => s.sourceQrOrderId)
-  const setSourceQrOrderId = usePOSStore(s => s.setSourceQrOrderId)
 
   const getSubtotal = usePOSStore(s => s.getSubtotal)
   const getDiscountAmount = usePOSStore(s => s.getDiscountAmount)
@@ -334,19 +333,10 @@ export default function Cart({ tableParam }: Props) {
 
           {/* QR import banner */}
           {sourceQrOrderId && (
-            <div className="flex items-center justify-between px-3 py-2 rounded-xl"
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
               style={{ background: '#DCFCE7', border: '1.5px solid #86EFAC' }}>
-              <div className="flex items-center gap-2">
-                <QrCode size={13} className="text-green-600" />
-                <span className="text-[11px] font-bold text-green-800">Imported via Table QR code!</span>
-              </div>
-              <button
-                onClick={() => setSourceQrOrderId(null)}
-                className="flex items-center gap-1 text-[10px] font-bold text-green-700 hover:text-red-600 transition-colors"
-              >
-                <Unlink size={11} />
-                Disconnect
-              </button>
+              <QrCode size={13} className="text-green-600" />
+              <span className="text-[11px] font-bold text-green-800">Imported via Table QR code!</span>
             </div>
           )}
         </div>
