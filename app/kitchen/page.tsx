@@ -329,6 +329,13 @@ export default function KitchenPage() {
     return () => { supabase.removeChannel(ch) }
   }, [fetchOrders])
 
+  // Fallback poll — keeps KDS in sync even if the realtime channel drops
+  // (e.g. tablet screen sleeps and the websocket disconnects silently)
+  useEffect(() => {
+    const id = setInterval(fetchOrders, 15000)
+    return () => clearInterval(id)
+  }, [fetchOrders])
+
   async function advance(orderId: string, nextStatus: OrderStatus) {
     setAdv(orderId)
     await fetch(`/api/order/${orderId}`, {
