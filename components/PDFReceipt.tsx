@@ -7,8 +7,8 @@ import { Download } from 'lucide-react'
 
 const RED    = '#CC0000'
 const DARK   = '#1A1208'
-const GRAY   = '#6B7280'
-const LGRAY  = '#9CA3AF'
+const GRAY   = '#4B5563'
+const LGRAY  = '#6B7280'
 
 const TAX_PERCENT = 15
 
@@ -20,38 +20,37 @@ const s = StyleSheet.create({
     width: '80mm',
   },
   center: { alignItems: 'center' },
-  restoName: { color: RED, fontSize: 13, fontWeight: 700, textAlign: 'center' },
-  branchName: { color: GRAY, fontSize: 8, textAlign: 'center', marginTop: 2 },
-  invoiceNo: { color: LGRAY, fontSize: 7, textAlign: 'center', marginTop: 1 },
+  restoName: { color: RED, fontSize: 14, fontWeight: 700, textAlign: 'center' },
+  branchName: { color: GRAY, fontSize: 9, textAlign: 'center', marginTop: 2 },
+  invoiceNo: { color: LGRAY, fontSize: 7.5, textAlign: 'center', marginTop: 1 },
   divider: { borderTop: '1px dashed #D1D5DB', marginVertical: 5 },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  metaLabel: { color: GRAY, fontSize: 8 },
-  metaValue: { color: DARK, fontSize: 8, fontWeight: 700, textAlign: 'right', maxWidth: '60%' },
-  metaValueRed: { color: RED, fontSize: 8, fontWeight: 700, textAlign: 'right' },
+  metaLabel: { color: GRAY, fontSize: 9 },
+  metaValue: { color: DARK, fontSize: 9, fontWeight: 700, textAlign: 'right', maxWidth: '60%' },
+  metaValueRed: { color: RED, fontSize: 9, fontWeight: 700, textAlign: 'right' },
   tableHeader: { flexDirection: 'row', borderBottom: '1px solid #E5E7EB', paddingBottom: 3, marginBottom: 4 },
-  thLeft: { flex: 1, color: GRAY, fontSize: 7 },
-  thMid: { width: 24, color: GRAY, fontSize: 7, textAlign: 'center' },
-  thRight: { width: 60, color: GRAY, fontSize: 7, textAlign: 'right' },
+  thLeft: { flex: 1, color: GRAY, fontSize: 8 },
+  thMid: { width: 24, color: GRAY, fontSize: 8, textAlign: 'center' },
+  thRight: { width: 60, color: GRAY, fontSize: 8, textAlign: 'right' },
   itemRow: { marginBottom: 5 },
   itemInner: { flexDirection: 'row', alignItems: 'flex-start' },
-  itemName: { flex: 1, color: DARK, fontSize: 9, fontWeight: 700, lineHeight: 1.3 },
-  itemNameAr: { color: LGRAY, fontSize: 7, marginTop: 1 },
-  itemQty: { width: 24, color: GRAY, fontSize: 9, textAlign: 'center' },
-  itemTotal: { width: 60, color: DARK, fontSize: 9, fontWeight: 700, textAlign: 'right' },
+  itemName: { flex: 1, color: DARK, fontSize: 10, fontWeight: 700, lineHeight: 1.3 },
+  itemQty: { width: 24, color: GRAY, fontSize: 10, textAlign: 'center' },
+  itemTotal: { width: 60, color: DARK, fontSize: 10, fontWeight: 700, textAlign: 'right' },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  totalLabel: { color: GRAY, fontSize: 8 },
-  totalValue: { color: DARK, fontSize: 8, fontWeight: 700 },
+  totalLabel: { color: GRAY, fontSize: 9 },
+  totalValue: { color: DARK, fontSize: 9, fontWeight: 700 },
   grandRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 },
-  grandLabel: { color: DARK, fontSize: 11, fontWeight: 700 },
-  grandValue: { color: DARK, fontSize: 11, fontWeight: 700 },
-  discountValue: { color: '#16A34A', fontSize: 8, fontWeight: 700 },
-  discountLabel: { color: '#16A34A', fontSize: 8 },
-  complianceText: { color: LGRAY, fontSize: 6.5, textAlign: 'center', lineHeight: 1.4, marginVertical: 5 },
+  grandLabel: { color: DARK, fontSize: 12.5, fontWeight: 700 },
+  grandValue: { color: DARK, fontSize: 12.5, fontWeight: 700 },
+  discountValue: { color: '#16A34A', fontSize: 9, fontWeight: 700 },
+  discountLabel: { color: '#16A34A', fontSize: 9 },
+  complianceText: { color: LGRAY, fontSize: 7, textAlign: 'center', lineHeight: 1.4, marginVertical: 5 },
   payRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 1.5 },
-  payLabel: { color: GRAY, fontSize: 8 },
-  payValue: { color: DARK, fontSize: 8, fontWeight: 700 },
-  changeLabel: { color: '#16A34A', fontSize: 8.5, fontWeight: 700 },
-  changeValue: { color: '#16A34A', fontSize: 8.5, fontWeight: 700 },
+  payLabel: { color: GRAY, fontSize: 9 },
+  payValue: { color: DARK, fontSize: 9, fontWeight: 700 },
+  changeLabel: { color: '#16A34A', fontSize: 9.5, fontWeight: 700 },
+  changeValue: { color: '#16A34A', fontSize: 9.5, fontWeight: 700 },
 })
 
 function fmt(n: number) {
@@ -91,7 +90,7 @@ export interface PDFReceiptProps {
 }
 
 const PAYMENT_LABELS: Record<string, string> = {
-  cash: 'Cash / نقد',
+  cash: 'Cash',
   mada: 'Mada',
   visa: 'Visa/MC',
   qris: 'QRIS',
@@ -127,7 +126,6 @@ function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
   return (
     <Document>
       <Page size={[226.77, 900]} style={s.page}>
-
         {/* Restaurant name */}
         <View style={s.center}>
           {logoUrl && <Image style={{ width: 100, height: 32, objectFit: 'contain', marginBottom: 3 }} src={logoUrl} />}
@@ -140,23 +138,23 @@ function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
 
         {/* Meta */}
         <View style={s.metaRow}>
-          <Text style={s.metaLabel}>الرقم الضريبي (VAT Reg):</Text>
+          <Text style={s.metaLabel}>VAT Reg. No.:</Text>
           <Text style={s.metaValue}>{vatReg}</Text>
         </View>
         <View style={s.metaRow}>
-          <Text style={s.metaLabel}>التاريخ (Date):</Text>
+          <Text style={s.metaLabel}>Date:</Text>
           <Text style={s.metaValue}>{fmtDate(data.createdAt)}</Text>
         </View>
         <View style={s.metaRow}>
-          <Text style={s.metaLabel}>الموظف (Operator):</Text>
+          <Text style={s.metaLabel}>Operator:</Text>
           <Text style={s.metaValue}>{data.customerName || 'Cashier'}</Text>
         </View>
         <View style={s.metaRow}>
-          <Text style={s.metaLabel}>نوع الطلب (Order Type):</Text>
+          <Text style={s.metaLabel}>Order Type:</Text>
           <Text style={s.metaValue}>{ORDER_TYPE_LABELS[data.orderType] || data.orderType}</Text>
         </View>
         <View style={s.metaRow}>
-          <Text style={s.metaLabel}>رقم الطاولة (Table No):</Text>
+          <Text style={s.metaLabel}>Table No.:</Text>
           <Text style={s.metaValueRed}>{data.tableNumber || '—'}</Text>
         </View>
 
@@ -164,7 +162,7 @@ function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
 
         {/* Items table header */}
         <View style={s.tableHeader}>
-          <Text style={s.thLeft}>Item الوصف</Text>
+          <Text style={s.thLeft}>Item</Text>
           <Text style={s.thMid}>Qty</Text>
           <Text style={s.thRight}>Total SAR</Text>
         </View>
@@ -175,7 +173,6 @@ function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
             <View style={s.itemInner}>
               <View style={{ flex: 1 }}>
                 <Text style={s.itemName}>{item.name}</Text>
-                {item.name_ar && <Text style={s.itemNameAr}>{item.name_ar}</Text>}
                 {item.notes && <Text style={{ color: '#9CA3AF', fontSize: 7, fontStyle: 'italic' }}>{item.notes}</Text>}
               </View>
               <Text style={s.itemQty}>{item.qty}</Text>
@@ -188,7 +185,7 @@ function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
 
         {/* Totals */}
         <View style={s.totalRow}>
-          <Text style={s.totalLabel}>Subtotal (الفرعي):</Text>
+          <Text style={s.totalLabel}>Subtotal:</Text>
           <Text style={s.totalValue}>{fmt(data.subtotal)}</Text>
         </View>
 
@@ -202,12 +199,12 @@ function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
         )}
 
         <View style={s.totalRow}>
-          <Text style={s.totalLabel}>Taxable Amount (الخاضع للضريبة):</Text>
+          <Text style={s.totalLabel}>Taxable Amount:</Text>
           <Text style={s.totalValue}>{fmt(taxableAmount)}</Text>
         </View>
 
         <View style={s.totalRow}>
-          <Text style={s.totalLabel}>VAT @ {taxPct}% (ضريبة القيمة المضافة):</Text>
+          <Text style={s.totalLabel}>VAT @ {taxPct}%:</Text>
           <Text style={s.totalValue}>{fmt(vatAmount)}</Text>
         </View>
 
@@ -215,7 +212,7 @@ function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
 
         {/* Grand total */}
         <View style={s.grandRow}>
-          <Text style={s.grandLabel}>Total Amount (الإجمالي):</Text>
+          <Text style={s.grandLabel}>Total Amount:</Text>
           <Text style={s.grandValue}>{fmt(total)}</Text>
         </View>
 
@@ -231,7 +228,7 @@ function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
             ))}
             {change > 0 && (
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 }}>
-                <Text style={s.changeLabel}>Change / الباقي:</Text>
+                <Text style={s.changeLabel}>Change:</Text>
                 <Text style={s.changeValue}>{fmt(change)}</Text>
               </View>
             )}
@@ -242,7 +239,7 @@ function ReceiptDocument({ data, logoUrl, restoName, branchName, vatReg }: {
 
         {/* Compliance */}
         <Text style={s.complianceText}>
-          This is a simplified tax invoice compliant with Saudi Arabia FATOORA Phase 2 regulations. رقم تسجيل ضريبي: {vatReg}
+          This is a simplified tax invoice compliant with Saudi Arabia FATOORA Phase 2 regulations. VAT Reg: {vatReg}
         </Text>
 
       </Page>

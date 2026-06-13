@@ -318,6 +318,10 @@ export default function ReceiptPage() {
 
       <style>{`
         @media print {
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body { background: white !important; margin: 0; }
           .no-print { display: none !important; }
           #receipt {
@@ -327,6 +331,17 @@ export default function ReceiptPage() {
             max-width: 80mm !important;
           }
           @page { size: 80mm auto; margin: 4mm; }
+
+          /* Darken light grays for thermal contrast */
+          #receipt .text-gray-400 { color: #4B5563 !important; }
+          #receipt .text-gray-300 { color: #6B7280 !important; }
+
+          /* Bump up small text sizes for legibility on thermal paper */
+          #receipt [class*="text-[8px]"]  { font-size: 10px !important; }
+          #receipt [class*="text-[9px]"]  { font-size: 11px !important; }
+          #receipt [class*="text-[10px]"] { font-size: 12px !important; }
+          #receipt [class*="text-[11px]"] { font-size: 13px !important; }
+          #receipt [class*="text-[12px]"] { font-size: 14px !important; }
         }
       `}</style>
     </div>
