@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
 const APP_URL     = 'https://serasa-opal.vercel.app'
-const TOTAL_TABLES = 8
+const TOTAL_TABLES = 9
 const P = '#FF6B35'
 
 // Generate QR as data URL using qrcode library (client-side, no external API)
@@ -147,14 +147,36 @@ export default function QRPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media print {
-          body { background: white !important; }
+          @page {
+            size: A4;
+            margin: 8mm;
+          }
+          body {
+            background: white !important;
+            padding: 0 !important;
+          }
           .no-print { display: none !important; }
           .qr-grid {
             display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 12px !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 6mm !important;
+            max-width: 100% !important;
+            margin: 0 !important;
           }
-          .qr-card { break-inside: avoid; page-break-inside: avoid; }
+          .qr-card {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            border: 1.5px solid #1A1208 !important;
+            box-shadow: none !important;
+          }
+          .qr-card-header { padding: 10px 12px 6px !important; }
+          .qr-card-footer { padding: 6px 12px 8px !important; }
+          .qr-image-wrap { padding: 6px !important; }
+          .qr-image { width: 130px !important; height: 130px !important; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
 
         .qr-grid {

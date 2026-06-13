@@ -17,7 +17,7 @@ const C = {
   bg2:    '#13161C',
 }
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
-const TOTAL_TABLES  = 8
+const TOTAL_TABLES  = 9
 
 type TableStatus = 'kosong' | 'terisi' | 'tagihan'
 
