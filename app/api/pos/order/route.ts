@@ -11,12 +11,18 @@ function generateOrderNumber(): string {
   return result
 }
 
+// POS supports cash + card/wallet (mada, visa, applepay) — map onto the
+// 'cash' | 'online' | 'qris' values allowed by orders.payment_method.
+function mapPaymentMethod(method: string | undefined): 'cash' | 'online' | 'qris' {
+  return method === 'cash' || !method ? 'cash' : 'online'
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
     const {
-      customer_name, table_number, order_type,
+      customer_name, table_number, order_type, payment_method,
       total_price, items,
       subtotal, discount_type, discount_value, discount_amount,
       tax_percent, tax_amount,
@@ -45,8 +51,8 @@ export async function POST(req: NextRequest) {
         table_number: String(table_number || '1'),
         order_type: order_type ?? 'dine_in',
         delivery_address,
-        payment_method: 'cash',
-        status: 'awaiting_payment',
+        payment_method: mapPaymentMethod(payment_method),
+        status: 'paid',
         source: 'pos',
         total_price,
         subtotal: subtotal ?? total_price,

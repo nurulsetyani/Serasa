@@ -154,6 +154,7 @@ export default function Cart({ tableParam }: Props) {
           customer_phone: customerPhone || null,
           table_number: tableNumber || tableParam || '1',
           order_type: orderType,
+          payment_method: payments[0]?.method ?? 'cash',
           delivery_address: orderType === 'delivery' ? deliveryAddress : null,
           subtotal,
           discount_type: discountType,
