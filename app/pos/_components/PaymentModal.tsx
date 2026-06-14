@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Banknote, CreditCard, Smartphone, Shield, ChevronRight, CheckCircle } from 'lucide-react'
+import { X, Banknote, Landmark, Shield, ChevronRight, CheckCircle } from 'lucide-react'
 import { usePOSStore } from '@/stores/pos.store'
 import { POSPaymentMethod } from '@/types/pos'
 import { formatPrice } from '@/lib/utils'
@@ -12,14 +12,11 @@ interface Method {
   sublabel: string
   icon: React.ElementType
   color: string
-  isEDC: boolean
 }
 
 const METHODS: Method[] = [
-  { value: 'cash',     label: 'Cash / Tunai',   sublabel: 'Uang kertas / koin',    icon: Banknote,    color: '#22C55E', isEDC: false },
-  { value: 'mada',     label: 'Mada EDC',       sublabel: 'Mesin gesek/tap Mada',  icon: CreditCard,  color: '#3B82F6', isEDC: true  },
-  { value: 'visa',     label: 'Visa / MC',      sublabel: 'Mesin gesek EDC',       icon: CreditCard,  color: '#6366F1', isEDC: true  },
-  { value: 'applepay', label: 'STC Pay / NFC',  sublabel: 'Tap phone / STC Pay',   icon: Smartphone,  color: '#1A1208', isEDC: true  },
+  { value: 'cash',     label: 'Cash / Tunai',  sublabel: 'Uang kertas / koin',   icon: Banknote, color: '#22C55E' },
+  { value: 'transfer', label: 'Bank Transfer', sublabel: 'Transfer ke rekening', icon: Landmark, color: '#3B82F6' },
 ]
 
 const QUICK_AMOUNTS = [50, 100, 200, 500]
@@ -38,9 +35,9 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
   const clearPayments = usePOSStore(s => s.clearPayments)
   const isFullyPaid   = usePOSStore(s => s.isFullyPaid)
 
-  const [selected, setSelected]     = useState<POSPaymentMethod>('cash')
-  const [cashInput, setCashInput]   = useState('')
-  const [edcDone, setEdcDone]       = useState(false)
+  const [selected, setSelected]         = useState<POSPaymentMethod>('cash')
+  const [cashInput, setCashInput]       = useState('')
+  const [bankConfirmed, setBankConfirmed] = useState(false)
 
   const total       = getTotal()
   const change      = getChange()
@@ -48,13 +45,13 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
   const isCash      = selected === 'cash'
   const cashReceived = parseFloat(cashInput) || 0
   const changeReturn = isCash ? Math.max(0, cashReceived - total) : change
-  const canConfirm  = isCash ? isFullyPaid() : edcDone
+  const canConfirm  = isCash ? isFullyPaid() : bankConfirmed
 
   function handleSelectMethod(m: POSPaymentMethod) {
     setSelected(m)
     clearPayments()
     setCashInput('')
-    setEdcDone(false)
+    setBankConfirmed(false)
     if (m !== 'cash') {
       addPayment({ method: m, amount: total })
     }
@@ -190,10 +187,10 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
                 </div>
               )}
 
-              {/* ── EDC FLOW ── */}
+              {/* ── BANK TRANSFER FLOW ── */}
               {!isCash && (
                 <div className="space-y-3">
-                  {!edcDone ? (
+                  {!bankConfirmed ? (
                     <>
                       {/* Instruction card */}
                       <div className="rounded-2xl overflow-hidden"
@@ -202,7 +199,7 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
                           style={{ background: activeMethod.color }}>
                           <activeMethod.icon size={14} className="text-white" />
                           <span className="text-white font-black text-xs uppercase tracking-wide">
-                            Proses di Mesin {activeMethod.label}
+                            Konfirmasi {activeMethod.label}
                           </span>
                         </div>
                         <div className="px-4 py-4 text-center"
@@ -211,19 +208,15 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
                             {formatPrice(total)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {selected === 'mada'
-                              ? 'Minta pelanggan tap/gesek kartu Mada di mesin EDC'
-                              : selected === 'visa'
-                              ? 'Minta pelanggan gesek kartu Visa/Mastercard di mesin EDC'
-                              : 'Minta pelanggan tap HP / scan STC Pay'}
+                            Minta pelanggan transfer ke rekening resto, lalu konfirmasi setelah dana masuk
                           </p>
                         </div>
                       </div>
 
-                      {/* Confirm EDC button */}
+                      {/* Confirm transfer button */}
                       <motion.button
                         whileTap={{ scale: 0.97 }}
-                        onClick={() => setEdcDone(true)}
+                        onClick={() => setBankConfirmed(true)}
                         className="w-full py-3.5 rounded-xl font-black text-white text-sm flex items-center justify-center gap-2"
                         style={{ background: activeMethod.color }}>
                         <CheckCircle size={16} />
@@ -244,7 +237,7 @@ export default function PaymentModal({ open, onClose, onConfirm, loading }: Prop
                           {formatPrice(total)} via {activeMethod.label}
                         </p>
                       </div>
-                      <button onClick={() => setEdcDone(false)}
+                      <button onClick={() => setBankConfirmed(false)}
                         className="ml-auto text-xs text-green-600 underline font-semibold">
                         Batal
                       </button>

@@ -11,7 +11,7 @@ function generateOrderNumber(): string {
   return result
 }
 
-// POS supports cash + card/wallet (mada, visa, applepay) — map onto the
+// POS supports cash + bank transfer — map onto the
 // 'cash' | 'online' | 'qris' values allowed by orders.payment_method.
 function mapPaymentMethod(method: string | undefined): 'cash' | 'online' | 'qris' {
   return method === 'cash' || !method ? 'cash' : 'online'
