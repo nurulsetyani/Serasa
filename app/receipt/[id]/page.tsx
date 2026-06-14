@@ -332,9 +332,10 @@ export default function ReceiptPage() {
           }
           @page { size: 80mm auto; margin: 4mm; }
 
-          /* Darken light grays for thermal contrast */
-          #receipt .text-gray-400 { color: #4B5563 !important; }
-          #receipt .text-gray-300 { color: #6B7280 !important; }
+          /* Darken light grays to black for thermal contrast */
+          #receipt .text-gray-400,
+          #receipt .text-gray-300,
+          #receipt .text-gray-600 { color: #000000 !important; }
 
           /* Bump up small text sizes for legibility on thermal paper */
           #receipt [class*="text-[8px]"]  { font-size: 10px !important; }

@@ -147,8 +147,8 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
         <tr>
           <td style="padding:4px 0">
             <div style="font-weight:bold;font-size:10px">${l.name}</div>
-            ${l.name_ar ? `<div style="font-size:9px;color:#666;direction:rtl">${l.name_ar}</div>` : ''}
-            ${l.note ? `<div style="font-size:9px;font-style:italic;color:#888">${l.note}</div>` : ''}
+            ${l.name_ar ? `<div style="font-size:9px;color:#000;direction:rtl">${l.name_ar}</div>` : ''}
+            ${l.note ? `<div style="font-size:9px;font-style:italic;color:#000">${l.note}</div>` : ''}
           </td>
           <td style="text-align:center;font-size:10px;vertical-align:top;padding:4px 4px">${l.qty}</td>
           <td style="text-align:right;font-size:10px;font-weight:bold;vertical-align:top;padding:4px 0">${formatPrice(unitFinal * l.qty)}</td>
@@ -171,7 +171,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
         .divider { border-top:1px dashed #000; margin:6px 0; }
         .right { text-align:right; }
         table { width:100%; border-collapse:collapse; }
-        th { font-size:9px; color:#666; padding:3px 0; border-bottom:1px solid #ccc; }
+        th { font-size:9px; color:#000; padding:3px 0; border-bottom:1px solid #ccc; }
         .total-label { font-size:11px; font-weight:bold; }
         .total-val { font-size:11px; font-weight:bold; text-align:right; }
         .grand-label { font-size:13px; font-weight:900; }
@@ -182,10 +182,10 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
           <img src="/logof22.png" alt="Logo" style="max-height:48px;max-width:120px;object-fit:contain;display:block;margin:0 auto 4px" />
           <div style="font-size:14px;font-weight:900;color:#CC0000">${RESTO_NAME}</div>
           <div style="font-size:10px;margin-top:2px">${BRANCH_NAME}</div>
-          <div style="font-size:9px;color:#666">${invoiceNo}</div>
+          <div style="font-size:9px;color:#000">${invoiceNo}</div>
         </div>
         <div class="divider"></div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:#666;margin:2px 0">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:#000;margin:2px 0">
           <span>الرقم الضريبي (VAT Reg):</span><span>${VAT_REG}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
@@ -232,7 +232,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
           <span>Change / الباقي:</span><span>${formatPrice(change)}</span>
         </div>` : ''}
         <div class="divider"></div>
-        <div class="center" style="font-size:8px;color:#666;margin-top:6px;line-height:1.5">
+        <div class="center" style="font-size:8px;color:#000;margin-top:6px;line-height:1.5">
           This is a simplified tax invoice compliant with Saudi Arabia FATOORA Phase 2 regulations. رقم تسجيل ضريبي: ${VAT_REG}
         </div>
       </body></html>

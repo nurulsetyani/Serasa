@@ -7,8 +7,8 @@ import { Download } from 'lucide-react'
 
 const RED    = '#CC0000'
 const DARK   = '#1A1208'
-const GRAY   = '#4B5563'
-const LGRAY  = '#6B7280'
+const GRAY   = '#1A1208'
+const LGRAY  = '#1A1208'
 
 const TAX_PERCENT = 15
 
