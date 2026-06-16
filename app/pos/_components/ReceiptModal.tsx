@@ -371,19 +371,16 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
 
                   <Divider />
 
-                  {/* Totals */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[14px] text-black">
-                      <span>Subtotal (الفرعي):</span>
-                      <span className="font-semibold">{formatPrice(subtotal)}</span>
-                    </div>
-                    {discountAmount > 0 && (
+                  {/* Discount only (if applicable) */}
+                  {discountAmount > 0 && (
+                    <>
                       <div className="flex justify-between text-[14px] text-black">
                         <span>Discount {discountType === 'percent' ? `${discountValue}%` : ''}:</span>
                         <span className="font-bold">-{formatPrice(discountAmount)}</span>
                       </div>
-                    )}
-                  </div>
+                      <Divider />
+                    </>
+                  )}
 
                   <Divider />
 
