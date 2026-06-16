@@ -254,6 +254,12 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
         <div class="c" style="margin-top:4px;font-size:11px">
           Served by: ${CASHIER_NAME} :بواسطة
         </div>
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 300);
+          };
+        </script>
       </body></html>
     `
     const win = window.open('', '_blank', 'width=420,height=800')
@@ -261,7 +267,6 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
     win.document.write(html)
     win.document.close()
     win.focus()
-    setTimeout(() => { win.print(); win.close() }, 600)
   }
 
   const pdfData = {
