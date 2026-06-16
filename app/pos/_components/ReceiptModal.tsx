@@ -55,9 +55,9 @@ interface Props {
 function MetaRow({ arLabel, value, highlight }: { arLabel: string; value: string; highlight?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-2 py-0.5">
-      <span className="text-[10px] text-gray-900">{arLabel}</span>
+      <span className="text-[12px] text-gray-900">{arLabel}</span>
       <span
-        className="text-[10px] font-bold text-right"
+        className="text-[12px] font-bold text-right"
         style={{ color: highlight ? '#EF4444' : '#1a1a1a' }}
       >
         {value}
@@ -74,14 +74,14 @@ function ItemRow({ line }: { line: POSLine }) {
     <div className="mb-2">
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold text-gray-900 leading-tight">{line.name}</p>
+          <p className="text-[13px] font-bold text-gray-900 leading-tight">{line.name}</p>
           {line.name_ar && (
-            <p className="text-[9px] text-gray-900 leading-tight">{line.name_ar}</p>
+            <p className="text-[11px] text-gray-900 leading-tight">{line.name_ar}</p>
           )}
-          {line.note && <p className="text-[9px] text-gray-900 italic">{line.note}</p>}
+          {line.note && <p className="text-[11px] text-gray-900 italic">{line.note}</p>}
         </div>
-        <span className="text-[11px] text-gray-900 flex-shrink-0 w-6 text-center">{line.qty}</span>
-        <span className="text-[11px] font-bold text-gray-900 flex-shrink-0 min-w-[60px] text-right">
+        <span className="text-[13px] text-gray-900 flex-shrink-0 w-6 text-center">{line.qty}</span>
+        <span className="text-[13px] font-bold text-gray-900 flex-shrink-0 min-w-[60px] text-right">
           {formatPrice(lineTotal)}
         </span>
       </div>
@@ -191,37 +191,37 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
       <html><head><title>${invoiceNo}</title>
       <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Courier New',monospace;font-size:10px;width:80mm;padding:4mm 3mm;color:#000}
+        body{font-family:'Courier New',monospace;font-size:12px;width:80mm;padding:4mm 3mm;color:#000}
         .c{text-align:center} .b{font-weight:bold}
         .box{${B};padding:3px 6px;margin:2px 0;text-align:center}
         .row{display:flex;justify-content:space-between;align-items:center;${B};padding:3px 6px;margin:2px 0}
         table{width:100%;border-collapse:collapse;margin:3px 0}
-        th,td{${B};font-size:9px}
+        th,td{${B};font-size:11px}
         @page{size:80mm auto;margin:4mm}
       </style></head>
       <body>
         <div class="c" style="margin-bottom:4px">
           <img src="/logof22.png" style="max-height:44px;max-width:110px;object-fit:contain;display:block;margin:0 auto 3px"/>
-          <div style="font-size:13px;font-weight:900;letter-spacing:2px">serasa</div>
-          <div style="font-size:7px;letter-spacing:5px">RESTAURANT</div>
+          <div style="font-size:16px;font-weight:900;letter-spacing:2px">serasa</div>
+          <div style="font-size:10px;letter-spacing:5px">RESTAURANT</div>
         </div>
 
         <div class="box">
-          <div style="font-size:9px;direction:rtl">فاتورة ضريبية مبسطة</div>
-          <div class="b" style="font-size:11px">SIMPLIFIED TAX INVOICE</div>
+          <div style="font-size:11px;direction:rtl">فاتورة ضريبية مبسطة</div>
+          <div class="b" style="font-size:14px">SIMPLIFIED TAX INVOICE</div>
         </div>
 
         <div class="box">
-          <div style="font-size:8px">Invoice No / رقم الفاتورة</div>
+          <div style="font-size:10px">Invoice No / رقم الفاتورة</div>
           <div class="b">Order ${invoiceNo.replace('INV-', '')}</div>
         </div>
 
         <div class="box">
-          <div style="font-size:8px">Table No / رقم الطاولة</div>
+          <div style="font-size:10px">Table No / رقم الطاولة</div>
           <div class="b">${tableDisplay}</div>
         </div>
 
-        <div class="box" style="font-size:12px;font-weight:bold;direction:rtl">${RESTO_NAME_AR}</div>
+        <div class="box" style="font-size:14px;font-weight:bold;direction:rtl">${RESTO_NAME_AR}</div>
 
         <div class="row">
           <span>VAT No:${VAT_REG}</span>
@@ -231,7 +231,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
           <span>Date: ${dateStr} ${timeStr}</span>
           <span style="direction:rtl">:التاريخ</span>
         </div>
-        <div class="box" style="direction:rtl;font-size:9px">${BRANCH_NAME_AR}</div>
+        <div class="box" style="direction:rtl;font-size:11px">${BRANCH_NAME_AR}</div>
 
         <table>
           <thead><tr>
@@ -251,7 +251,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
           <img src="${qrDataUrl}" width="120" height="120" style="display:block;margin:0 auto"/>
         </div>
 
-        <div class="c" style="margin-top:4px;font-size:9px">
+        <div class="c" style="margin-top:4px;font-size:11px">
           Served by: ${CASHIER_NAME} :بواسطة
         </div>
       </body></html>
@@ -332,8 +332,8 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                     <p className="font-black text-base leading-tight" style={{ color: '#CC0000' }}>
                       {RESTO_NAME}
                     </p>
-                    <p className="text-[10px] text-gray-900 mt-0.5">{BRANCH_NAME_AR}</p>
-                    <p className="text-[9px] text-gray-900 mt-0.5">{invoiceNo}</p>
+                    <p className="text-[12px] text-gray-900 mt-0.5">{BRANCH_NAME_AR}</p>
+                    <p className="text-[11px] text-gray-900 mt-0.5">{invoiceNo}</p>
                   </div>
 
                   <Divider />
@@ -351,9 +351,9 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
 
                   {/* Items table header */}
                   <div className="flex items-center gap-2 pb-1.5" style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <span className="flex-1 text-[9px] text-gray-900 font-bold">Item الوصف</span>
-                    <span className="text-[9px] text-gray-900 w-6 text-center">Qty</span>
-                    <span className="text-[9px] text-gray-900 min-w-[60px] text-right">Total SAR</span>
+                    <span className="flex-1 text-[11px] text-gray-900 font-bold">Item الوصف</span>
+                    <span className="text-[11px] text-gray-900 w-6 text-center">Qty</span>
+                    <span className="text-[11px] text-gray-900 min-w-[60px] text-right">Total SAR</span>
                   </div>
 
                   {/* Items */}
@@ -367,12 +367,12 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
 
                   {/* Totals */}
                   <div className="space-y-1">
-                    <div className="flex justify-between text-[10px]">
+                    <div className="flex justify-between text-[12px]">
                       <span className="text-gray-900">Subtotal (الفرعي):</span>
                       <span className="font-semibold">{formatPrice(subtotal)}</span>
                     </div>
                     {discountAmount > 0 && (
-                      <div className="flex justify-between text-[10px]">
+                      <div className="flex justify-between text-[12px]">
                         <span className="text-gray-900">Discount {discountType === 'percent' ? `${discountValue}%` : ''}:</span>
                         <span className="font-bold">-{formatPrice(discountAmount)}</span>
                       </div>
@@ -393,13 +393,13 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                       <Divider />
                       <div className="space-y-1">
                         {payments.map((p, i) => (
-                          <div key={i} className="flex justify-between text-[10px]">
+                          <div key={i} className="flex justify-between text-[12px]">
                             <span className="text-gray-900">{PAYMENT_LABELS[p.method] ?? p.method}</span>
                             <span className="font-bold">{formatPrice(p.amount)}</span>
                           </div>
                         ))}
                         {change > 0 && (
-                          <div className="flex justify-between text-[11px] font-black text-gray-900 mt-1">
+                          <div className="flex justify-between text-[13px] font-black text-gray-900 mt-1">
                             <span>Change / الباقي:</span>
                             <span>{formatPrice(change)}</span>
                           </div>
@@ -418,7 +418,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                   </div>
 
                   {/* Served by */}
-                  <p className="text-[9px] text-gray-900 text-center mt-3">
+                  <p className="text-[11px] text-gray-900 text-center mt-3">
                     Served by: {CASHIER_NAME} :بواسطة
                   </p>
                 </div>
