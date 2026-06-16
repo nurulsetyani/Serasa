@@ -52,7 +52,7 @@ interface Props {
 function MetaRow({ arLabel, value, highlight }: { arLabel: string; value: string; highlight?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-2 py-0.5">
-      <span className="text-[10px] text-gray-500">{arLabel}</span>
+      <span className="text-[10px] text-gray-900">{arLabel}</span>
       <span
         className="text-[10px] font-bold text-right"
         style={{ color: highlight ? '#EF4444' : '#1a1a1a' }}
@@ -73,11 +73,11 @@ function ItemRow({ line }: { line: POSLine }) {
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-bold text-gray-900 leading-tight">{line.name}</p>
           {line.name_ar && (
-            <p className="text-[9px] text-gray-400 leading-tight">{line.name_ar}</p>
+            <p className="text-[9px] text-gray-900 leading-tight">{line.name_ar}</p>
           )}
-          {line.note && <p className="text-[9px] text-gray-400 italic">{line.note}</p>}
+          {line.note && <p className="text-[9px] text-gray-900 italic">{line.note}</p>}
         </div>
-        <span className="text-[11px] text-gray-600 flex-shrink-0 w-6 text-center">{line.qty}</span>
+        <span className="text-[11px] text-gray-900 flex-shrink-0 w-6 text-center">{line.qty}</span>
         <span className="text-[11px] font-bold text-gray-900 flex-shrink-0 min-w-[60px] text-right">
           {formatPrice(lineTotal)}
         </span>
@@ -313,8 +313,8 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                     <p className="font-black text-base leading-tight" style={{ color: '#CC0000' }}>
                       {RESTO_NAME}
                     </p>
-                    <p className="text-[10px] text-gray-600 mt-0.5">{BRANCH_NAME}</p>
-                    <p className="text-[9px] text-gray-400 mt-0.5">{invoiceNo}</p>
+                    <p className="text-[10px] text-gray-900 mt-0.5">{BRANCH_NAME}</p>
+                    <p className="text-[9px] text-gray-900 mt-0.5">{invoiceNo}</p>
                   </div>
 
                   <Divider />
@@ -332,9 +332,9 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
 
                   {/* Items table header */}
                   <div className="flex items-center gap-2 pb-1.5" style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <span className="flex-1 text-[9px] text-gray-500 font-bold">Item الوصف</span>
-                    <span className="text-[9px] text-gray-500 w-6 text-center">Qty</span>
-                    <span className="text-[9px] text-gray-500 min-w-[60px] text-right">Total SAR</span>
+                    <span className="flex-1 text-[9px] text-gray-900 font-bold">Item الوصف</span>
+                    <span className="text-[9px] text-gray-900 w-6 text-center">Qty</span>
+                    <span className="text-[9px] text-gray-900 min-w-[60px] text-right">Total SAR</span>
                   </div>
 
                   {/* Items */}
@@ -349,7 +349,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                   {/* Totals */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-500">Subtotal (الفرعي):</span>
+                      <span className="text-gray-900">Subtotal (الفرعي):</span>
                       <span className="font-semibold">{formatPrice(subtotal)}</span>
                     </div>
                     {discountAmount > 0 && (
@@ -359,11 +359,11 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                       </div>
                     )}
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-500">Taxable Amount (الخاضع للضريبة):</span>
+                      <span className="text-gray-900">Taxable Amount (الخاضع للضريبة):</span>
                       <span className="font-semibold">{formatPrice(taxableAmount)}</span>
                     </div>
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-500">VAT @ {taxPercent}% (ضريبة القيمة المضافة):</span>
+                      <span className="text-gray-900">VAT @ {taxPercent}% (ضريبة القيمة المضافة):</span>
                       <span className="font-semibold">{formatPrice(vatAmount)}</span>
                     </div>
                   </div>
@@ -383,7 +383,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                       <div className="space-y-1">
                         {payments.map((p, i) => (
                           <div key={i} className="flex justify-between text-[10px]">
-                            <span className="text-gray-600">{PAYMENT_LABELS[p.method] ?? p.method}</span>
+                            <span className="text-gray-900">{PAYMENT_LABELS[p.method] ?? p.method}</span>
                             <span className="font-bold">{formatPrice(p.amount)}</span>
                           </div>
                         ))}
@@ -400,7 +400,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                   <Divider />
 
                   {/* FATOORA compliance text */}
-                  <p className="text-[8px] text-gray-400 text-center leading-relaxed mb-3">
+                  <p className="text-[8px] text-gray-900 text-center leading-relaxed mb-3">
                     This is a simplified tax invoice compliant with Saudi Arabia FATOORA Phase 2 regulations. رقم تسجيل ضريبي: {VAT_REG}
                   </p>
 
@@ -409,7 +409,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                     <div className="p-2 border border-gray-200 rounded-lg inline-block">
                       <QRCodeSVG value={qrData} size={100} level="M" />
                     </div>
-                    <p className="text-[8px] text-gray-400 text-center break-all max-w-[200px]">
+                    <p className="text-[8px] text-gray-900 text-center break-all max-w-[200px]">
                       TLV: {qrData.slice(0, 40)}...
                     </p>
                   </div>

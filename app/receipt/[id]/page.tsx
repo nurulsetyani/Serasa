@@ -213,7 +213,7 @@ export default function ReceiptPage() {
             { label: lbl.payment,  value: paymentLabel },
           ].map(row => (
             <div key={row.label} className={`flex items-start gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <span className="text-gray-400 text-[11px] flex-shrink-0">{row.label}</span>
+              <span className="text-gray-900 text-[11px] flex-shrink-0">{row.label}</span>
               <span className={`text-gray-900 text-[11px] font-semibold flex-1 ${isRTL ? 'text-left' : 'text-right'}`}>
                 {row.value}
               </span>
@@ -223,7 +223,7 @@ export default function ReceiptPage() {
 
         {/* Items — with translated names */}
         <div className="px-6 py-4 space-y-2.5" style={{ borderBottom: '1px dashed #E5E7EB' }}>
-          <p className="text-gray-400 text-[10px] tracking-widest uppercase mb-3">{lbl.order}</p>
+          <p className="text-gray-900 text-[10px] tracking-widest uppercase mb-3">{lbl.order}</p>
           {order.order_items?.map(item => {
             const menuItem = menuMap[item.menu_id]
             const displayName = menuItem ? getItemName(menuItem, lang) : item.name
@@ -234,7 +234,7 @@ export default function ReceiptPage() {
                     style={{ fontFamily: lang === 'ar' ? 'var(--font-noto-arabic),serif' : undefined }}>
                     {displayName}
                   </p>
-                  <p className="text-gray-400 text-[10px]">{item.qty} × {formatPrice(item.price)}</p>
+                  <p className="text-gray-900 text-[10px]">{item.qty} × {formatPrice(item.price)}</p>
                 </div>
                 <span className="text-gray-900 text-[12px] font-bold">{formatPrice(item.price * item.qty)}</span>
               </div>
@@ -250,16 +250,16 @@ export default function ReceiptPage() {
             return (
               <div className="space-y-1.5">
                 <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <span className="text-gray-400 text-[11px]">
+                  <span className="text-gray-900 text-[11px]">
                     {isRTL ? 'المجموع قبل الضريبة' : 'Subtotal (excl. VAT)'}
                   </span>
-                  <span className="text-gray-600 text-[11px] font-semibold">{formatPrice(subtotal)}</span>
+                  <span className="text-gray-900 text-[11px] font-semibold">{formatPrice(subtotal)}</span>
                 </div>
                 <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <span className="text-gray-400 text-[11px]">
+                  <span className="text-gray-900 text-[11px]">
                     {isRTL ? `ضريبة القيمة المضافة ${vatPct}%` : `VAT ${vatPct}%`}
                   </span>
-                  <span className="text-gray-600 text-[11px] font-semibold">{formatPrice(vatAmount)}</span>
+                  <span className="text-gray-900 text-[11px] font-semibold">{formatPrice(vatAmount)}</span>
                 </div>
                 <div className={`flex items-center justify-between pt-1.5 border-t border-dashed ${isRTL ? 'flex-row-reverse' : ''}`}
                   style={{ borderColor: '#E5E7EB' }}>
@@ -271,7 +271,7 @@ export default function ReceiptPage() {
           })()}
           {(order.payment_method === 'online' || order.payment_method === 'qris') && (
             <div className={`flex items-center justify-between mt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <span className="text-gray-300 text-[11px]">{lbl.status}</span>
+              <span className="text-gray-900 text-[11px]">{lbl.status}</span>
               <span className="text-green-500 text-[11px] font-semibold">✓ {paymentLabel} {lbl.paid}</span>
             </div>
           )}
@@ -283,11 +283,11 @@ export default function ReceiptPage() {
             style={{ fontFamily: lang === 'ar' ? 'var(--font-noto-arabic),serif' : undefined }}>
             {lbl.thanks}
           </p>
-          <p className="text-gray-400 text-[10px]"
+          <p className="text-gray-900 text-[10px]"
             style={{ fontFamily: lang === 'ar' ? 'var(--font-noto-arabic),serif' : undefined }}>
             {lbl.tagline}
           </p>
-          <p className="text-gray-300 text-[9px] mt-3">Serasa Indonesian Restaurant · Saudi Arabia</p>
+          <p className="text-gray-900 text-[9px] mt-3">Serasa Indonesian Restaurant · Saudi Arabia</p>
         </div>
 
         {/* ZATCA QR Code */}
@@ -296,10 +296,10 @@ export default function ReceiptPage() {
             style={{ borderTop: '1px dashed #E5E7EB' }}>
             <QRCodeSVG value={zatcaQR} size={96} level="M"
               fgColor="#1A1208" bgColor="transparent" />
-            <p className="text-gray-400 text-[9px] text-center">
+            <p className="text-gray-900 text-[9px] text-center">
               {isRTL ? 'رمز ZATCA الضريبي' : 'ZATCA Tax QR Code'}
             </p>
-            <p className="text-gray-300 text-[8px] text-center">
+            <p className="text-gray-900 text-[8px] text-center">
               {process.env.NEXT_PUBLIC_VAT_NUMBER
                 ? `VAT: ${process.env.NEXT_PUBLIC_VAT_NUMBER}`
                 : 'Set NEXT_PUBLIC_VAT_NUMBER in Vercel'}
