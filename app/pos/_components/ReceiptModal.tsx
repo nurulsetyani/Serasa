@@ -1,8 +1,9 @@
 'use client'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Printer, CheckCircle2, Download, Shield } from 'lucide-react'
-import { useState, Component, ReactNode } from 'react'
+import { X, Printer, Download, Shield } from 'lucide-react'
+import { Component, ReactNode } from 'react'
 import dynamic from 'next/dynamic'
+import QRCode from 'qrcode'
 import { QRCodeSVG } from 'qrcode.react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -32,9 +33,11 @@ class PDFErrorBoundary extends Component<{ children: ReactNode }, { failed: bool
   }
 }
 
-const RESTO_NAME = process.env.NEXT_PUBLIC_RESTO_NAME || 'SERASA RESTAURANT'
-const BRANCH_NAME = process.env.NEXT_PUBLIC_BRANCH_NAME || 'Kuday, Mekkah - Saudi Arabia'
-const VAT_REG = process.env.NEXT_PUBLIC_VAT_REG || '310000000000003'
+const RESTO_NAME    = process.env.NEXT_PUBLIC_RESTO_NAME    || 'SERASA RESTAURANT'
+const RESTO_NAME_AR = process.env.NEXT_PUBLIC_RESTO_NAME_AR || 'مطعم سيراسا'
+const BRANCH_NAME_AR= process.env.NEXT_PUBLIC_BRANCH_NAME_AR|| 'مكة المكرمة - السعودية'
+const VAT_REG       = process.env.NEXT_PUBLIC_VAT_REG       || '310000000000003'
+const CASHIER_NAME  = process.env.NEXT_PUBLIC_CASHIER_NAME  || 'MANAGER'
 
 const ORDER_TYPE_LABELS: Record<string, string> = {
   dine_in: 'DINE IN',
@@ -139,110 +142,126 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
     online: 'Online',
   }
 
-  function handlePrint() {
+  async function handlePrint() {
     const itemsHtml = lines.map(l => {
       const modSum = l.modifiers.reduce((s, m) => s + m.priceAdj, 0)
       const unitFinal = l.unitPrice + modSum
-      return `
-        <tr>
-          <td style="padding:4px 0">
-            <div style="font-weight:bold;font-size:10px">${l.name}</div>
-            ${l.name_ar ? `<div style="font-size:9px;color:#000;direction:rtl">${l.name_ar}</div>` : ''}
-            ${l.note ? `<div style="font-size:9px;font-style:italic;color:#000">${l.note}</div>` : ''}
-          </td>
-          <td style="text-align:center;font-size:10px;vertical-align:top;padding:4px 4px">${l.qty}</td>
-          <td style="text-align:right;font-size:10px;font-weight:bold;vertical-align:top;padding:4px 0">${formatPrice(unitFinal * l.qty)}</td>
-        </tr>
-      `
+      const lineTotal = unitFinal * l.qty
+      const productCell = l.name_ar
+        ? `${l.name} ${l.name_ar}`
+        : l.name
+      return `<tr>
+        <td style="text-align:right;padding:3px 4px">${lineTotal.toFixed(2)}</td>
+        <td style="text-align:right;padding:3px 4px">${unitFinal.toFixed(2)}</td>
+        <td style="text-align:center;padding:3px 4px">${l.qty}</td>
+        <td style="text-align:right;padding:3px 4px;direction:rtl">${productCell}</td>
+      </tr>`
     }).join('')
 
-    const paymentsHtml = payments.map(p =>
-      `<div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0">
-        <span>${PAYMENT_LABELS[p.method] ?? p.method}</span><span>${formatPrice(p.amount)}</span>
-      </div>`
-    ).join('')
+    const tableDisplay = orderType === 'dine_in'
+      ? (tableNumber || '1')
+      : ORDER_TYPE_LABELS[orderType] || orderType
 
+    const totalsHtml = `
+      <tr>
+        <td style="text-align:right;padding:3px 8px;font-weight:bold">${total.toFixed(2)} SR</td>
+        <td style="text-align:right;direction:rtl;padding:3px 8px">TOTAL / الإجمالي</td>
+      </tr>
+      <tr>
+        <td style="text-align:right;padding:3px 8px">${total.toFixed(2)} SR</td>
+        <td style="text-align:right;direction:rtl;padding:3px 8px">To Pay / المطلوب</td>
+      </tr>
+      ${payments.map(p => `<tr>
+        <td style="text-align:right;padding:3px 8px">${p.amount.toFixed(2)}</td>
+        <td style="text-align:right;direction:rtl;padding:3px 8px">${PAYMENT_LABELS[p.method] ?? p.method}</td>
+      </tr>`).join('')}
+      ${change > 0 ? `<tr>
+        <td style="text-align:right;padding:3px 8px;font-weight:bold">${change.toFixed(2)} SR</td>
+        <td style="text-align:right;direction:rtl;padding:3px 8px;font-weight:bold">CHANGE / المتبقي</td>
+      </tr>` : ''}
+    `
+
+    const qrDataUrl = await QRCode.toDataURL(qrData, {
+      width: 160, margin: 1,
+      color: { dark: '#000000', light: '#FFFFFF' },
+    })
+
+    const B = 'border:1px solid #000'
     const html = `
       <html><head><title>${invoiceNo}</title>
       <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Courier New',monospace; font-size:11px; width:80mm; padding:6mm 4mm; }
-        .center { text-align:center; }
-        .divider { border-top:1px dashed #000; margin:6px 0; }
-        .right { text-align:right; }
-        table { width:100%; border-collapse:collapse; }
-        th { font-size:9px; color:#000; padding:3px 0; border-bottom:1px solid #ccc; }
-        .total-label { font-size:11px; font-weight:bold; }
-        .total-val { font-size:11px; font-weight:bold; text-align:right; }
-        .grand-label { font-size:13px; font-weight:900; }
-        .grand-val { font-size:13px; font-weight:900; text-align:right; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Courier New',monospace;font-size:10px;width:80mm;padding:4mm 3mm;color:#000}
+        .c{text-align:center} .b{font-weight:bold}
+        .box{${B};padding:3px 6px;margin:2px 0;text-align:center}
+        .row{display:flex;justify-content:space-between;align-items:center;${B};padding:3px 6px;margin:2px 0}
+        table{width:100%;border-collapse:collapse;margin:3px 0}
+        th,td{${B};font-size:9px}
+        @page{size:80mm auto;margin:4mm}
       </style></head>
       <body>
-        <div class="center" style="margin-bottom:6px">
-          <img src="/logof22.png" alt="Logo" style="max-height:48px;max-width:120px;object-fit:contain;display:block;margin:0 auto 4px" />
-          <div style="font-size:14px;font-weight:900;color:#CC0000">${RESTO_NAME}</div>
-          <div style="font-size:10px;margin-top:2px">${BRANCH_NAME}</div>
-          <div style="font-size:9px;color:#000">${invoiceNo}</div>
+        <div class="c" style="margin-bottom:4px">
+          <img src="/logof22.png" style="max-height:44px;max-width:110px;object-fit:contain;display:block;margin:0 auto 3px"/>
+          <div style="font-size:13px;font-weight:900;letter-spacing:2px">serasa</div>
+          <div style="font-size:7px;letter-spacing:5px">RESTAURANT</div>
         </div>
-        <div class="divider"></div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:#000;margin:2px 0">
-          <span>الرقم الضريبي (VAT Reg):</span><span>${VAT_REG}</span>
+
+        <div class="box">
+          <div style="font-size:9px;direction:rtl">فاتورة ضريبية مبسطة</div>
+          <div class="b" style="font-size:11px">SIMPLIFIED TAX INVOICE</div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
-          <span>التاريخ (Date):</span><span>${dateStr}, ${timeStr}</span>
+
+        <div class="box">
+          <div style="font-size:8px">Invoice No / رقم الفاتورة</div>
+          <div class="b">Order ${invoiceNo.replace('INV-', '')}</div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
-          <span>العميل (Customer):</span><span>${customerName || 'Guest'}</span>
+
+        <div class="box">
+          <div style="font-size:8px">Table No / رقم الطاولة</div>
+          <div class="b">${tableDisplay}</div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
-          <span>نوع الطلب (Order Type):</span><span>${ORDER_TYPE_LABELS[orderType] || orderType}</span>
+
+        <div class="box" style="font-size:12px;font-weight:bold;direction:rtl">${RESTO_NAME_AR}</div>
+
+        <div class="row">
+          <span>VAT No:${VAT_REG}</span>
+          <span style="direction:rtl">:الرقم الضريبي</span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;margin:2px 0">
-          <span>رقم الطاولة (Table No):</span><span style="color:#CC0000;font-weight:bold">${tableNumber || '—'}</span>
+        <div class="row">
+          <span>Date: ${dateStr} ${timeStr}</span>
+          <span style="direction:rtl">:التاريخ</span>
         </div>
-        <div class="divider"></div>
+        <div class="box" style="direction:rtl;font-size:9px">${BRANCH_NAME_AR}</div>
+
         <table>
           <thead><tr>
-            <th style="text-align:left">Item الوصف</th>
-            <th style="text-align:center">Qty</th>
-            <th style="text-align:right">Total SAR</th>
+            <th style="text-align:right;width:22%;padding:3px 4px">Sub Total<br>الإجمالي الفرعي</th>
+            <th style="text-align:right;width:18%;padding:3px 4px">Price<br>سعر</th>
+            <th style="text-align:center;width:12%;padding:3px 4px">Qty<br>الكمية</th>
+            <th style="text-align:right;width:48%;padding:3px 4px;direction:rtl">Product<br>الصنف</th>
           </tr></thead>
           <tbody>${itemsHtml}</tbody>
         </table>
-        <div class="divider"></div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0">
-          <span>Subtotal (الفرعي):</span><span>${formatPrice(subtotal)}</span>
+
+        <table style="margin-top:3px">
+          <tbody>${totalsHtml}</tbody>
+        </table>
+
+        <div class="box c" style="margin-top:4px;padding:6px">
+          <img src="${qrDataUrl}" width="120" height="120" style="display:block;margin:0 auto"/>
         </div>
-        ${discountAmount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;color:green;margin:2px 0">
-          <span>Discount ${discountType === 'percent' ? `${discountValue}%` : ''}:</span><span>-${formatPrice(discountAmount)}</span>
-        </div>` : ''}
-        <div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0">
-          <span>Taxable Amount (الخاضع للضريبة):</span><span>${formatPrice(taxableAmount)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0">
-          <span>VAT @ ${taxPercent}% (ضريبة القيمة المضافة):</span><span>${formatPrice(vatAmount)}</span>
-        </div>
-        <div class="divider"></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:900;margin:4px 0">
-          <span>Total Amount (الإجمالي):</span><span>${formatPrice(total)}</span>
-        </div>
-        <div class="divider"></div>
-        ${paymentsHtml}
-        ${change > 0 ? `<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;color:green;margin:4px 0">
-          <span>Change / الباقي:</span><span>${formatPrice(change)}</span>
-        </div>` : ''}
-        <div class="divider"></div>
-        <div class="center" style="font-size:8px;color:#000;margin-top:6px;line-height:1.5">
-          This is a simplified tax invoice compliant with Saudi Arabia FATOORA Phase 2 regulations. رقم تسجيل ضريبي: ${VAT_REG}
+
+        <div class="c" style="margin-top:4px;font-size:9px">
+          Served by: ${CASHIER_NAME} :بواسطة
         </div>
       </body></html>
     `
-    const win = window.open('', '_blank', 'width=400,height=720')
+    const win = window.open('', '_blank', 'width=420,height=800')
     if (!win) return
     win.document.write(html)
     win.document.close()
     win.focus()
-    setTimeout(() => { win.print(); win.close() }, 500)
+    setTimeout(() => { win.print(); win.close() }, 600)
   }
 
   const pdfData = {
@@ -313,7 +332,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                     <p className="font-black text-base leading-tight" style={{ color: '#CC0000' }}>
                       {RESTO_NAME}
                     </p>
-                    <p className="text-[10px] text-gray-900 mt-0.5">{BRANCH_NAME}</p>
+                    <p className="text-[10px] text-gray-900 mt-0.5">{BRANCH_NAME_AR}</p>
                     <p className="text-[9px] text-gray-900 mt-0.5">{invoiceNo}</p>
                   </div>
 

@@ -10,12 +10,18 @@ const os     = require('os')
 
 const LOGO_PATH = path.join(__dirname, '..', 'assets', 'logo-thermal.png')
 
+const RESTO_NAME    = process.env.NEXT_PUBLIC_RESTO_NAME    || 'SERASA RESTAURANT'
+const RESTO_NAME_AR = process.env.NEXT_PUBLIC_RESTO_NAME_AR || 'مطعم سيراسا'
+const BRANCH_NAME_AR= process.env.NEXT_PUBLIC_BRANCH_NAME_AR|| 'مكة المكرمة - السعودية'
+const VAT_REG       = process.env.NEXT_PUBLIC_VAT_REG       || '310000000000003'
+const CASHIER_NAME  = process.env.NEXT_PUBLIC_CASHIER_NAME  || 'MANAGER'
+
 const PAYMENT_LABELS = {
-  cash: 'Tunai / Cash / نقداً',
+  cash: 'Cash',
   mada: 'Mada',
-  visa: 'Visa / Mastercard',
+  visa: 'Visa/MC',
   qris: 'QRIS',
-  transfer: 'Transfer Bank',
+  transfer: 'Bank Transfer',
   online: 'Online',
 }
 
@@ -84,132 +90,118 @@ async function buildCashierReceipt(printer, payload) {
   const tmpFiles = []
 
   try {
+    // ── Logo + Header ─────────────────────────────────────
     printer.alignCenter()
-
-    // ── Logo ──────────────────────────────────────────────
     if (fs.existsSync(LOGO_PATH)) {
       await printer.printImage(LOGO_PATH)
     }
-
-    printer.newLine()
     printer.bold(true)
-    printer.setTextSize(1, 1)
-    printer.println(order.restaurant_name || 'SERASA RESTAURANT')
-    printer.bold(false)
+    printer.setTextSize(1, 0)
+    printer.println(RESTO_NAME)
     printer.setTextSize(0, 0)
-    printer.println(order.restaurant_sub || 'Authentic Indonesian Cuisine')
-    printer.println(order.restaurant_addr || 'Al Khobar, Saudi Arabia')
+    printer.bold(false)
+    printer.println(RESTO_NAME_AR)
     printer.drawLine()
 
-    // ── Meta ──────────────────────────────────────────────
+    // ── Invoice title ─────────────────────────────────────
+    printer.println('فاتورة ضريبية مبسطة')
+    printer.bold(true)
+    printer.println('SIMPLIFIED TAX INVOICE')
+    printer.bold(false)
+    printer.drawLine()
+
+    // ── Invoice meta ──────────────────────────────────────
+    printer.alignLeft()
+    const orderNum = order.order_number || order.id?.slice(0, 8).toUpperCase()
+    printer.tableCustom([
+      { text: 'Invoice No / رقم الفاتورة', align: 'LEFT', width: 0.5 },
+      { text: `Order ${orderNum}`,          align: 'RIGHT', width: 0.5, bold: true },
+    ])
+    const tableDisplay = order.order_type === 'dine_in'
+      ? (order.table_number || '1')
+      : ORDER_TYPE_LABELS[order.order_type] || order.order_type
+    printer.tableCustom([
+      { text: 'Table No / رقم الطاولة', align: 'LEFT', width: 0.5 },
+      { text: tableDisplay,              align: 'RIGHT', width: 0.5, bold: true },
+    ])
+    printer.drawLine()
+
+    // ── Restaurant info ───────────────────────────────────
+    printer.alignCenter()
+    printer.println(RESTO_NAME_AR)
+    printer.tableCustom([
+      { text: `VAT No:${VAT_REG}`, align: 'LEFT',  width: 0.55 },
+      { text: ':الرقم الضريبي',    align: 'RIGHT', width: 0.45 },
+    ])
+    printer.tableCustom([
+      { text: `Date: ${formatDate(order.created_at)}`, align: 'LEFT',  width: 0.6 },
+      { text: ':التاريخ',                               align: 'RIGHT', width: 0.4 },
+    ])
+    printer.alignRight()
+    printer.println(BRANCH_NAME_AR)
+    printer.drawLine()
+
+    // ── Items table (Sub Total | Price | Qty | Product) ───
     printer.alignLeft()
     printer.tableCustom([
-      { text: formatDate(order.created_at), align: 'LEFT',  width: 0.6 },
-      { text: `#${order.order_number || order.id?.slice(0,8)}`, align: 'RIGHT', width: 0.4 },
+      { text: 'Sub Total', align: 'LEFT',   width: 0.22 },
+      { text: 'Price',     align: 'CENTER', width: 0.18 },
+      { text: 'Qty',       align: 'CENTER', width: 0.10 },
+      { text: 'Product',   align: 'RIGHT',  width: 0.50 },
     ])
     printer.tableCustom([
-      { text: 'Meja / Table:', align: 'LEFT',  width: 0.5 },
-      { text: `${order.table_number}`, align: 'RIGHT', width: 0.5, bold: true },
-    ])
-    printer.tableCustom([
-      { text: 'Nama / Customer:', align: 'LEFT',  width: 0.5 },
-      { text: order.customer_name, align: 'RIGHT', width: 0.5 },
-    ])
-    printer.tableCustom([
-      { text: 'Jenis / Type:', align: 'LEFT',  width: 0.5 },
-      { text: ORDER_TYPE_LABELS[order.order_type] || order.order_type, align: 'RIGHT', width: 0.5 },
+      { text: 'الإجمالي الفرعي', align: 'LEFT',   width: 0.22 },
+      { text: 'سعر',             align: 'CENTER', width: 0.18 },
+      { text: 'الكمية',          align: 'CENTER', width: 0.10 },
+      { text: 'الصنف',           align: 'RIGHT',  width: 0.50 },
     ])
     printer.drawLine()
 
-    // ── Items ─────────────────────────────────────────────
-    printer.bold(true)
-    printer.println('PESANAN / ORDER / الطلب')
-    printer.bold(false)
-    printer.newLine()
-
     for (const item of order.order_items || []) {
-      // Item name (English)
+      const lineTotal = (item.price * item.qty).toFixed(2)
+      const productName = item.name_ar ? `${item.name} ${item.name_ar}` : item.name
       printer.tableCustom([
-        { text: `${item.qty}x ${item.name}`, align: 'LEFT',  width: 0.65 },
-        { text: formatPrice(item.price * item.qty), align: 'RIGHT', width: 0.35 },
+        { text: lineTotal,    align: 'LEFT',   width: 0.22 },
+        { text: item.price.toFixed(2), align: 'CENTER', width: 0.18 },
+        { text: String(item.qty),      align: 'CENTER', width: 0.10 },
+        { text: productName,  align: 'RIGHT',  width: 0.50 },
       ])
-
-      // Arabic name as text (printer may or may not render)
-      if (item.name_ar) {
-        printer.alignRight()
-        printer.println(item.name_ar)
-        printer.alignLeft()
-      }
-
-      // Notes (highlighted)
       if (item.notes) {
-        printer.bold(true)
         printer.println(`  ⚠ ${item.notes}`)
-        printer.bold(false)
       }
     }
-
     printer.drawLine()
 
     // ── Totals ────────────────────────────────────────────
-    const subtotal = order.subtotal ?? order.total_price
+    const total = order.total_price
     printer.tableCustom([
-      { text: 'Subtotal:', align: 'LEFT',  width: 0.6 },
-      { text: formatPrice(subtotal), align: 'RIGHT', width: 0.4 },
+      { text: `${total.toFixed(2)} SR`, align: 'LEFT',  width: 0.45, bold: true },
+      { text: 'TOTAL / الإجمالي',       align: 'RIGHT', width: 0.55, bold: true },
+    ])
+    printer.tableCustom([
+      { text: `${total.toFixed(2)} SR`, align: 'LEFT',  width: 0.45 },
+      { text: 'To Pay / المطلوب',       align: 'RIGHT', width: 0.55 },
     ])
 
-    if (order.discount_amount && order.discount_amount > 0) {
-      printer.tableCustom([
-        { text: `Diskon${order.discount_type === 'percent' ? ` (${order.discount_value}%)` : ''}:`, align: 'LEFT',  width: 0.6 },
-        { text: `-${formatPrice(order.discount_amount)}`, align: 'RIGHT', width: 0.4 },
-      ])
-    }
-
-    if (order.tax_amount && order.tax_amount > 0) {
-      printer.tableCustom([
-        { text: `VAT ${order.tax_percent || 15}%:`, align: 'LEFT',  width: 0.6 },
-        { text: formatPrice(order.tax_amount), align: 'RIGHT', width: 0.4 },
-      ])
-    }
-
-    printer.drawLine()
-    printer.bold(true)
-    printer.setTextSize(1, 1)
-    printer.tableCustom([
-      { text: 'TOTAL:', align: 'LEFT',  width: 0.5 },
-      { text: formatPrice(order.total_price), align: 'RIGHT', width: 0.5, bold: true },
-    ])
-    printer.setTextSize(0, 0)
-    printer.bold(false)
-
-    // Payments breakdown
     if (order.payments?.length) {
-      printer.newLine()
       for (const p of order.payments) {
         printer.tableCustom([
-          { text: PAYMENT_LABELS[p.method] || p.method, align: 'LEFT',  width: 0.6 },
-          { text: formatPrice(p.amount), align: 'RIGHT', width: 0.4 },
+          { text: p.amount.toFixed(2),              align: 'LEFT',  width: 0.45 },
+          { text: PAYMENT_LABELS[p.method] || p.method, align: 'RIGHT', width: 0.55 },
         ])
       }
       const paid   = order.payments.reduce((s, p) => s + p.amount, 0)
-      const change = Math.max(0, paid - order.total_price)
-      if (change > 0) {
-        printer.bold(true)
-        printer.tableCustom([
-          { text: 'Kembalian / Change:', align: 'LEFT',  width: 0.6 },
-          { text: formatPrice(change), align: 'RIGHT', width: 0.4, bold: true },
-        ])
-        printer.bold(false)
-      }
+      const change = Math.max(0, paid - total)
+      printer.tableCustom([
+        { text: `${change.toFixed(2)} SR`, align: 'LEFT',  width: 0.45, bold: true },
+        { text: 'CHANGE / المتبقي',        align: 'RIGHT', width: 0.55, bold: true },
+      ])
     }
-
     printer.drawLine()
 
     // ── QR Code ───────────────────────────────────────────
     if (receipt_url) {
       printer.alignCenter()
-      printer.println('Scan untuk struk digital:')
-      printer.println('Scan for digital receipt:')
       const qrPath = await qrToTempPng(receipt_url)
       tmpFiles.push(qrPath)
       await printer.printImage(qrPath)
@@ -218,15 +210,11 @@ async function buildCashierReceipt(printer, payload) {
 
     // ── Footer ────────────────────────────────────────────
     printer.alignCenter()
-    printer.println('Terima kasih telah berkunjung')
-    printer.println('Thank you for dining with us')
-    printer.println('شكراً لزيارتكم')
+    printer.println(`Served by: ${CASHIER_NAME} :بواسطة`)
     printer.newLine()
-    printer.println('**** Struk ini adalah bukti pembayaran ****')
     printer.cut()
 
   } finally {
-    // Clean up temp files
     for (const f of tmpFiles) {
       try { fs.unlinkSync(f) } catch {}
     }
