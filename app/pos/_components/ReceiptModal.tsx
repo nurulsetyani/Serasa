@@ -372,19 +372,11 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                       <span className="font-semibold">{formatPrice(subtotal)}</span>
                     </div>
                     {discountAmount > 0 && (
-                      <div className="flex justify-between text-[10px] text-green-600">
-                        <span>Discount {discountType === 'percent' ? `${discountValue}%` : ''}:</span>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-900">Discount {discountType === 'percent' ? `${discountValue}%` : ''}:</span>
                         <span className="font-bold">-{formatPrice(discountAmount)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-900">Taxable Amount (الخاضع للضريبة):</span>
-                      <span className="font-semibold">{formatPrice(taxableAmount)}</span>
-                    </div>
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-900">VAT @ {taxPercent}% (ضريبة القيمة المضافة):</span>
-                      <span className="font-semibold">{formatPrice(vatAmount)}</span>
-                    </div>
                   </div>
 
                   <Divider />
@@ -407,7 +399,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                           </div>
                         ))}
                         {change > 0 && (
-                          <div className="flex justify-between text-[11px] font-black text-green-700 mt-1">
+                          <div className="flex justify-between text-[11px] font-black text-gray-900 mt-1">
                             <span>Change / الباقي:</span>
                             <span>{formatPrice(change)}</span>
                           </div>
@@ -418,20 +410,17 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
 
                   <Divider />
 
-                  {/* FATOORA compliance text */}
-                  <p className="text-[8px] text-gray-900 text-center leading-relaxed mb-3">
-                    This is a simplified tax invoice compliant with Saudi Arabia FATOORA Phase 2 regulations. رقم تسجيل ضريبي: {VAT_REG}
-                  </p>
-
                   {/* QR Code */}
                   <div className="flex flex-col items-center gap-1.5">
-                    <div className="p-2 border border-gray-200 rounded-lg inline-block">
-                      <QRCodeSVG value={qrData} size={100} level="M" />
+                    <div className="p-2 border border-gray-900 rounded-sm inline-block">
+                      <QRCodeSVG value={qrData} size={110} level="M" />
                     </div>
-                    <p className="text-[8px] text-gray-900 text-center break-all max-w-[200px]">
-                      TLV: {qrData.slice(0, 40)}...
-                    </p>
                   </div>
+
+                  {/* Served by */}
+                  <p className="text-[9px] text-gray-900 text-center mt-3">
+                    Served by: {CASHIER_NAME} :بواسطة
+                  </p>
                 </div>
 
                 {/* Tear bottom */}
