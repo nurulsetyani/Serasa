@@ -90,24 +90,34 @@ function unlockAudio() {
 function playNewOrderSound() {
   const ctx = getAudioCtx()
   if (!ctx) return
+
+  // "Tiing Toong" doorbell — two notes, played twice
   const doPlay = () => {
-    const notes = [
-      { f: 523.25, t: 0,    d: 0.14 },
-      { f: 659.25, t: 0.15, d: 0.14 },
-      { f: 783.99, t: 0.30, d: 0.22 },
-    ]
-    notes.forEach(({ f, t, d }) => {
-      const osc = ctx.createOscillator()
+    const bell = (freq: number, startAt: number, duration: number, vol: number) => {
+      const osc  = ctx.createOscillator()
+      const osc2 = ctx.createOscillator()   // upper harmonic for bell timbre
       const gain = ctx.createGain()
-      osc.connect(gain); gain.connect(ctx.destination)
-      osc.type = 'sine'; osc.frequency.value = f
-      const s = ctx.currentTime + t
+      osc.connect(gain); osc2.connect(gain); gain.connect(ctx.destination)
+      osc.type  = 'sine'; osc.frequency.value  = freq
+      osc2.type = 'sine'; osc2.frequency.value = freq * 2.76  // bell partial
+      const s = ctx.currentTime + startAt
       gain.gain.setValueAtTime(0, s)
-      gain.gain.linearRampToValueAtTime(0.38, s + 0.01)
-      gain.gain.exponentialRampToValueAtTime(0.001, s + d)
-      osc.start(s); osc.stop(s + d)
-    })
+      gain.gain.linearRampToValueAtTime(vol,   s + 0.004)
+      gain.gain.exponentialRampToValueAtTime(0.001, s + duration)
+      osc.start(s);  osc.stop(s + duration)
+      osc2.start(s); osc2.stop(s + duration * 0.4)  // harmonic fades faster
+    }
+
+    // One "tiing toong" sequence
+    const seq = (offset: number) => {
+      bell(1046.5, offset + 0.00, 0.8, 0.42)   // tiing — C6, bright
+      bell( 523.2, offset + 0.38, 1.1, 0.36)   // toong — C5, deep
+    }
+
+    seq(0.0)   // first tiing-toong
+    seq(1.15)  // second tiing-toong
   }
+
   if (ctx.state === 'suspended') {
     ctx.resume().then(doPlay).catch(() => {})
   } else {
