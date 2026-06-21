@@ -236,7 +236,7 @@ export default function ReceiptPage() {
                   </p>
                   <p className="text-gray-900 text-[10px]">{item.qty} × {formatPrice(item.price)}</p>
                 </div>
-                <span className="text-gray-900 text-[12px] font-bold">{formatPrice(item.price * item.qty)}</span>
+                <span className="text-gray-900 text-[12px] font-bold whitespace-nowrap">{formatPrice(item.price * item.qty)}</span>
               </div>
             )
           })}
@@ -264,7 +264,7 @@ export default function ReceiptPage() {
                 <div className={`flex items-center justify-between pt-1.5 border-t border-dashed ${isRTL ? 'flex-row-reverse' : ''}`}
                   style={{ borderColor: '#E5E7EB' }}>
                   <span className="text-gray-900 font-black text-sm">{lbl.total}</span>
-                  <span className="font-black text-xl" style={{ color: '#FF6B35' }}>{formatPrice(order.total_price)}</span>
+                  <span className="font-black text-xl whitespace-nowrap" style={{ color: '#FF6B35' }}>{formatPrice(order.total_price)}</span>
                 </div>
               </div>
             )
