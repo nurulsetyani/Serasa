@@ -529,7 +529,7 @@ export default function KitchenPage() {
             {[
               {
                 icon: soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />,
-                onClick: () => { unlockAudio(); setSoundOn(s => !s) },
+                onClick: () => { unlockAudio(); setSoundOn(s => { if (!s) playNewOrderSound(); return !s }) },
                 active: soundOn,
                 activeColor: 'rgba(255,107,53,0.18)',
                 activeBorder: 'rgba(255,107,53,0.28)',
