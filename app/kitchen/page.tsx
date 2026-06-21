@@ -79,34 +79,43 @@ function playNewOrderSound() {
 
   window.speechSynthesis.cancel()
 
+  const MALE_NAMES    = ['david', 'mark', 'alex', 'fred', 'male', 'guy', 'daniel',
+                         'james', 'ryan', 'george', 'thomas', 'gordon', 'reed',
+                         'rishi', 'paul', 'eric', 'tom', 'bruce', 'richard']
+  const FEMALE_NAMES  = ['female', 'zira', 'susan', 'hazel', 'fiona', 'samantha',
+                         'victoria', 'karen', 'moira', 'tessa', 'veena', 'allison',
+                         'ava', 'linda', 'lisa', 'sara', 'aria', 'jenny', 'grace']
+
+  const pickMale = (voices: SpeechSynthesisVoice[]) => {
+    const en = voices.filter(v => v.lang.startsWith('en'))
+    // 1. Exact male keyword match
+    const byName = en.find(v => MALE_NAMES.some(k => v.name.toLowerCase().includes(k)))
+    if (byName) return byName
+    // 2. Anything that doesn't sound female
+    return en.find(v => !FEMALE_NAMES.some(k => v.name.toLowerCase().includes(k))) ?? null
+  }
+
   const speak = (voices: SpeechSynthesisVoice[]) => {
+    const male = pickMale(voices)
     const u = new SpeechSynthesisUtterance('New order')
-    u.lang   = 'en-US'
-    u.rate   = 0.85
-    u.pitch  = 0.85   // lower = more masculine
+    u.lang   = male?.lang ?? 'en-US'
+    u.rate   = 0.82
+    u.pitch  = male ? 0.85 : 0.5   // 0.5 = minimum pitch — forces deep voice
     u.volume = 1.0
-
-    // Prefer known male English voices across platforms
-    const maleKeywords = ['david', 'mark', 'alex', 'fred', 'male', 'guy', 'daniel', 'james', 'ryan']
-    const male = voices.find(v =>
-      v.lang.startsWith('en') &&
-      maleKeywords.some(k => v.name.toLowerCase().includes(k))
-    )
     if (male) u.voice = male
-
     window.speechSynthesis.speak(u)
   }
 
-  const voices = window.speechSynthesis.getVoices()
-  if (voices.length > 0) {
-    speak(voices)
-  } else {
-    // Voices not loaded yet — wait for the event (first page load)
+  const trySpeak = () => {
+    const voices = window.speechSynthesis.getVoices()
+    if (voices.length > 0) { speak(voices); return }
     window.speechSynthesis.onvoiceschanged = () => {
       window.speechSynthesis.onvoiceschanged = null
       speak(window.speechSynthesis.getVoices())
     }
   }
+
+  trySpeak()
 }
 
 // ─────────────────────────────────────────────
