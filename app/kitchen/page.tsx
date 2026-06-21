@@ -79,18 +79,34 @@ function playNewOrderSound() {
 
   window.speechSynthesis.cancel()
 
-  const say = (onEnd?: () => void) => {
+  const speak = (voices: SpeechSynthesisVoice[]) => {
     const u = new SpeechSynthesisUtterance('New order')
     u.lang   = 'en-US'
-    u.rate   = 0.88
-    u.pitch  = 1.1
+    u.rate   = 0.85
+    u.pitch  = 0.85   // lower = more masculine
     u.volume = 1.0
-    if (onEnd) u.onend = onEnd
+
+    // Prefer known male English voices across platforms
+    const maleKeywords = ['david', 'mark', 'alex', 'fred', 'male', 'guy', 'daniel', 'james', 'ryan']
+    const male = voices.find(v =>
+      v.lang.startsWith('en') &&
+      maleKeywords.some(k => v.name.toLowerCase().includes(k))
+    )
+    if (male) u.voice = male
+
     window.speechSynthesis.speak(u)
   }
 
-  // Say "New order" twice with a short pause between
-  say(() => setTimeout(() => say(), 350))
+  const voices = window.speechSynthesis.getVoices()
+  if (voices.length > 0) {
+    speak(voices)
+  } else {
+    // Voices not loaded yet — wait for the event (first page load)
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null
+      speak(window.speechSynthesis.getVoices())
+    }
+  }
 }
 
 // ─────────────────────────────────────────────
