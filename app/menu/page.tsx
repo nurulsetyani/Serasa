@@ -37,7 +37,8 @@ const CATEGORIES = [
   { key: 'seafood',    labelKey: 'seafood' as TranslationKey,    icon: '🦐' },
   { key: 'soup',       labelKey: 'soup' as TranslationKey,       icon: '🍲' },
   { key: 'extra',      labelKey: 'extra' as TranslationKey,      icon: '➕' },
-  { key: 'drinks',     labelKey: 'drinks' as TranslationKey,     icon: '🥤' },
+  { key: 'drinks',          labelKey: 'drinks' as TranslationKey,          icon: '🥤' },
+  { key: 'all_you_can_eat', labelKey: 'all_you_can_eat' as TranslationKey, icon: '🍽️' },
 ]
 
 // ─── Toast ────────────────────────────────────────────────
@@ -214,6 +215,69 @@ function FoodCard({
         </div>
       </div>
     </motion.div>
+  )
+}
+
+// ─── AYCE Promo Banner ────────────────────────────────────
+function AYCEBanner({ lang, onBrowse }: { lang: Language; onBrowse: () => void }) {
+  const label = lang === 'id' ? 'Makan Sepuasnya' : lang === 'ar' ? 'أكل بلا حدود' : 'All You Can Eat'
+  const sub   = lang === 'id' ? 'Nikmati semua hidangan tanpa batas!'
+               : lang === 'ar' ? 'استمتع بجميع الأطباق بلا حدود!'
+               : 'Enjoy all dishes without limits!'
+  const cta   = lang === 'id' ? 'Lihat Menu →' : lang === 'ar' ? 'عرض القائمة ←' : 'View Menu →'
+
+  return (
+    <div className="mx-4 mt-4">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        onClick={onBrowse}
+        className="relative h-36 rounded-3xl overflow-hidden cursor-pointer"
+        style={{ boxShadow: '0 6px 28px rgba(255,107,53,0.22)' }}
+      >
+        {/* Background gradient */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(135deg, #1A0A00 0%, #3D1500 40%, #FF6B35 100%)',
+        }} />
+
+        {/* Decorative circles */}
+        <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full opacity-10"
+          style={{ background: '#FF6B35' }} />
+        <div className="absolute -right-2 -bottom-10 w-32 h-32 rounded-full opacity-10"
+          style={{ background: '#D4AF37' }} />
+
+        {/* Shimmer */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.07) 50%, transparent 65%)' }}
+          animate={{ x: ['-100%', '200%'] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+        />
+
+        {/* Content */}
+        <div className="absolute inset-0 flex flex-col justify-center px-6 z-10">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-2xl">🍽️</span>
+            <span className="text-[10px] font-black tracking-[0.25em] uppercase text-white/50">
+              {lang === 'id' ? 'PROMO SPESIAL' : lang === 'ar' ? 'عرض خاص' : 'SPECIAL OFFER'}
+            </span>
+          </div>
+          <h3 className="text-white font-black text-2xl leading-tight mb-1"
+            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}>
+            {label}
+          </h3>
+          <p className="text-white/60 text-[12px] mb-3">{sub}</p>
+          <motion.div
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center self-start text-[11px] font-black px-4 py-2 rounded-full"
+            style={{ background: PRIMARY, color: '#fff', boxShadow: `0 4px 14px rgba(255,107,53,0.45)` }}
+          >
+            {cta}
+          </motion.div>
+        </div>
+      </motion.div>
+    </div>
   )
 }
 
@@ -641,11 +705,14 @@ export default function MenuPage() {
       return bScore - aScore
     })
 
-  // Featured items for slideshow: diskon dulu, lalu best seller
+  // Featured items for slideshow: AYCE dulu, lalu diskon, lalu best seller
   const featured = [
-    ...menu.filter(i => (i.discount_percent ?? 0) > 0),
-    ...menu.filter(i => i.is_best_seller && !((i.discount_percent ?? 0) > 0)),
-  ].slice(0, 6)
+    ...menu.filter(i => i.category === 'all_you_can_eat'),
+    ...menu.filter(i => (i.discount_percent ?? 0) > 0 && i.category !== 'all_you_can_eat'),
+    ...menu.filter(i => i.is_best_seller && !((i.discount_percent ?? 0) > 0) && i.category !== 'all_you_can_eat'),
+  ].slice(0, 8)
+
+  const hasAYCE = menu.some(i => i.category === 'all_you_can_eat')
 
   const total = calculateCartTotal(cartItems)
 
@@ -750,6 +817,11 @@ export default function MenuPage() {
           ))}
         </div>
       </header>
+
+      {/* ═══════ AYCE PROMO BANNER ═════════════════════════ */}
+      {!search && activeCategory === 'all' && hasAYCE && (
+        <AYCEBanner lang={lang} onBrowse={() => setActiveCategory('all_you_can_eat')} />
+      )}
 
       {/* ═══════ FEATURED SLIDESHOW ════════════════════════ */}
       {!search && activeCategory === 'all' && featured.length > 0 && (
