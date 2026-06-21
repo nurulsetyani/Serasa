@@ -219,12 +219,29 @@ function FoodCard({
 }
 
 // ─── AYCE Promo Banner ────────────────────────────────────
+const AYCE_COPY: Record<Language, { badge: string; title: string; desc: string; cta: string }> = {
+  id: {
+    badge: 'PROMO SPESIAL',
+    title: 'All You Can Eat',
+    desc:  'Pesan sekali, makan sepuasnya. Nikmati semua menu pilihan kami tanpa batas!',
+    cta:   'Lihat Menu',
+  },
+  en: {
+    badge: 'SPECIAL OFFER',
+    title: 'All You Can Eat',
+    desc:  'One price, unlimited plates — enjoy every dish on our menu to your heart\'s content.',
+    cta:   'View Menu',
+  },
+  ar: {
+    badge: 'عرض خاص',
+    title: 'أكل بلا حدود',
+    desc:  'سعر واحد وأكل بلا حدود — استمتع بجميع أطباقنا الشهية كما تشاء.',
+    cta:   'عرض القائمة',
+  },
+}
+
 function AYCEBanner({ lang, onBrowse }: { lang: Language; onBrowse: () => void }) {
-  const label = lang === 'id' ? 'Makan Sepuasnya' : lang === 'ar' ? 'أكل بلا حدود' : 'All You Can Eat'
-  const sub   = lang === 'id' ? 'Nikmati semua hidangan tanpa batas!'
-               : lang === 'ar' ? 'استمتع بجميع الأطباق بلا حدود!'
-               : 'Enjoy all dishes without limits!'
-  const cta   = lang === 'id' ? 'Lihat Menu →' : lang === 'ar' ? 'عرض القائمة ←' : 'View Menu →'
+  const copy = AYCE_COPY[lang]
 
   return (
     <div className="mx-4 mt-4">
@@ -233,48 +250,53 @@ function AYCEBanner({ lang, onBrowse }: { lang: Language; onBrowse: () => void }
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         onClick={onBrowse}
-        className="relative h-36 rounded-3xl overflow-hidden cursor-pointer"
+        className="relative rounded-3xl overflow-hidden cursor-pointer"
         style={{ boxShadow: '0 6px 28px rgba(255,107,53,0.22)' }}
       >
-        {/* Background gradient */}
-        <div className="absolute inset-0" style={{
-          background: 'linear-gradient(135deg, #1A0A00 0%, #3D1500 40%, #FF6B35 100%)',
-        }} />
+        {/* Background */}
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(135deg, #1A0A00 0%, #3D1500 45%, #FF6B35 100%)' }} />
 
-        {/* Decorative circles */}
-        <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full opacity-10"
-          style={{ background: '#FF6B35' }} />
-        <div className="absolute -right-2 -bottom-10 w-32 h-32 rounded-full opacity-10"
-          style={{ background: '#D4AF37' }} />
+        {/* Decorative blobs */}
+        <div className="absolute -right-6 -top-6 w-36 h-36 rounded-full"
+          style={{ background: 'rgba(255,107,53,0.12)' }} />
+        <div className="absolute right-8 -bottom-8 w-28 h-28 rounded-full"
+          style={{ background: 'rgba(212,175,55,0.10)' }} />
 
-        {/* Shimmer */}
+        {/* Shimmer sweep */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.07) 50%, transparent 65%)' }}
+          style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%)' }}
           animate={{ x: ['-100%', '200%'] }}
-          transition={{ duration: 3.5, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: 'linear', repeatDelay: 1.2 }}
         />
 
         {/* Content */}
-        <div className="absolute inset-0 flex flex-col justify-center px-6 z-10">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-2xl">🍽️</span>
-            <span className="text-[10px] font-black tracking-[0.25em] uppercase text-white/50">
-              {lang === 'id' ? 'PROMO SPESIAL' : lang === 'ar' ? 'عرض خاص' : 'SPECIAL OFFER'}
-            </span>
-          </div>
-          <h3 className="text-white font-black text-2xl leading-tight mb-1"
-            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}>
-            {label}
+        <div className="relative z-10 px-5 py-5">
+          {/* Badge */}
+          <span className="inline-block text-[9px] font-black tracking-[0.28em] uppercase text-white/45 mb-2">
+            🍽️ {copy.badge}
+          </span>
+
+          {/* Title */}
+          <h3 className="text-white font-black text-[22px] leading-tight mb-1.5"
+            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.35)' }}>
+            {copy.title}
           </h3>
-          <p className="text-white/60 text-[12px] mb-3">{sub}</p>
-          <motion.div
+
+          {/* Description */}
+          <p className="text-white/65 text-[12px] leading-relaxed mb-4 max-w-[260px]">
+            {copy.desc}
+          </p>
+
+          {/* CTA */}
+          <motion.span
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center self-start text-[11px] font-black px-4 py-2 rounded-full"
-            style={{ background: PRIMARY, color: '#fff', boxShadow: `0 4px 14px rgba(255,107,53,0.45)` }}
+            className="inline-flex items-center gap-1.5 text-[11px] font-black px-4 py-2 rounded-full"
+            style={{ background: PRIMARY, color: '#fff', boxShadow: '0 4px 14px rgba(255,107,53,0.45)' }}
           >
-            {cta}
-          </motion.div>
+            {copy.cta} →
+          </motion.span>
         </div>
       </motion.div>
     </div>
