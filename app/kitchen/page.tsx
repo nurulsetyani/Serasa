@@ -64,10 +64,33 @@ const MOCK_ORDERS: KitchenOrder[] = [
 
 // ─────────────────────────────────────────────
 // SOUND — pleasant ascending triad
+// Browsers block AudioContext until a user gesture.
+// We keep one singleton and resume it on demand.
 // ─────────────────────────────────────────────
-function playNewOrderSound() {
+let _audioCtx: AudioContext | null = null
+
+function getAudioCtx(): AudioContext | null {
   try {
-    const ctx = new AudioContext()
+    if (!_audioCtx) {
+      _audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    }
+    return _audioCtx
+  } catch {
+    return null
+  }
+}
+
+function unlockAudio() {
+  const ctx = getAudioCtx()
+  if (ctx && ctx.state === 'suspended') {
+    ctx.resume().catch(() => {})
+  }
+}
+
+function playNewOrderSound() {
+  const ctx = getAudioCtx()
+  if (!ctx) return
+  const doPlay = () => {
     const notes = [
       { f: 523.25, t: 0,    d: 0.14 },
       { f: 659.25, t: 0.15, d: 0.14 },
@@ -84,7 +107,12 @@ function playNewOrderSound() {
       gain.gain.exponentialRampToValueAtTime(0.001, s + d)
       osc.start(s); osc.stop(s + d)
     })
-  } catch {}
+  }
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(doPlay).catch(() => {})
+  } else {
+    try { doPlay() } catch {}
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -288,6 +316,14 @@ export default function KitchenPage() {
   const soundRef = useRef(true)
   useEffect(() => { soundRef.current = soundOn }, [soundOn])
 
+  // Unlock AudioContext on first user interaction — browsers require a gesture
+  // before AudioContext can produce sound.
+  useEffect(() => {
+    const unlock = () => { unlockAudio(); window.removeEventListener('pointerdown', unlock) }
+    window.addEventListener('pointerdown', unlock, { once: true })
+    return () => window.removeEventListener('pointerdown', unlock)
+  }, [])
+
   const fetchOrders = useCallback(async () => {
     if (IS_MOCK_MODE) { setOrders(MOCK_ORDERS); setLoading(false); return }
     const { data } = await supabase
@@ -483,7 +519,7 @@ export default function KitchenPage() {
             {[
               {
                 icon: soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />,
-                onClick: () => setSoundOn(s => !s),
+                onClick: () => { unlockAudio(); setSoundOn(s => !s) },
                 active: soundOn,
                 activeColor: 'rgba(255,107,53,0.18)',
                 activeBorder: 'rgba(255,107,53,0.28)',
