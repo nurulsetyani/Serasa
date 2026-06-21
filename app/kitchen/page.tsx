@@ -63,66 +63,34 @@ const MOCK_ORDERS: KitchenOrder[] = [
 ]
 
 // ─────────────────────────────────────────────
-// SOUND — pleasant ascending triad
-// Browsers block AudioContext until a user gesture.
-// We keep one singleton and resume it on demand.
+// SOUND — Web Speech API ("New order" x2)
+// iOS requires a dummy speak() inside a user gesture to unlock synthesis.
 // ─────────────────────────────────────────────
-let _audioCtx: AudioContext | null = null
-
-function getAudioCtx(): AudioContext | null {
-  try {
-    if (!_audioCtx) {
-      _audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
-    }
-    return _audioCtx
-  } catch {
-    return null
-  }
-}
-
 function unlockAudio() {
-  const ctx = getAudioCtx()
-  if (ctx && ctx.state === 'suspended') {
-    ctx.resume().catch(() => {})
-  }
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
+  // Trigger a silent utterance to unlock on iOS Safari
+  const u = new SpeechSynthesisUtterance('')
+  u.volume = 0
+  window.speechSynthesis.speak(u)
 }
 
 function playNewOrderSound() {
-  const ctx = getAudioCtx()
-  if (!ctx) return
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
 
-  // "Tiing Toong" doorbell — two notes, played twice
-  const doPlay = () => {
-    const bell = (freq: number, startAt: number, duration: number, vol: number) => {
-      const osc  = ctx.createOscillator()
-      const osc2 = ctx.createOscillator()   // upper harmonic for bell timbre
-      const gain = ctx.createGain()
-      osc.connect(gain); osc2.connect(gain); gain.connect(ctx.destination)
-      osc.type  = 'sine'; osc.frequency.value  = freq
-      osc2.type = 'sine'; osc2.frequency.value = freq * 2.76  // bell partial
-      const s = ctx.currentTime + startAt
-      gain.gain.setValueAtTime(0, s)
-      gain.gain.linearRampToValueAtTime(vol,   s + 0.004)
-      gain.gain.exponentialRampToValueAtTime(0.001, s + duration)
-      osc.start(s);  osc.stop(s + duration)
-      osc2.start(s); osc2.stop(s + duration * 0.4)  // harmonic fades faster
-    }
+  window.speechSynthesis.cancel()
 
-    // One "tiing toong" sequence
-    const seq = (offset: number) => {
-      bell(1046.5, offset + 0.00, 0.8, 0.42)   // tiing — C6, bright
-      bell( 523.2, offset + 0.38, 1.1, 0.36)   // toong — C5, deep
-    }
-
-    seq(0.0)   // first tiing-toong
-    seq(1.15)  // second tiing-toong
+  const say = (onEnd?: () => void) => {
+    const u = new SpeechSynthesisUtterance('New order')
+    u.lang   = 'en-US'
+    u.rate   = 0.88
+    u.pitch  = 1.1
+    u.volume = 1.0
+    if (onEnd) u.onend = onEnd
+    window.speechSynthesis.speak(u)
   }
 
-  if (ctx.state === 'suspended') {
-    ctx.resume().then(doPlay).catch(() => {})
-  } else {
-    try { doPlay() } catch {}
-  }
+  // Say "New order" twice with a short pause between
+  say(() => setTimeout(() => say(), 350))
 }
 
 // ─────────────────────────────────────────────
