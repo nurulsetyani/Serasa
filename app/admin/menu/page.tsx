@@ -40,7 +40,8 @@ const CATEGORIES = [
   { key: 'seafood',    label: 'Seafood',    icon: '🦐' },
   { key: 'soup',       label: 'Soup',       icon: '🍲' },
   { key: 'extra',      label: 'Extra',      icon: '➕' },
-  { key: 'drinks',     label: 'Drinks',     icon: '🥤' },
+  { key: 'drinks',          label: 'Drinks',          icon: '🥤' },
+  { key: 'all_you_can_eat', label: 'All You Can Eat', icon: '🍽️' },
 ]
 
 const EMPTY_FORM = {
