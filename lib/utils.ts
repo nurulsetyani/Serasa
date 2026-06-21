@@ -1,7 +1,7 @@
 import { CartItem, OrderStatus } from '@/types'
 
 export function formatPrice(price: number): string {
-  return `${price.toFixed(2)} SAR`
+  return `SAR ${price.toFixed(2)}`
 }
 
 export function discountedPrice(price: number, discountPercent?: number): number {

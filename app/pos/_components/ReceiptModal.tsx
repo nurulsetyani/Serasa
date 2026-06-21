@@ -387,7 +387,7 @@ export default function ReceiptModal({ open, onClose, orderNumber, orderId }: Pr
                   {/* Grand Total */}
                   <div className="flex justify-between items-baseline">
                     <span className="font-black text-base text-black">Total Amount (الإجمالي):</span>
-                    <span className="font-black text-2xl text-black">{formatPrice(total)}</span>
+                    <span className="font-black text-2xl text-black whitespace-nowrap">{formatPrice(total)}</span>
                   </div>
 
                   {/* Payments */}
