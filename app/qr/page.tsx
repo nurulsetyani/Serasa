@@ -18,6 +18,66 @@ async function generateQR(text: string): Promise<string> {
   })
 }
 
+function QRCardCashier({ baseUrl }: { baseUrl: string }) {
+  const [qrSrc, setQrSrc] = useState<string | null>(null)
+  const [error, setError]  = useState(false)
+
+  useEffect(() => {
+    generateQR(`${baseUrl}/?table=kasir`)
+      .then(src => setQrSrc(src))
+      .catch(() => setError(true))
+  }, [baseUrl])
+
+  return (
+    <div className="qr-card" style={{ border: `1.5px solid ${P}` }}>
+      {/* Header */}
+      <div className="qr-card-header">
+        <div className="flex justify-center mb-2">
+          <div style={{ position: 'relative', width: 140, height: 50 }}>
+            <Image src="/logo.png" alt="Serasa Restaurant" fill className="object-contain" sizes="140px" />
+          </div>
+        </div>
+        <p style={{ fontSize: 10, color: '#9A8A7A', letterSpacing: '2px', textTransform: 'uppercase', marginTop: 4 }}>
+          Scan to Order
+        </p>
+      </div>
+
+      {/* QR Code */}
+      <div className="qr-image-wrap">
+        {error ? (
+          <div style={{ width: 200, height: 200, background: '#F5F0EC', borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9A8A7A', fontSize: 12 }}>
+            QR Error
+          </div>
+        ) : qrSrc ? (
+          <img src={qrSrc} alt="QR Kasir" width={200} height={200} className="qr-image" style={{ borderRadius: 8 }} />
+        ) : (
+          <div style={{ width: 200, height: 200, background: '#F5F0EC', borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 28, height: 28, border: '3px solid #E8D8C8',
+              borderTopColor: P, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          </div>
+        )}
+      </div>
+
+      {/* Footer — cashier label */}
+      <div className="qr-card-footer">
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          padding: '6px 20px', borderRadius: 999,
+          background: P, color: 'white', margin: '0 auto',
+          boxShadow: `0 4px 12px rgba(255,107,53,0.35)`,
+        }}>
+          <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: '0.04em' }}>KASIR</span>
+        </div>
+        <p style={{ fontSize: 10, color: '#9A8A7A', marginTop: 6, letterSpacing: '1px' }}>
+          Counter / كاشير
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function QRCard({ table, baseUrl }: { table: number; baseUrl: string }) {
   const [qrSrc, setQrSrc] = useState<string | null>(null)
   const [error, setError]  = useState(false)
@@ -126,6 +186,7 @@ export default function QRPage() {
 
       {/* QR Grid */}
       <div className="qr-grid">
+        <QRCardCashier baseUrl={appliedUrl} />
         {tables.map(table => (
           <QRCard key={`${table}-${appliedUrl}`} table={table} baseUrl={appliedUrl} />
         ))}
