@@ -822,7 +822,7 @@ export default function KitchenPage() {
 
                           {/* ── ITEMS ── */}
                           <div style={{ padding: '10px 16px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {order.order_items?.map(item => (
+                            {order.order_items?.filter(item => !item.cancelled).map(item => (
                               <div key={item.id} style={{ display: 'flex', gap: 12 }}>
                                 {/* Qty */}
                                 <span style={{

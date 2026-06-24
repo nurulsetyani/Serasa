@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, ChefHat, Package, CheckCircle, Copy, Printer, MessageCircle, Hourglass, CreditCard } from 'lucide-react'
+import { Clock, ChefHat, Package, CheckCircle, Copy, Printer, MessageCircle, Hourglass, CreditCard, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -119,6 +119,7 @@ export default function OrderTrackingPage() {
   const [showReview, setShowReview]   = useState(false)
   const [reviewShown, setReviewShown] = useState(false)
   const [copied, setCopied]           = useState(false)
+  const [cancellingItem, setCancellingItem] = useState<string | null>(null)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -158,6 +159,30 @@ export default function OrderTrackingPage() {
       setTimeout(() => { setShowReview(true); setReviewShown(true) }, 1500)
     }
   }, [order?.status, reviewShown])
+
+  async function cancelItem(itemId: string, itemName: string) {
+    if (!confirm(`Hapus "${itemName}" dari pesanan?`)) return
+    setCancellingItem(itemId)
+    try {
+      const res = await fetch(`/api/order/${id}/item/${itemId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error ?? 'Gagal membatalkan item'); return }
+      if (data.orderCancelled) {
+        router.replace(`/menu?table=${table}`)
+        return
+      }
+      // Update local state: mark item cancelled + update total
+      setOrder(prev => prev ? {
+        ...prev,
+        total_price: data.newTotal,
+        order_items: prev.order_items?.map(i =>
+          i.id === itemId ? { ...i, cancelled: true } : i
+        ),
+      } : null)
+    } finally {
+      setCancellingItem(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -427,13 +452,42 @@ export default function OrderTrackingPage() {
           className="bg-white rounded-2xl p-5 space-y-3"
           style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #F0EAE0' }}
         >
-          <p className="text-[10px] font-black tracking-[2px] text-gray-400 uppercase">{t('orderItems')}</p>
-          {order.order_items?.map(item => (
-            <div key={item.id} className="flex justify-between text-sm">
-              <span className="text-gray-600">{item.name} × {item.qty}</span>
-              <span className="font-bold text-gray-900">{formatPrice(item.price * item.qty)}</span>
-            </div>
-          ))}
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black tracking-[2px] text-gray-400 uppercase">{t('orderItems')}</p>
+            {order.status === 'new' && (
+              <span className="text-[9px] font-bold text-orange-400 tracking-wide">
+                Tekan 🗑 untuk batalkan item
+              </span>
+            )}
+          </div>
+          {order.order_items?.map(item => {
+            if (item.cancelled) return null
+            const isCancelling = cancellingItem === item.id
+            return (
+              <div key={item.id} className="flex items-center justify-between text-sm gap-2">
+                <span className="text-gray-600 flex-1">{item.name} × {item.qty}</span>
+                <span className="font-bold text-gray-900 whitespace-nowrap">
+                  {formatPrice(item.price * item.qty)}
+                </span>
+                {order.status === 'new' && (
+                  <button
+                    onClick={() => cancelItem(item.id, item.name)}
+                    disabled={isCancelling}
+                    className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+                    style={{
+                      background: 'rgba(239,68,68,0.09)',
+                      border: '1px solid rgba(239,68,68,0.20)',
+                      color: isCancelling ? '#F9A8A8' : '#EF4444',
+                    }}
+                  >
+                    {isCancelling
+                      ? <span style={{ fontSize: 8 }}>…</span>
+                      : <Trash2 size={11} />}
+                  </button>
+                )}
+              </div>
+            )
+          })}
           <div className="border-t border-gray-100 pt-3 flex justify-between">
             <span className="font-bold text-gray-900">{t('total')}</span>
             <span className="font-black text-xl" style={{ color: PRIMARY }}>{formatPrice(order.total_price)}</span>

@@ -70,6 +70,7 @@ export interface OrderItem {
   price: number
   qty: number
   notes?: string
+  cancelled?: boolean
 }
 
 export interface Review {
