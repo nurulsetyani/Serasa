@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Clock, ChevronRight, RefreshCw, Inbox, CreditCard, Eye, PlusCircle } from 'lucide-react'
+import { X, Clock, ChevronRight, RefreshCw, Inbox, CreditCard, Eye, PlusCircle, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -48,9 +48,10 @@ function TimerAgo({ createdAt }: { createdAt: string }) {
 interface Props { open: boolean; onClose: () => void; onOrderLoaded: () => void }
 
 export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) {
-  const [orders, setOrders]   = useState<QROrder[]>([])
-  const [loading, setLoading] = useState(false)
-  const [patching, setPatching] = useState<string | null>(null)
+  const [orders, setOrders]       = useState<QROrder[]>([])
+  const [loading, setLoading]     = useState(false)
+  const [patching, setPatching]   = useState<string | null>(null)
+  const [cancellingItem, setCancellingItem] = useState<string | null>(null)
   const loadFromQROrder = usePOSStore(s => s.loadFromQROrder)
   const setSourceQrOrderId = usePOSStore(s => s.setSourceQrOrderId)
   const enterEditMode = usePOSStore(s => s.enterEditMode)
@@ -90,6 +91,19 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
         .map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
     })
     onClose()
+  }
+
+  async function handleCancelItem(orderId: string, itemId: string, itemName: string) {
+    if (!confirm(`Batalkan "${itemName}" dari pesanan?`)) return
+    setCancellingItem(itemId)
+    try {
+      const res = await fetch(`/api/order/${orderId}/item/${itemId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error ?? 'Gagal membatalkan item'); return }
+      await fetchOrders()
+    } finally {
+      setCancellingItem(null)
+    }
   }
 
   // Load order into POS cart for checkout
@@ -225,11 +239,25 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
 
                           {/* Items */}
                           <div className="space-y-1 mb-3">
-                            {order.order_items.map(item => (
+                            {order.order_items
+                              .filter(i => !(i as QROrderItem & { cancelled?: boolean }).cancelled)
+                              .map(item => (
                               <div key={item.id} className="flex items-center gap-2">
                                 <span className="font-black text-xs w-5 flex-shrink-0" style={{ color: P }}>{item.qty}×</span>
                                 <p className="text-xs text-gray-700 font-medium truncate flex-1">{item.name}</p>
                                 <span className="text-[10px] text-gray-400">{formatPrice(item.price * item.qty)}</span>
+                                {EDITABLE_STATUSES.includes(order.status) && (
+                                  <button
+                                    onClick={() => handleCancelItem(order.id, item.id, item.name)}
+                                    disabled={cancellingItem === item.id}
+                                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 hover:bg-red-100 transition-colors"
+                                    style={{ color: cancellingItem === item.id ? '#FCA5A5' : '#EF4444' }}
+                                  >
+                                    {cancellingItem === item.id
+                                      ? <span style={{ fontSize: 8 }}>…</span>
+                                      : <Trash2 size={10} />}
+                                  </button>
+                                )}
                               </div>
                             ))}
                           </div>

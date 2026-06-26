@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, ChefHat, Package, CheckCircle, Copy, Printer, MessageCircle, Hourglass, CreditCard, Trash2 } from 'lucide-react'
+import { Clock, ChefHat, Package, CheckCircle, Copy, Printer, MessageCircle, Hourglass, CreditCard } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -119,8 +119,6 @@ export default function OrderTrackingPage() {
   const [showReview, setShowReview]   = useState(false)
   const [reviewShown, setReviewShown] = useState(false)
   const [copied, setCopied]           = useState(false)
-  const [cancellingItem, setCancellingItem] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete]   = useState<{ itemId: string; itemName: string } | null>(null)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -161,28 +159,6 @@ export default function OrderTrackingPage() {
     }
   }, [order?.status, reviewShown])
 
-  async function cancelItem(itemId: string) {
-    setConfirmDelete(null)
-    setCancellingItem(itemId)
-    try {
-      const res = await fetch(`/api/order/${id}/item/${itemId}`, { method: 'DELETE' })
-      const data = await res.json()
-      if (!res.ok) { alert(data.error ?? 'Gagal membatalkan item'); return }
-      if (data.orderCancelled) {
-        router.replace(`/menu?table=${table}`)
-        return
-      }
-      setOrder(prev => prev ? {
-        ...prev,
-        total_price: data.newTotal,
-        order_items: prev.order_items?.map(i =>
-          i.id === itemId ? { ...i, cancelled: true } : i
-        ),
-      } : null)
-    } finally {
-      setCancellingItem(null)
-    }
-  }
 
   if (loading) {
     return (
@@ -452,43 +428,15 @@ export default function OrderTrackingPage() {
           className="bg-white rounded-2xl p-5 space-y-3"
           style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #F0EAE0' }}
         >
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black tracking-[2px] text-gray-400 uppercase">{t('orderItems')}</p>
-            {order.status === 'new' && (
-              <span className="text-[9px] font-bold text-orange-400 tracking-wide">
-                Tekan 🗑 untuk batalkan item
+          <p className="text-[10px] font-black tracking-[2px] text-gray-400 uppercase">{t('orderItems')}</p>
+          {order.order_items?.filter(item => !item.cancelled).map(item => (
+            <div key={item.id} className="flex items-center justify-between text-sm gap-2">
+              <span className="text-gray-600 flex-1">{item.name} × {item.qty}</span>
+              <span className="font-bold text-gray-900 whitespace-nowrap">
+                {formatPrice(item.price * item.qty)}
               </span>
-            )}
-          </div>
-          {order.order_items?.map(item => {
-            if (item.cancelled) return null
-            const isCancelling = cancellingItem === item.id
-            return (
-              <div key={item.id} className="flex items-center justify-between text-sm gap-2">
-                <span className="text-gray-600 flex-1">{item.name} × {item.qty}</span>
-                <span className="font-bold text-gray-900 whitespace-nowrap">
-                  {formatPrice(item.price * item.qty)}
-                </span>
-                {order.status === 'new' && (
-                  <motion.button
-                    whileTap={{ scale: 0.88 }}
-                    onClick={() => setConfirmDelete({ itemId: item.id, itemName: item.name })}
-                    disabled={isCancelling}
-                    className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: 'rgba(239,68,68,0.09)',
-                      border: '1px solid rgba(239,68,68,0.20)',
-                      color: isCancelling ? '#F9A8A8' : '#EF4444',
-                    }}
-                  >
-                    {isCancelling
-                      ? <span style={{ fontSize: 8 }}>…</span>
-                      : <Trash2 size={11} />}
-                  </motion.button>
-                )}
-              </div>
-            )
-          })}
+            </div>
+          ))}
           <div className="border-t border-gray-100 pt-3 flex justify-between">
             <span className="font-bold text-gray-900">{t('total')}</span>
             <span className="font-black text-xl" style={{ color: PRIMARY }}>{formatPrice(order.total_price)}</span>
@@ -540,137 +488,6 @@ export default function OrderTrackingPage() {
 
       {showReview && <ReviewModal orderId={id} onClose={() => setShowReview(false)} />}
 
-      {/* ── DELETE CONFIRM BOTTOM SHEET ── */}
-      <AnimatePresence>
-        {confirmDelete && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22 }}
-              onClick={() => setConfirmDelete(null)}
-              style={{
-                position: 'fixed', inset: 0, zIndex: 60,
-                background: 'rgba(10,8,5,0.55)',
-                backdropFilter: 'blur(5px)',
-                WebkitBackdropFilter: 'blur(5px)',
-              }}
-            />
-
-            {/* Sheet */}
-            <motion.div
-              key="sheet"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 400, mass: 0.85 }}
-              style={{
-                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 61,
-                maxWidth: 480, margin: '0 auto',
-                background: 'white',
-                borderRadius: '28px 28px 0 0',
-                padding: '14px 24px 44px',
-                boxShadow: '0 -12px 48px rgba(0,0,0,0.18)',
-              }}
-            >
-              {/* Handle */}
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
-                <div style={{ width: 36, height: 4, background: '#E8E0D8', borderRadius: 9999 }} />
-              </div>
-
-              {/* Icon — bounce in */}
-              <motion.div
-                initial={{ scale: 0.3, opacity: 0, rotate: -20 }}
-                animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                transition={{ type: 'spring', damping: 14, stiffness: 380, delay: 0.08 }}
-                style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}
-              >
-                <div style={{
-                  width: 76, height: 76, borderRadius: '50%',
-                  background: 'rgba(239,68,68,0.08)',
-                  border: '2px solid rgba(239,68,68,0.16)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Trash2 size={30} style={{ color: '#EF4444' }} />
-                </div>
-              </motion.div>
-
-              {/* Text */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.14 }}
-                style={{ textAlign: 'center', marginBottom: 28 }}
-              >
-                <h3 style={{
-                  fontSize: 20, fontWeight: 900, color: '#1A1208',
-                  letterSpacing: '-0.02em', margin: '0 0 10px',
-                }}>
-                  Hapus dari pesanan?
-                </h3>
-
-                {/* Item name pill */}
-                <div style={{
-                  display: 'inline-block',
-                  background: '#FFF7F3',
-                  border: '1.5px solid rgba(255,107,53,0.22)',
-                  borderRadius: 999,
-                  padding: '6px 18px',
-                  marginBottom: 12,
-                }}>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: PRIMARY }}>
-                    {confirmDelete.itemName}
-                  </span>
-                </div>
-
-                <p style={{ fontSize: 13, color: '#9A8A7A', lineHeight: 1.6, margin: 0 }}>
-                  Item ini akan dihapus dan total akan dihitung ulang.
-                  <br />Aksi ini tidak bisa dibatalkan.
-                </p>
-              </motion.div>
-
-              {/* Buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                style={{ display: 'flex', gap: 12 }}
-              >
-                <button
-                  onClick={() => setConfirmDelete(null)}
-                  style={{
-                    flex: 1, padding: '16px 0', borderRadius: 999,
-                    border: '1.5px solid #E8E0D8', background: 'white',
-                    fontSize: 14, fontWeight: 700, color: '#7A6A5A',
-                    cursor: 'pointer', transition: 'background 0.15s',
-                  }}
-                >
-                  Batal
-                </button>
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => cancelItem(confirmDelete.itemId)}
-                  style={{
-                    flex: 1.5, padding: '16px 0', borderRadius: 999,
-                    background: 'linear-gradient(135deg, #F87171 0%, #DC2626 100%)',
-                    border: 'none',
-                    fontSize: 14, fontWeight: 800, color: 'white',
-                    cursor: 'pointer',
-                    boxShadow: '0 8px 24px rgba(220,38,38,0.35)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  }}
-                >
-                  <Trash2 size={14} />
-                  Hapus Item
-                </motion.button>
-              </motion.div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
