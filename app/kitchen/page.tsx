@@ -179,8 +179,7 @@ const COLS: ColDef[] = [
     glow:  'rgba(48,209,88,0.18)',
     emoji: '✅',
     actions: [
-      { forStatuses: ['ready'],  label: 'SAJIKAN', nextStatus: 'served',    btn: '#A78BFA', btnShadow: '167,139,250', btnText: '#0A0A14' },
-      { forStatuses: ['served'], label: 'SELESAI', nextStatus: 'delivered', btn: '#1C1C1E', btnShadow: '80,80,80',   btnText: '#FFFFFF' },
+      { forStatuses: ['ready', 'served'], label: 'SAJIKAN ✓', nextStatus: 'delivered', btn: '#A78BFA', btnShadow: '167,139,250', btnText: '#0A0A14' },
     ],
   },
 ]
