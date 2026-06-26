@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Clock, ChevronRight, RefreshCw, Inbox, CreditCard, Eye } from 'lucide-react'
+import { X, Clock, ChevronRight, RefreshCw, Inbox, CreditCard, Eye, PlusCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -53,6 +53,7 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
   const [patching, setPatching] = useState<string | null>(null)
   const loadFromQROrder = usePOSStore(s => s.loadFromQROrder)
   const setSourceQrOrderId = usePOSStore(s => s.setSourceQrOrderId)
+  const enterEditMode = usePOSStore(s => s.enterEditMode)
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
@@ -75,6 +76,21 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [open, fetchOrders])
+
+  const EDITABLE_STATUSES = ['new', 'accepted', 'preparing']
+
+  function handleEnterEditMode(order: QROrder) {
+    enterEditMode(order.id, {
+      orderNumber:   order.order_number,
+      tableNumber:   order.table_number,
+      customerName:  order.customer_name,
+      status:        order.status,
+      existingItems: order.order_items
+        .filter(i => !(i as QROrderItem & { cancelled?: boolean }).cancelled)
+        .map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
+    })
+    onClose()
+  }
 
   // Load order into POS cart for checkout
   function handleLoadForCheckout(order: QROrder) {
@@ -220,6 +236,20 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
 
                           {/* Actions */}
                           <div className="flex gap-2">
+                            {/* Tambah item — saat order masih bisa diubah */}
+                            {EDITABLE_STATUSES.includes(order.status) && (
+                              <motion.button whileTap={{ scale: 0.97 }}
+                                onClick={() => handleEnterEditMode(order)}
+                                className="flex-1 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-1.5"
+                                style={{
+                                  background: 'rgba(48,209,88,0.10)',
+                                  border: '1.5px solid rgba(48,209,88,0.35)',
+                                  color: '#16A34A',
+                                }}>
+                                <PlusCircle size={12} />
+                                Tambah Item
+                              </motion.button>
+                            )}
                             {/* served or awaiting_payment → checkout langsung */}
                             {(order.status === 'served' || order.status === 'awaiting_payment') && (
                               <motion.button whileTap={{ scale: 0.97 }}

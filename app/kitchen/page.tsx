@@ -822,33 +822,50 @@ export default function KitchenPage() {
 
                           {/* ── ITEMS ── */}
                           <div style={{ padding: '10px 16px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {order.order_items?.filter(item => !item.cancelled).map(item => (
-                              <div key={item.id} style={{ display: 'flex', gap: 12 }}>
-                                {/* Qty */}
-                                <span style={{
-                                  fontFamily: "'Barlow Condensed', sans-serif",
-                                  fontWeight: 900, fontSize: '1.7rem', lineHeight: 1.1,
-                                  width: 44, textAlign: 'center', flexShrink: 0,
-                                  color: col.color,
-                                  textShadow: `0 0 12px ${col.glow}`,
-                                }}>
-                                  {item.qty}×
-                                </span>
-                                {/* Name + notes */}
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 14, fontWeight: 700, color: 'rgba(240,240,250,0.92)', lineHeight: 1.3 }}>
-                                    {item.name}
-                                  </div>
-                                  {item.notes && (
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 5 }}>
-                                      {item.notes.split(',').map((n, i) => (
-                                        <NoteChip key={i} text={n} />
-                                      ))}
+                            {order.order_items?.filter(item => !item.cancelled).map(item => {
+                              const isAddon = item.created_at && order.created_at &&
+                                new Date(item.created_at).getTime() > new Date(order.created_at).getTime() + 30_000
+                              return (
+                                <div key={item.id} style={{ display: 'flex', gap: 12 }}>
+                                  {/* Qty */}
+                                  <span style={{
+                                    fontFamily: "'Barlow Condensed', sans-serif",
+                                    fontWeight: 900, fontSize: '1.7rem', lineHeight: 1.1,
+                                    width: 44, textAlign: 'center', flexShrink: 0,
+                                    color: col.color,
+                                    textShadow: `0 0 12px ${col.glow}`,
+                                  }}>
+                                    {item.qty}×
+                                  </span>
+                                  {/* Name + notes */}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                      <span style={{ fontSize: 14, fontWeight: 700, color: 'rgba(240,240,250,0.92)', lineHeight: 1.3 }}>
+                                        {item.name}
+                                      </span>
+                                      {isAddon && (
+                                        <span style={{
+                                          fontSize: 9, fontWeight: 900, letterSpacing: '0.08em',
+                                          padding: '2px 6px', borderRadius: 99,
+                                          background: 'rgba(48,209,88,0.20)',
+                                          border: '1px solid rgba(48,209,88,0.50)',
+                                          color: '#30D158',
+                                        }}>
+                                          BARU +
+                                        </span>
+                                      )}
                                     </div>
-                                  )}
+                                    {item.notes && (
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 5 }}>
+                                        {item.notes.split(',').map((n, i) => (
+                                          <NoteChip key={i} text={n} />
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
 
                           {/* ── ACTION BUTTON ── */}

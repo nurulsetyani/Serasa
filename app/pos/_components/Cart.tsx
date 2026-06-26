@@ -1,6 +1,6 @@
 'use client'
 import { AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, UtensilsCrossed, ShoppingBag, LayoutGrid } from 'lucide-react'
+import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, UtensilsCrossed, ShoppingBag, LayoutGrid, PlusCircle, X, CheckCheck } from 'lucide-react'
 import { useState } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -39,6 +39,9 @@ export default function Cart({ tableParam }: Props) {
   const clearPayments = usePOSStore(s => s.clearPayments)
   const payments = usePOSStore(s => s.payments)
   const sourceQrOrderId = usePOSStore(s => s.sourceQrOrderId)
+  const editOrderId = usePOSStore(s => s.editOrderId)
+  const editOrderMeta = usePOSStore(s => s.editOrderMeta)
+  const exitEditMode = usePOSStore(s => s.exitEditMode)
 
   const getSubtotal = usePOSStore(s => s.getSubtotal)
   const getDiscountAmount = usePOSStore(s => s.getDiscountAmount)
@@ -183,6 +186,33 @@ export default function Cart({ tableParam }: Props) {
     }
   }
 
+  async function handleAddToOrder() {
+    if (!editOrderId || isEmpty) return
+    setLoading(true); setError('')
+    try {
+      const res = await fetch(`/api/order/${editOrderId}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: lines.map(l => ({
+            menu_id: l.menuId || undefined,
+            name: l.name,
+            price: l.unitPrice,
+            qty: l.qty,
+            notes: l.note || undefined,
+          })),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Gagal menambah item')
+      exitEditMode()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   function handleReceiptClose() {
     setShowReceipt(false)
     newOrder()
@@ -190,13 +220,41 @@ export default function Cart({ tableParam }: Props) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Edit Mode Banner */}
+      {editOrderId && editOrderMeta && (
+        <div className="px-4 py-3 flex-shrink-0" style={{ background: '#DCFCE7', borderBottom: '1.5px solid #86EFAC' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <PlusCircle size={14} className="text-green-700" />
+              <div>
+                <p className="font-black text-green-900 text-xs">Edit Order #{editOrderMeta.orderNumber}</p>
+                <p className="text-[10px] text-green-700">Meja {editOrderMeta.tableNumber} · {editOrderMeta.customerName}</p>
+              </div>
+            </div>
+            <button onClick={exitEditMode} className="w-6 h-6 rounded-full bg-green-200 flex items-center justify-center hover:bg-green-300">
+              <X size={11} className="text-green-800" />
+            </button>
+          </div>
+          {/* Existing items summary */}
+          <div className="mt-2 space-y-1 pt-2 border-t border-green-200">
+            <p className="text-[9px] font-black tracking-widest uppercase text-green-600 mb-1">Sudah Dipesan</p>
+            {editOrderMeta.existingItems.map(i => (
+              <div key={i.id} className="flex justify-between text-[11px] text-green-800">
+                <span>{i.name} × {i.qty}</span>
+                <span className="font-bold">{formatPrice(i.price * i.qty)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Cart Header */}
       <div className="px-4 py-3 border-b border-gray-100 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <ShoppingCart size={16} style={{ color: P }} />
             <span className="font-black text-gray-900 text-sm">
-              Cart / السلة
+              {editOrderId ? 'Item Tambahan' : 'Cart / السلة'}
               {totalQty > 0 && (
                 <span
                   className="ml-1.5 text-[11px] px-1.5 py-0.5 rounded-full text-white font-black"
@@ -208,7 +266,7 @@ export default function Cart({ tableParam }: Props) {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {!isEmpty && (
+            {!isEmpty && !editOrderId && (
               <button
                 onClick={() => setShowReceipt(true)}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -449,19 +507,35 @@ export default function Cart({ tableParam }: Props) {
             <p className="text-xs text-red-500 text-center bg-red-50 rounded-xl py-2 px-3">{error}</p>
           )}
 
-          {/* Checkout button */}
-          <button
-            onClick={() => { setError(''); clearPayments(); setShowPayment(true) }}
-            className="w-full py-4 rounded-2xl font-bold text-white text-[15px] font-inter active:scale-[0.98] flex items-center justify-center gap-2 transition-[box-shadow,transform,opacity] duration-150"
-            style={{
-              background: 'linear-gradient(135deg, #EF4444 0%, #E02020 100%)',
-              boxShadow: 'var(--pos-shadow-red)',
-              letterSpacing: '0.01em',
-            }}
-          >
-            <CreditCard size={17} />
-            Waiter Checkout
-          </button>
+          {/* Edit mode: Tambahkan ke Order */}
+          {editOrderId ? (
+            <button
+              onClick={handleAddToOrder}
+              disabled={loading || isEmpty}
+              className="w-full py-4 rounded-2xl font-bold text-white text-[15px] active:scale-[0.98] flex items-center justify-center gap-2 transition-all duration-150 disabled:opacity-50"
+              style={{
+                background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                boxShadow: '0 8px 24px rgba(34,197,94,0.40)',
+                letterSpacing: '0.01em',
+              }}
+            >
+              {loading ? '...' : <><CheckCheck size={17} />Tambahkan ke Order</>}
+            </button>
+          ) : (
+            /* Normal: Checkout */
+            <button
+              onClick={() => { setError(''); clearPayments(); setShowPayment(true) }}
+              className="w-full py-4 rounded-2xl font-bold text-white text-[15px] font-inter active:scale-[0.98] flex items-center justify-center gap-2 transition-[box-shadow,transform,opacity] duration-150"
+              style={{
+                background: 'linear-gradient(135deg, #EF4444 0%, #E02020 100%)',
+                boxShadow: 'var(--pos-shadow-red)',
+                letterSpacing: '0.01em',
+              }}
+            >
+              <CreditCard size={17} />
+              Waiter Checkout
+            </button>
+          )}
         </div>
       )}
 

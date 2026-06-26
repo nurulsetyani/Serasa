@@ -37,6 +37,14 @@ interface POSState {
   activeLineId: string | null
   lang: 'id' | 'en' | 'ar'
   sourceQrOrderId: string | null
+  editOrderId: string | null
+  editOrderMeta: {
+    orderNumber: string
+    tableNumber: string
+    customerName: string
+    status: string
+    existingItems: { id: string; name: string; qty: number; price: number }[]
+  } | null
 }
 
 interface POSActions {
@@ -66,6 +74,8 @@ interface POSActions {
   setActiveLine: (id: string | null) => void
   setLang: (lang: 'id' | 'en' | 'ar') => void
   setSourceQrOrderId: (id: string | null) => void
+  enterEditMode: (orderId: string, meta: POSState['editOrderMeta']) => void
+  exitEditMode: () => void
 
   getSubtotal: () => number
   getDiscountAmount: () => number
@@ -108,6 +118,8 @@ export const usePOSStore = create<POSState & POSActions>()(
         activeLineId: null,
         lang: 'en',
         sourceQrOrderId: null,
+        editOrderId: null,
+        editOrderMeta: null,
 
         // ── Cart ──
         addLine: (item) => set(s => {
@@ -214,6 +226,27 @@ export const usePOSStore = create<POSState & POSActions>()(
         setLang: (lang) => set({ lang }),
         setSourceQrOrderId: (sourceQrOrderId) => set({ sourceQrOrderId }),
 
+        enterEditMode: (orderId, meta) => set({
+          editOrderId: orderId,
+          editOrderMeta: meta,
+          lines: [],
+          payments: [],
+          discountType: null,
+          discountValue: 0,
+          activeLineId: null,
+          sourceQrOrderId: null,
+        }),
+
+        exitEditMode: () => set({
+          editOrderId: null,
+          editOrderMeta: null,
+          lines: [],
+          payments: [],
+          discountType: null,
+          discountValue: 0,
+          activeLineId: null,
+        }),
+
         // ── Computed ──
         getSubtotal: () => get().lines.reduce((s, l) => s + l.lineTotal, 0),
 
@@ -256,6 +289,7 @@ export const usePOSStore = create<POSState & POSActions>()(
           customerName: 'Guest', customerPhone: '', deliveryAddress: '',
           tableNumber: '', orderType: 'dine_in', activeLineId: null,
           searchQuery: '', selectedCategory: null, sourceQrOrderId: null,
+          editOrderId: null, editOrderMeta: null,
         }),
 
         loadFromQROrder: (order) => set({

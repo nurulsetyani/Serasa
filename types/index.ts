@@ -71,6 +71,7 @@ export interface OrderItem {
   qty: number
   notes?: string
   cancelled?: boolean
+  created_at?: string
 }
 
 export interface Review {
