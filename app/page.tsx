@@ -97,13 +97,19 @@ export default function EntryPage() {
   const [heroImg, setHeroImg] = useState<string | null>(null)
 
   useEffect(() => {
-    setMounted(true)
     const p = new URLSearchParams(window.location.search)
-    setTable(p.get('table') ?? '1')
+    const tableVal = p.get('table') ?? '1'
+    setTable(tableVal)
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as Language | null
-      setLang(saved ?? detectLang())
+      if (saved) {
+        // Bahasa sudah dipilih sebelumnya — langsung ke menu
+        router.replace(`/menu?table=${tableVal}`)
+        return
+      }
+      setLang(detectLang())
     } catch {}
+    setMounted(true)
     fetch('/api/menu').then(r => r.json())
       .then((items: { image?: string; is_best_seller?: boolean }[]) => {
         const hit = items.find(i => i.is_best_seller && i.image && !i.image.includes('placehold'))
@@ -118,7 +124,7 @@ export default function EntryPage() {
   function start() {
     if (going) return; setGoing(true)
     try { localStorage.setItem(STORAGE_KEY, lang) } catch {}
-    setTimeout(() => router.push(`/menu?table=${table}`), 220)
+    router.push(`/menu?table=${table}`)
   }
 
   if (!mounted) return null
