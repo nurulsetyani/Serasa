@@ -52,7 +52,8 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, fetchCounts)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, fetchCounts)
       .subscribe()
-    return () => { supabase.removeChannel(ch) }
+    const poll = setInterval(fetchCounts, 8000)
+    return () => { supabase.removeChannel(ch); clearInterval(poll) }
   }, [])
 
   return (

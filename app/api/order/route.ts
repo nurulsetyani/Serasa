@@ -120,6 +120,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create order items' }, { status: 500 })
     }
 
+    // Touch updated_at so KDS realtime gets an UPDATE event *after* order_items exist.
+    // Without this, the INSERT event fires before items are committed → KDS shows empty order.
+    supabase.from('orders').update({ updated_at: new Date().toISOString() }).eq('id', order.id).then(() => {})
+
     sendOwnerWhatsApp({
       order_number: order.order_number ?? orderNumber,
       source: 'qr',
@@ -130,8 +134,8 @@ export async function POST(req: NextRequest) {
       items: body.items,
     })
 
-    // Auto-print kitchen ticket
-    await queuePrintJob(supabase, RESTAURANT_ID, 'kitchen', {
+    // Auto-print kitchen ticket — fire and forget, don't block the API response
+    queuePrintJob(supabase, RESTAURANT_ID, 'kitchen', {
       id: order.id,
       order_number: order.order_number,
       table_number: order.table_number,

@@ -50,7 +50,7 @@ interface Props { open: boolean; onClose: () => void; onOrderLoaded: () => void 
 export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) {
   const [orders, setOrders]       = useState<QROrder[]>([])
   const [loading, setLoading]     = useState(false)
-  const [patching, setPatching]   = useState<string | null>(null)
+
   const [cancellingItem, setCancellingItem] = useState<string | null>(null)
   const loadFromQROrder = usePOSStore(s => s.loadFromQROrder)
   const setSourceQrOrderId = usePOSStore(s => s.setSourceQrOrderId)
@@ -71,11 +71,33 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
 
   useEffect(() => {
     if (!open) return
+    let ch = supabase.channel('order-monitor')
+
+    function subscribe() {
+      supabase.removeChannel(ch)
+      ch = supabase.channel('order-monitor')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
+        .subscribe()
+    }
+
     fetchOrders()
-    const ch = supabase.channel('order-monitor')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
-      .subscribe()
-    return () => { supabase.removeChannel(ch) }
+    subscribe()
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') { subscribe(); fetchOrders() }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    const poll = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      if (ch.state !== 'joined') subscribe()
+      fetchOrders()
+    }, 5000)
+
+    return () => {
+      supabase.removeChannel(ch)
+      clearInterval(poll)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [open, fetchOrders])
 
   const EDITABLE_STATUSES = ['new', 'accepted', 'preparing']
@@ -122,17 +144,6 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
     onClose()
   }
 
-  // Mark order as awaiting_payment
-  async function handleRequestPayment(orderId: string) {
-    setPatching(orderId)
-    await fetch(`/api/order/${orderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'awaiting_payment' }),
-    })
-    await fetchOrders()
-    setPatching(null)
-  }
 
   const awaitingCount = orders.filter(o => o.status === 'awaiting_payment').length
 
@@ -200,7 +211,6 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
                   {orders.map(order => {
                     const scfg = STATUS_CFG[order.status] ?? { label: order.status, color: '#9CA3AF', bg: '#F3F4F6' }
                     const isCheckout = order.status === 'awaiting_payment' || order.status === 'served'
-                    const isServed   = order.status === 'served'
                     return (
                       <motion.div key={order.id}
                         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -282,11 +292,10 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
                             {(order.status === 'served' || order.status === 'awaiting_payment') && (
                               <motion.button whileTap={{ scale: 0.97 }}
                                 onClick={() => handleLoadForCheckout(order)}
-                                disabled={patching === order.id}
                                 className="flex-1 py-2.5 rounded-xl text-white font-black text-xs flex items-center justify-center gap-1.5"
                                 style={{ background: '#EF4444', boxShadow: '0 4px 16px rgba(239,68,68,0.40)' }}>
                                 <CreditCard size={12} />
-                                {patching === order.id ? '...' : 'Checkout & Bayar'}
+                                Checkout & Bayar
                                 <ChevronRight size={11} />
                               </motion.button>
                             )}

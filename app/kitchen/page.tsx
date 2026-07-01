@@ -340,39 +340,61 @@ export default function KitchenPage() {
   }, [])
 
   useEffect(() => {
-    fetchOrders()
-    const ch = supabase.channel('kitchen')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, p => {
-        if (p.eventType === 'INSERT') {
-          const o = p.new as KitchenOrder
-          // Skip orders that don't belong in KDS
-          const SKIP_SOURCES   = ['pos']
-          const SKIP_STATUSES  = ['awaiting_payment', 'paid', 'delivered', 'cancelled']
-          if (SKIP_SOURCES.includes(o.source ?? '') || SKIP_STATUSES.includes(o.status)) return
-          if (soundRef.current) playNewOrderSound()
-          const where = o.order_type === 'delivery' ? 'DELIVERY' : `MEJA ${o.table_number}`
-          setAlertMsg({ text: `PESANAN BARU — ${where}`, id: o.id })
-          setFlashOn(true)
-          setTimeout(() => setAlertMsg(null), 5000)
-          setTimeout(() => setFlashOn(false), 700)
-          fetchOrders()
-        } else if (p.eventType === 'UPDATE') {
-          const u = p.new as KitchenOrder
-          if (['delivered', 'paid', 'awaiting_payment', 'cancelled'].includes(u.status)) {
-            setOrders(prev => prev.filter(o => o.id !== u.id))
-          } else {
-            setOrders(prev => prev.map(o => o.id === u.id ? { ...o, ...u } : o))
-          }
-        }
-      }).subscribe()
-    return () => { supabase.removeChannel(ch) }
-  }, [fetchOrders])
+    let ch = supabase.channel('kitchen')
 
-  // Fallback poll — keeps KDS in sync even if the realtime channel drops
-  // (e.g. tablet screen sleeps and the websocket disconnects silently)
-  useEffect(() => {
-    const id = setInterval(fetchOrders, 15000)
-    return () => clearInterval(id)
+    function subscribe() {
+      supabase.removeChannel(ch)
+      ch = supabase.channel('kitchen')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, p => {
+          if (p.eventType === 'INSERT') {
+            const o = p.new as KitchenOrder
+            const SKIP_SOURCES  = ['pos']
+            const SKIP_STATUSES = ['awaiting_payment', 'paid', 'delivered', 'cancelled']
+            if (SKIP_SOURCES.includes(o.source ?? '') || SKIP_STATUSES.includes(o.status)) return
+            if (soundRef.current) playNewOrderSound()
+            const where = o.order_type === 'delivery' ? 'DELIVERY' : `MEJA ${o.table_number}`
+            setAlertMsg({ text: `PESANAN BARU — ${where}`, id: o.id })
+            setFlashOn(true)
+            setTimeout(() => setAlertMsg(null), 5000)
+            setTimeout(() => setFlashOn(false), 700)
+            fetchOrders()
+          } else if (p.eventType === 'UPDATE') {
+            const u = p.new as KitchenOrder
+            if (['delivered', 'paid', 'awaiting_payment', 'cancelled'].includes(u.status)) {
+              setOrders(prev => prev.filter(o => o.id !== u.id))
+            } else if (u.status === 'new') {
+              fetchOrders()
+            } else {
+              setOrders(prev => prev.map(o => o.id === u.id ? { ...o, ...u } : o))
+            }
+          }
+        })
+        .subscribe()
+    }
+
+    fetchOrders()
+    subscribe()
+
+    // Reconnect when screen wakes up or tab becomes active again
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') { subscribe(); fetchOrders() }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+
+    // Poll + channel health check every 5s.
+    // If the websocket dropped (network hiccup, server restart) while the tab was
+    // visible, ch.state will be 'closed' or 'errored' — reconnect immediately.
+    const poll = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      if (ch.state !== 'joined') subscribe()
+      fetchOrders()
+    }, 5000)
+
+    return () => {
+      supabase.removeChannel(ch)
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(poll)
+    }
   }, [fetchOrders])
 
   async function advance(orderId: string, nextStatus: OrderStatus) {
