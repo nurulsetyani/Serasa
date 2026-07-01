@@ -67,33 +67,55 @@ export default function NewOrderAlert({ soundEnabled, onOpenQR, onOpenDelivery }
   }, [])
 
   useEffect(() => {
-    const ch = supabase.channel('pos-alert-listener')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'orders',
-        filter: `restaurant_id=eq.${RESTAURANT_ID}`,
-      }, payload => {
-        const o = payload.new as Record<string, unknown>
-        if (o.status !== 'new') return
+    let ch = supabase.channel('pos-alert-listener')
 
-        if (soundRef.current) playAlert(o.order_type === 'delivery')
+    function subscribe() {
+      supabase.removeChannel(ch)
+      ch = supabase.channel('pos-alert-listener')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `restaurant_id=eq.${RESTAURANT_ID}`,
+        }, payload => {
+          const o = payload.new as Record<string, unknown>
+          if (o.status !== 'new') return
 
-        const alert: AlertOrder = {
-          id: String(o.id),
-          source: String(o.source ?? 'qr'),
-          order_type: String(o.order_type ?? 'dine_in'),
-          table_number: String(o.table_number ?? '?'),
-          customer_name: String(o.customer_name ?? ''),
-          order_number: String(o.order_number ?? ''),
-        }
+          if (soundRef.current) playAlert(o.order_type === 'delivery')
 
-        setAlerts(prev => [alert, ...prev].slice(0, 4))
-        setTimeout(() => dismiss(alert.id), DISMISS_MS)
-      })
-      .subscribe()
+          const alert: AlertOrder = {
+            id: String(o.id),
+            source: String(o.source ?? 'qr'),
+            order_type: String(o.order_type ?? 'dine_in'),
+            table_number: String(o.table_number ?? '?'),
+            customer_name: String(o.customer_name ?? ''),
+            order_number: String(o.order_number ?? ''),
+          }
 
-    return () => { supabase.removeChannel(ch) }
+          setAlerts(prev => [alert, ...prev].slice(0, 4))
+          setTimeout(() => dismiss(alert.id), DISMISS_MS)
+        })
+        .subscribe()
+    }
+
+    subscribe()
+
+    // Reconnect when screen wakes up / tab becomes active
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') subscribe()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+
+    // Health check every 10s — reconnect if websocket dropped
+    const health = setInterval(() => {
+      if (ch.state !== 'joined') subscribe()
+    }, 10000)
+
+    return () => {
+      supabase.removeChannel(ch)
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(health)
+    }
   }, [dismiss])
 
   function tap(a: AlertOrder) {

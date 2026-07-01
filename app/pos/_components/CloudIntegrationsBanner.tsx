@@ -47,13 +47,34 @@ export default function CloudIntegrationsBanner({ onOpenQR, onOpenDelivery }: Pr
       })
     }
 
+    let ch = supabase.channel('cloud-banner')
+
+    function subscribe() {
+      supabase.removeChannel(ch)
+      ch = supabase.channel('cloud-banner')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, fetchCounts)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, fetchCounts)
+        .subscribe()
+    }
+
     fetchCounts()
-    const ch = supabase.channel('cloud-banner')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, fetchCounts)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, fetchCounts)
-      .subscribe()
-    const poll = setInterval(fetchCounts, 8000)
-    return () => { supabase.removeChannel(ch); clearInterval(poll) }
+    subscribe()
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') { subscribe(); fetchCounts() }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+
+    const poll = setInterval(() => {
+      if (ch.state !== 'joined') subscribe()
+      fetchCounts()
+    }, 8000)
+
+    return () => {
+      supabase.removeChannel(ch)
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(poll)
+    }
   }, [])
 
   return (
