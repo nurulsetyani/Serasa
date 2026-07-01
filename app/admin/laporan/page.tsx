@@ -264,9 +264,9 @@ export default function LaporanPage() {
     typeMap[t].count++; typeMap[t].revenue += o.total_price
   })
 
-  // Top items
+  // Top items — exclude cancelled order_items
   const itemMap: Record<string, { name: string; qty: number; revenue: number }> = {}
-  orders.forEach(o => o.order_items?.forEach(i => {
+  orders.forEach(o => o.order_items?.filter(i => !i.cancelled).forEach(i => {
     if (!itemMap[i.name]) itemMap[i.name] = { name: i.name, qty: 0, revenue: 0 }
     itemMap[i.name].qty += i.qty; itemMap[i.name].revenue += i.price * i.qty
   }))

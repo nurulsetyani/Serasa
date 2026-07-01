@@ -58,10 +58,15 @@ export async function DELETE(
     // 4b. Recalculate total and touch updated_at (triggers KDS realtime)
     const newTotal = remaining!.reduce((sum, i) => sum + Number(i.price) * i.qty, 0)
 
-    await client
+    const { error: updateErr } = await client
       .from('orders')
       .update({ total_price: newTotal, updated_at: new Date().toISOString() })
       .eq('id', params.id)
+
+    if (updateErr) {
+      console.error('Failed to recalculate total:', updateErr)
+      return NextResponse.json({ error: 'Gagal update total harga' }, { status: 500 })
+    }
 
     return NextResponse.json({ cancelled: true, orderCancelled: false, newTotal })
   } catch (err) {
