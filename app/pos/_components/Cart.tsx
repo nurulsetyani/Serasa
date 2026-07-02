@@ -16,7 +16,6 @@ interface Props {
   tableParam?: string
 }
 
-const QUICK_DISCOUNTS = [5, 10, 15, 20]
 
 export default function Cart({ tableParam }: Props) {
   const lines = usePOSStore(s => s.lines)
@@ -56,7 +55,6 @@ export default function Cart({ tableParam }: Props) {
   const [error, setError] = useState('')
   const [lastOrderNumber, setLastOrderNumber] = useState<string | undefined>()
   const [lastOrderId, setLastOrderId] = useState<string | undefined>()
-  const [discountMode, setDiscountMode] = useState<'percent' | 'fixed'>('percent')
   const [sarInput, setSarInput] = useState('')
   const sarRef = useRef<HTMLInputElement>(null)
 
@@ -76,12 +74,6 @@ export default function Cart({ tableParam }: Props) {
     }
   }
 
-  function handleSwitchMode(mode: 'percent' | 'fixed') {
-    setDiscountMode(mode)
-    clearDiscount()
-    setSarInput('')
-    if (mode === 'fixed') setTimeout(() => sarRef.current?.focus(), 50)
-  }
 
   function queueCashierPrint(order: {
     id: string
@@ -430,95 +422,39 @@ export default function Cart({ tableParam }: Props) {
       {!isEmpty && (
         <div className="flex-shrink-0 border-t border-gray-100 px-4 pt-3 pb-4 space-y-3">
 
-          {/* Discount section */}
-          <div className="rounded-xl overflow-hidden" style={{ border: '1.5px solid #F0EAE0' }}>
-            {/* Mode toggle */}
-            <div className="flex" style={{ background: '#F5F2EE' }}>
-              <button
-                onClick={() => handleSwitchMode('percent')}
-                className="flex-1 py-1.5 text-[11px] font-black flex items-center justify-center gap-1 transition-all"
-                style={{
-                  background: discountMode === 'percent' ? P : 'transparent',
-                  color: discountMode === 'percent' ? 'white' : '#9A8A7A',
-                  borderRadius: '10px 0 0 0',
-                }}
-              >
-                <Tag size={10} /> % Diskon
-              </button>
-              <button
-                onClick={() => handleSwitchMode('fixed')}
-                className="flex-1 py-1.5 text-[11px] font-black flex items-center justify-center gap-1 transition-all"
-                style={{
-                  background: discountMode === 'fixed' ? P : 'transparent',
-                  color: discountMode === 'fixed' ? 'white' : '#9A8A7A',
-                  borderRadius: '0 10px 0 0',
-                }}
-              >
-                <Tag size={10} /> SAR Diskon
-              </button>
+          {/* Diskon SAR */}
+          <div className="flex gap-2">
+            <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-[#F5F2EE]">
+              <Tag size={11} className="text-gray-400 flex-shrink-0" />
+              <span className="text-[11px] font-black text-gray-400">SAR</span>
+              <input
+                ref={sarRef}
+                type="number"
+                min="0"
+                step="0.5"
+                value={sarInput}
+                onChange={e => setSarInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleApplySAR()}
+                placeholder="Diskon riyal..."
+                className="flex-1 text-sm font-black text-gray-900 bg-transparent outline-none w-full placeholder:text-gray-300 placeholder:font-normal"
+              />
             </div>
-
-            {/* % mode: quick buttons */}
-            {discountMode === 'percent' && (
-              <div className="flex gap-1.5 p-2">
-                {QUICK_DISCOUNTS.map(pct => {
-                  const active = discountType === 'percent' && discountValue === pct
-                  return (
-                    <button
-                      key={pct}
-                      onClick={() => active ? clearDiscount() : setDiscount('percent', pct)}
-                      className="flex-1 py-1.5 rounded-lg text-[11px] font-black transition-all"
-                      style={{
-                        background: active ? P : '#EDE9E4',
-                        color: active ? 'white' : '#9A8A7A',
-                        boxShadow: active ? `0 2px 8px rgba(255,107,53,0.35)` : 'none',
-                      }}
-                    >
-                      {pct}%
-                    </button>
-                  )
-                })}
-                {discountType === 'percent' && (
-                  <button onClick={clearDiscount}
-                    className="px-2 py-1.5 rounded-lg text-[11px] font-black text-red-400 bg-red-50">
-                    <X size={11} />
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* SAR mode: amount input */}
-            {discountMode === 'fixed' && (
-              <div className="flex gap-2 p-2">
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#EDE9E4]">
-                  <span className="text-[11px] font-black text-gray-400">SAR</span>
-                  <input
-                    ref={sarRef}
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={sarInput}
-                    onChange={e => setSarInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleApplySAR()}
-                    placeholder="0"
-                    className="flex-1 text-sm font-black text-gray-900 bg-transparent outline-none w-full"
-                  />
-                </div>
-                <button
-                  onClick={handleApplySAR}
-                  disabled={!sarInput || parseFloat(sarInput) <= 0}
-                  className="px-3 py-1.5 rounded-xl text-[11px] font-black text-white disabled:opacity-40"
-                  style={{ background: P }}
-                >
-                  Terapkan
-                </button>
-                {discountType === 'fixed' && (
-                  <button onClick={() => { clearDiscount(); setSarInput('') }}
-                    className="px-2 py-1.5 rounded-xl text-[11px] font-black text-red-400 bg-red-50">
-                    <X size={11} />
-                  </button>
-                )}
-              </div>
+            {discountType === 'fixed' ? (
+              <button
+                onClick={() => { clearDiscount(); setSarInput('') }}
+                className="px-3 py-2 rounded-xl text-[11px] font-black text-red-400 bg-red-50"
+              >
+                <X size={13} />
+              </button>
+            ) : (
+              <button
+                onClick={handleApplySAR}
+                disabled={!sarInput || parseFloat(sarInput) <= 0}
+                className="px-3 py-2 rounded-xl text-[11px] font-black text-white disabled:opacity-40"
+                style={{ background: P }}
+              >
+                Terapkan
+              </button>
             )}
           </div>
 
