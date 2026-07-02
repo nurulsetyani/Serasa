@@ -332,7 +332,7 @@ export default function KitchenPage() {
     const { data } = await supabase
       .from('orders').select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
-      .neq('source', 'pos')   // POS walk-in orders don't appear in KDS
+      // source: 'pos' orders DO appear in KDS (kasir ordering flow)
       .in('status', ['new', 'accepted', 'preparing', 'ready', 'served', 'pending', 'cooking'])
       .order('created_at', { ascending: true })
     if (data) setOrders(data as KitchenOrder[])
@@ -348,9 +348,8 @@ export default function KitchenPage() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, p => {
           if (p.eventType === 'INSERT') {
             const o = p.new as KitchenOrder
-            const SKIP_SOURCES  = ['pos']
             const SKIP_STATUSES = ['awaiting_payment', 'paid', 'delivered', 'cancelled']
-            if (SKIP_SOURCES.includes(o.source ?? '') || SKIP_STATUSES.includes(o.status)) return
+            if (SKIP_STATUSES.includes(o.status)) return
             if (soundRef.current) playNewOrderSound()
             const where = o.order_type === 'delivery' ? 'DELIVERY' : `MEJA ${o.table_number}`
             setAlertMsg({ text: `PESANAN BARU — ${where}`, id: o.id })
