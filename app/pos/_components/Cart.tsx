@@ -1,7 +1,7 @@
 'use client'
 import { AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, UtensilsCrossed, ShoppingBag, LayoutGrid, PlusCircle, X, CheckCheck } from 'lucide-react'
-import { useState } from 'react'
+import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, UtensilsCrossed, ShoppingBag, LayoutGrid, PlusCircle, X, CheckCheck, Tag } from 'lucide-react'
+import { useState, useRef } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
 import CartLine from './CartLine'
@@ -56,7 +56,9 @@ export default function Cart({ tableParam }: Props) {
   const [error, setError] = useState('')
   const [lastOrderNumber, setLastOrderNumber] = useState<string | undefined>()
   const [lastOrderId, setLastOrderId] = useState<string | undefined>()
-  const [discountCode, setDiscountCode] = useState('')
+  const [discountMode, setDiscountMode] = useState<'percent' | 'fixed'>('percent')
+  const [sarInput, setSarInput] = useState('')
+  const sarRef = useRef<HTMLInputElement>(null)
 
   const subtotal = getSubtotal()
   const discountAmount = getDiscountAmount()
@@ -66,18 +68,19 @@ export default function Cart({ tableParam }: Props) {
   const totalQty = lines.reduce((s, l) => s + l.qty, 0)
 
 
-  function handleApplyCode() {
-    // Simple code logic: codes like "10OFF" → 10%, "SAVE20" → 20%
-    const match = discountCode.toUpperCase().match(/(\d+)/)
-    if (match) {
-      const pct = parseInt(match[1])
-      if (pct > 0 && pct <= 100) {
-        setDiscount('percent', pct)
-        setDiscountCode('')
-        return
-      }
+  function handleApplySAR() {
+    const val = parseFloat(sarInput.replace(',', '.'))
+    if (!isNaN(val) && val > 0) {
+      setDiscount('fixed', val)
+      setSarInput('')
     }
-    // Unknown code — no-op (could show error)
+  }
+
+  function handleSwitchMode(mode: 'percent' | 'fixed') {
+    setDiscountMode(mode)
+    clearDiscount()
+    setSarInput('')
+    if (mode === 'fixed') setTimeout(() => sarRef.current?.focus(), 50)
   }
 
   function queueCashierPrint(order: {
@@ -427,47 +430,96 @@ export default function Cart({ tableParam }: Props) {
       {!isEmpty && (
         <div className="flex-shrink-0 border-t border-gray-100 px-4 pt-3 pb-4 space-y-3">
 
-          {/* Discount code input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={discountCode}
-              onChange={e => setDiscountCode(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleApplyCode()}
-              placeholder="Discount Code (e.g. foodics15)"
-              className="flex-1 px-3 py-2 rounded-xl text-xs text-gray-700 bg-[#F5F2EE] outline-none placeholder:text-gray-400"
-              style={{ border: '1.5px solid transparent' }}
-              onFocus={e => (e.currentTarget.style.borderColor = `${P}60`)}
-              onBlur={e => (e.currentTarget.style.borderColor = 'transparent')}
-            />
-            <button
-              onClick={handleApplyCode}
-              className="px-3 py-2 rounded-xl text-xs font-black text-white flex-shrink-0"
-              style={{ background: '#1A1208' }}
-            >
-              Apply
-            </button>
-          </div>
+          {/* Discount section */}
+          <div className="rounded-xl overflow-hidden" style={{ border: '1.5px solid #F0EAE0' }}>
+            {/* Mode toggle */}
+            <div className="flex" style={{ background: '#F5F2EE' }}>
+              <button
+                onClick={() => handleSwitchMode('percent')}
+                className="flex-1 py-1.5 text-[11px] font-black flex items-center justify-center gap-1 transition-all"
+                style={{
+                  background: discountMode === 'percent' ? P : 'transparent',
+                  color: discountMode === 'percent' ? 'white' : '#9A8A7A',
+                  borderRadius: '10px 0 0 0',
+                }}
+              >
+                <Tag size={10} /> % Diskon
+              </button>
+              <button
+                onClick={() => handleSwitchMode('fixed')}
+                className="flex-1 py-1.5 text-[11px] font-black flex items-center justify-center gap-1 transition-all"
+                style={{
+                  background: discountMode === 'fixed' ? P : 'transparent',
+                  color: discountMode === 'fixed' ? 'white' : '#9A8A7A',
+                  borderRadius: '0 10px 0 0',
+                }}
+              >
+                <Tag size={10} /> SAR Diskon
+              </button>
+            </div>
 
-          {/* Quick discount buttons */}
-          <div className="flex gap-1.5">
-            {QUICK_DISCOUNTS.map(pct => {
-              const active = discountType === 'percent' && discountValue === pct
-              return (
+            {/* % mode: quick buttons */}
+            {discountMode === 'percent' && (
+              <div className="flex gap-1.5 p-2">
+                {QUICK_DISCOUNTS.map(pct => {
+                  const active = discountType === 'percent' && discountValue === pct
+                  return (
+                    <button
+                      key={pct}
+                      onClick={() => active ? clearDiscount() : setDiscount('percent', pct)}
+                      className="flex-1 py-1.5 rounded-lg text-[11px] font-black transition-all"
+                      style={{
+                        background: active ? P : '#EDE9E4',
+                        color: active ? 'white' : '#9A8A7A',
+                        boxShadow: active ? `0 2px 8px rgba(255,107,53,0.35)` : 'none',
+                      }}
+                    >
+                      {pct}%
+                    </button>
+                  )
+                })}
+                {discountType === 'percent' && (
+                  <button onClick={clearDiscount}
+                    className="px-2 py-1.5 rounded-lg text-[11px] font-black text-red-400 bg-red-50">
+                    <X size={11} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* SAR mode: amount input */}
+            {discountMode === 'fixed' && (
+              <div className="flex gap-2 p-2">
+                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#EDE9E4]">
+                  <span className="text-[11px] font-black text-gray-400">SAR</span>
+                  <input
+                    ref={sarRef}
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={sarInput}
+                    onChange={e => setSarInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleApplySAR()}
+                    placeholder="0"
+                    className="flex-1 text-sm font-black text-gray-900 bg-transparent outline-none w-full"
+                  />
+                </div>
                 <button
-                  key={pct}
-                  onClick={() => active ? clearDiscount() : setDiscount('percent', pct)}
-                  className="flex-1 py-1.5 rounded-lg text-[11px] font-black transition-all"
-                  style={{
-                    background: active ? P : '#F5F2EE',
-                    color: active ? 'white' : '#9A8A7A',
-                    boxShadow: active ? `0 2px 8px rgba(255,107,53,0.35)` : 'none',
-                  }}
+                  onClick={handleApplySAR}
+                  disabled={!sarInput || parseFloat(sarInput) <= 0}
+                  className="px-3 py-1.5 rounded-xl text-[11px] font-black text-white disabled:opacity-40"
+                  style={{ background: P }}
                 >
-                  {pct}% OFF
+                  Terapkan
                 </button>
-              )
-            })}
+                {discountType === 'fixed' && (
+                  <button onClick={() => { clearDiscount(); setSarInput('') }}
+                    className="px-2 py-1.5 rounded-xl text-[11px] font-black text-red-400 bg-red-50">
+                    <X size={11} />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Split bill */}
@@ -487,7 +539,9 @@ export default function Cart({ tableParam }: Props) {
             </div>
             {discountAmount > 0 && (
               <div className="flex justify-between text-xs text-green-600">
-                <span className="font-semibold">Discount {discountType === 'percent' ? `${discountValue}%` : ''}:</span>
+                <span className="font-semibold">
+                  Diskon {discountType === 'percent' ? `${discountValue}%` : `SAR ${discountValue}`}:
+                </span>
                 <span className="font-black">-{formatPrice(discountAmount)}</span>
               </div>
             )}
