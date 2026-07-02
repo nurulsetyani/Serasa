@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   RefreshCw, FileText, X, UtensilsCrossed,
   ClipboardList, ChefHat, BarChart3, Clock, CheckCircle2,
@@ -329,6 +330,134 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
   )
 }
 
+// ── Delete Confirm Modal ─────────────────────────────────────
+function DeleteConfirmModal({
+  order, onConfirm, onCancel, deleting,
+}: {
+  order: Order; onConfirm: () => void; onCancel: () => void; deleting: boolean
+}) {
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="absolute inset-0 backdrop-blur-md"
+        style={{ background: 'rgba(0,0,0,0.8)' }}
+        onClick={onCancel}
+      />
+
+      {/* Modal card */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.78, y: 40 }}
+        animate={{ opacity: 1, scale: 1,    y: 0  }}
+        exit={{    opacity: 0, scale: 0.82, y: 20  }}
+        transition={{ type: 'spring', stiffness: 440, damping: 30 }}
+        className="relative w-full max-w-[360px] rounded-2xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(160deg, #1C0A0A 0%, #1A0C14 55%, #120C1E 100%)',
+          border: '1px solid rgba(239,68,68,0.28)',
+          boxShadow: '0 0 80px rgba(239,68,68,0.18), 0 0 0 1px rgba(249,115,22,0.08), 0 32px 80px rgba(0,0,0,0.75)',
+        }}
+      >
+        {/* Rainbow top stripe */}
+        <div style={{
+          height: 3,
+          background: 'linear-gradient(90deg, #EF4444 0%, #F97316 30%, #FBBF24 55%, #F97316 75%, #EF4444 100%)',
+          boxShadow: '0 0 18px rgba(239,68,68,0.6)',
+        }} />
+
+        {/* Radial glow behind icon */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-52 h-52 rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.12) 0%, transparent 70%)', top: -20 }} />
+
+        <div className="px-6 pt-7 pb-6">
+          {/* Icon */}
+          <div className="flex justify-center mb-5">
+            <motion.div
+              animate={{ boxShadow: ['0 0 20px rgba(239,68,68,0.3)', '0 0 40px rgba(239,68,68,0.5)', '0 0 20px rgba(239,68,68,0.3)'] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(239,68,68,0.22), rgba(249,115,22,0.12))',
+                border: '1px solid rgba(239,68,68,0.35)',
+              }}
+            >
+              <Trash2 size={28} style={{ color: '#F87171' }} />
+            </motion.div>
+          </div>
+
+          {/* Heading */}
+          <h3 className="text-center text-[19px] font-black text-white mb-1 tracking-tight">
+            Hapus Pesanan?
+          </h3>
+          <p className="text-center text-xs mb-5" style={{ color: 'rgba(255,255,255,0.38)' }}>
+            Data akan hilang permanen dan tidak bisa dikembalikan
+          </p>
+
+          {/* Order preview */}
+          <div className="rounded-xl p-3.5 mb-5"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0"
+                style={{ background: 'rgba(239,68,68,0.15)', color: '#F87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+                {order.table_number}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-white truncate">{order.customer_name}</p>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                  {order.order_items?.length ?? 0} item ·{' '}
+                  <span style={{ color: '#FBBF24', fontWeight: 700 }}>{formatPrice(order.total_price)}</span>
+                </p>
+              </div>
+              <StatusBadge status={order.status} />
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-2.5">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={onCancel}
+              disabled={deleting}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                color: 'rgba(255,255,255,0.6)',
+                border: '1px solid rgba(255,255,255,0.1)',
+              }}
+            >
+              Batalkan
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.03, boxShadow: '0 8px 32px rgba(239,68,68,0.5)' }}
+              whileTap={{ scale: 0.96 }}
+              onClick={onConfirm}
+              disabled={deleting}
+              className="flex-1 py-2.5 rounded-xl text-sm font-black text-white disabled:opacity-60 flex items-center justify-center gap-2"
+              style={{
+                background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 60%, #C41C1C 100%)',
+                boxShadow: '0 4px 24px rgba(239,68,68,0.4)',
+              }}
+            >
+              {deleting ? (
+                <RefreshCw size={14} className="animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+              {deleting ? 'Menghapus...' : 'Ya, Hapus'}
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 // ── OrderCard ────────────────────────────────────────────────
 function OrderCard({
   order, isNew, updating, deleting,
@@ -472,6 +601,7 @@ export default function AdminPage() {
   const [filter, setFilter] = useState('all')
   const [updating, setUpdating] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Order | null>(null)
   const [newOrderId, setNewOrderId] = useState<string | null>(null)
   const [showReport, setShowReport] = useState(false)
 
@@ -503,10 +633,12 @@ export default function AdminPage() {
     return () => { supabase.removeChannel(channel) }
   }, [fetchOrders])
 
-  async function deleteOrder(orderId: string) {
-    if (!window.confirm('Hapus pesanan ini? Tindakan ini tidak bisa dibatalkan.')) return
+  async function handleConfirmDelete() {
+    if (!confirmDelete) return
+    const orderId = confirmDelete.id
     setDeleting(orderId)
     setOrders(prev => prev.filter(o => o.id !== orderId))
+    setConfirmDelete(null)
     await fetch(`/api/order/${orderId}`, { method: 'DELETE' })
     setDeleting(null)
   }
@@ -550,6 +682,17 @@ export default function AdminPage() {
   return (
     <div className="min-h-dvh font-body" dir={isRTL ? 'rtl' : 'ltr'} style={{ background: C.bg }}>
       {showReport && <ReportModal orders={orders} onClose={() => setShowReport(false)} />}
+
+      <AnimatePresence>
+        {confirmDelete && (
+          <DeleteConfirmModal
+            order={confirmDelete}
+            deleting={deleting === confirmDelete.id}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => setConfirmDelete(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Sidebar ─────────────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 border-r z-40 py-5"
@@ -696,7 +839,7 @@ export default function AdminPage() {
                   updating={updating === order.id}
                   deleting={deleting === order.id}
                   onUpdate={() => updateStatus(order.id, order.status)}
-                  onDelete={() => deleteOrder(order.id)}
+                  onDelete={() => setConfirmDelete(order)}
                 />
               ))}
             </div>
