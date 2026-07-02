@@ -7,7 +7,7 @@ import {
   RefreshCw, FileText, X, UtensilsCrossed,
   ClipboardList, ChefHat, BarChart3, Clock, CheckCircle2,
   Flame, CircleCheck, TrendingUp, ShoppingBag, AlertCircle,
-  Bell
+  Bell, Trash2
 } from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -331,10 +331,11 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
 
 // ── OrderCard ────────────────────────────────────────────────
 function OrderCard({
-  order, isNew, updating,
-  onUpdate,
+  order, isNew, updating, deleting,
+  onUpdate, onDelete,
 }: {
-  order: Order; isNew: boolean; updating: boolean; onUpdate: () => void
+  order: Order; isNew: boolean; updating: boolean; deleting: boolean
+  onUpdate: () => void; onDelete: () => void
 }) {
   const cfg = STATUS_CONFIG[order.status]
   const next = NEXT_STATUS[order.status]
@@ -418,6 +419,19 @@ function OrderCard({
             <span className="text-sm font-bold" style={{ color: C.text }}>
               {formatPrice(order.total_price)}
             </span>
+            <button
+              onClick={onDelete}
+              disabled={deleting}
+              title="Hapus pesanan"
+              className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 disabled:opacity-40 hover:scale-105 active:scale-95"
+              style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444' }}
+            >
+              {deleting ? (
+                <RefreshCw size={12} className="animate-spin" />
+              ) : (
+                <Trash2 size={12} />
+              )}
+            </button>
           </div>
         </div>
         {next && cfg.btnLabel && (
@@ -457,6 +471,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [updating, setUpdating] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [newOrderId, setNewOrderId] = useState<string | null>(null)
   const [showReport, setShowReport] = useState(false)
 
@@ -481,10 +496,20 @@ export default function AdminPage() {
           fetchOrders()
         } else if (payload.eventType === 'UPDATE') {
           setOrders(prev => prev.map(o => o.id === (payload.new as Order).id ? { ...o, ...payload.new } : o))
+        } else if (payload.eventType === 'DELETE') {
+          setOrders(prev => prev.filter(o => o.id !== (payload.old as Order).id))
         }
       }).subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [fetchOrders])
+
+  async function deleteOrder(orderId: string) {
+    if (!window.confirm('Hapus pesanan ini? Tindakan ini tidak bisa dibatalkan.')) return
+    setDeleting(orderId)
+    setOrders(prev => prev.filter(o => o.id !== orderId))
+    await fetch(`/api/order/${orderId}`, { method: 'DELETE' })
+    setDeleting(null)
+  }
 
   async function updateStatus(orderId: string, currentStatus: OrderStatus) {
     const nextStatus = NEXT_STATUS[currentStatus]
@@ -669,7 +694,9 @@ export default function AdminPage() {
                   order={order}
                   isNew={order.id === newOrderId}
                   updating={updating === order.id}
+                  deleting={deleting === order.id}
                   onUpdate={() => updateStatus(order.id, order.status)}
+                  onDelete={() => deleteOrder(order.id)}
                 />
               ))}
             </div>

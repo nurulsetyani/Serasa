@@ -77,3 +77,27 @@ export async function PATCH(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { client, error } = getClient()
+    if (!client) return NextResponse.json({ error }, { status: 503 })
+
+    const { error: dbError } = await client
+      .from('orders')
+      .delete()
+      .eq('id', params.id)
+
+    if (dbError) {
+      return NextResponse.json({ error: 'Gagal menghapus pesanan' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('DELETE /api/order/[id] error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
