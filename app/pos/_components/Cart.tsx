@@ -1,6 +1,6 @@
 'use client'
 import { AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, UtensilsCrossed, ShoppingBag, LayoutGrid, PlusCircle, X, CheckCheck, Tag } from 'lucide-react'
+import { ShoppingCart, Trash2, Scissors, Receipt, Phone, MapPin, CreditCard, QrCode, UtensilsCrossed, ShoppingBag, LayoutGrid, PlusCircle, X, CheckCheck, Tag, ChefHat } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { usePOSStore } from '@/stores/pos.store'
 import { formatPrice } from '@/lib/utils'
@@ -57,6 +57,7 @@ export default function Cart({ tableParam }: Props) {
   const [lastOrderId, setLastOrderId] = useState<string | undefined>()
   const [sarInput, setSarInput] = useState('')
   const sarRef = useRef<HTMLInputElement>(null)
+  const [kitchenSent, setKitchenSent] = useState(false)
 
   const subtotal = getSubtotal()
   const discountAmount = getDiscountAmount()
@@ -74,6 +75,43 @@ export default function Cart({ tableParam }: Props) {
     }
   }
 
+
+  async function handleSendToKitchen() {
+    if (loading || isEmpty) return
+    const tbl = tableNumber || tableParam || ''
+    if (!tbl) { setError('Masukkan nomor meja terlebih dahulu'); return }
+    setLoading(true); setError('')
+    try {
+      const res = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'pos',
+          customer_name: customerName || 'Guest',
+          table_number: tbl,
+          order_type: orderType,
+          payment_method: 'cash',
+          total_price: subtotal,
+          items: lines.map(l => ({
+            menu_id: l.menuId || undefined,
+            name: l.name,
+            price: l.unitPrice,
+            qty: l.qty,
+            notes: l.note || null,
+          })),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Gagal kirim ke dapur')
+      newOrder()
+      setKitchenSent(true)
+      setTimeout(() => setKitchenSent(false), 2500)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   function queueCashierPrint(order: {
     id: string
@@ -399,16 +437,27 @@ export default function Cart({ tableParam }: Props) {
       {/* Lines */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-3"
-              style={{ background: `${P}12` }}
-            >
-              <ShoppingCart size={24} style={{ color: P }} />
+          kitchenSent ? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-12">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-3"
+                style={{ background: '#DCFCE7' }}>
+                <ChefHat size={24} style={{ color: '#16A34A' }} />
+              </div>
+              <p className="text-green-700 text-sm font-black">Pesanan Dikirim ke Dapur!</p>
+              <p className="text-green-500 text-xs mt-1">KDS dapur sudah menerima pesanan</p>
             </div>
-            <p className="text-gray-400 text-sm font-semibold">Cart is empty</p>
-            <p className="text-gray-300 text-xs mt-1">Tap a menu item to add</p>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center py-12">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-3"
+                style={{ background: `${P}12` }}
+              >
+                <ShoppingCart size={24} style={{ color: P }} />
+              </div>
+              <p className="text-gray-400 text-sm font-semibold">Cart is empty</p>
+              <p className="text-gray-300 text-xs mt-1">Tap a menu item to add</p>
+            </div>
+          )
         ) : (
           <AnimatePresence mode="popLayout">
             {lines.map((line, i) => (
@@ -508,19 +557,37 @@ export default function Cart({ tableParam }: Props) {
               {loading ? '...' : <><CheckCheck size={17} />Tambahkan ke Order</>}
             </button>
           ) : (
-            /* Normal: Checkout */
-            <button
-              onClick={() => { setError(''); clearPayments(); setShowPayment(true) }}
-              className="w-full py-4 rounded-2xl font-bold text-white text-[15px] font-inter active:scale-[0.98] flex items-center justify-center gap-2 transition-[box-shadow,transform,opacity] duration-150"
-              style={{
-                background: 'linear-gradient(135deg, #EF4444 0%, #E02020 100%)',
-                boxShadow: 'var(--pos-shadow-red)',
-                letterSpacing: '0.01em',
-              }}
-            >
-              <CreditCard size={17} />
-              Waiter Checkout
-            </button>
+            <div className="space-y-2">
+              {/* Kirim ke Dapur — only for fresh kasir orders (no QR import) */}
+              {!sourceQrOrderId && (
+                <button
+                  onClick={handleSendToKitchen}
+                  disabled={loading || isEmpty}
+                  className="w-full py-3.5 rounded-2xl font-bold text-white text-[14px] active:scale-[0.98] flex items-center justify-center gap-2 transition-[box-shadow,transform,opacity] duration-150 disabled:opacity-50"
+                  style={{
+                    background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
+                    boxShadow: '0 6px 20px rgba(22,163,74,0.38)',
+                    letterSpacing: '0.01em',
+                  }}
+                >
+                  <ChefHat size={16} />
+                  {loading ? 'Mengirim...' : 'Kirim ke Dapur'}
+                </button>
+              )}
+              {/* Waiter Checkout */}
+              <button
+                onClick={() => { setError(''); clearPayments(); setShowPayment(true) }}
+                className="w-full py-3.5 rounded-2xl font-bold text-white text-[14px] font-inter active:scale-[0.98] flex items-center justify-center gap-2 transition-[box-shadow,transform,opacity] duration-150"
+                style={{
+                  background: 'linear-gradient(135deg, #EF4444 0%, #E02020 100%)',
+                  boxShadow: 'var(--pos-shadow-red)',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                <CreditCard size={16} />
+                {sourceQrOrderId ? 'Bayar Sekarang' : 'Checkout & Bayar'}
+              </button>
+            </div>
           )}
         </div>
       )}

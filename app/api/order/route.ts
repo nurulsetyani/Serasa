@@ -12,6 +12,7 @@ interface CreateOrderBody {
   payment_method?: 'cash' | 'online' | 'qris'
   notes?: string
   total_price: number
+  source?: string
   items: {
     menu_id: string
     name: string
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
         payment_method: body.payment_method ?? 'cash',
         notes: body.notes?.trim() || null,
         total_price: body.total_price,
-        source: 'qr',
+        source: body.source ?? 'qr',
         status: 'new',
       })
       .select()

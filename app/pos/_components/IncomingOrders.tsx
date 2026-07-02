@@ -13,7 +13,7 @@ interface QROrderItem { id: string; menu_id: string; name: string; price: number
 interface QROrder {
   id: string; order_number: string; customer_name: string; table_number: string
   order_type: 'dine_in' | 'take_away' | 'delivery'; total_price: number
-  status: string; created_at: string; order_items: QROrderItem[]
+  status: string; source?: string; created_at: string; order_items: QROrderItem[]
 }
 
 // Status display config
@@ -31,6 +31,13 @@ const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> =
 
 const ORDER_TYPE_LABEL: Record<string, string> = {
   dine_in: '🍽 Dine In', take_away: '🛍 Take Away', delivery: '🛵 Delivery',
+}
+
+const SOURCE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
+  pos:          { label: '🖥 Kasir',        color: '#7C3AED', bg: '#EDE9FE' },
+  qr:           { label: '📱 QR',           color: '#FF6B35', bg: '#FFF0E8' },
+  hungerstation:{ label: 'HS',              color: '#FF6000', bg: '#FFF1E6' },
+  keeta:        { label: 'KT',              color: '#22C55E', bg: '#F0FDF4' },
 }
 
 function TimerAgo({ createdAt }: { createdAt: string }) {
@@ -62,7 +69,7 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
       .from('orders')
       .select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
-      .in('source', ['qr', 'hungerstation', 'keeta'])
+      .in('source', ['qr', 'hungerstation', 'keeta', 'pos'])
       .in('status', ['new', 'accepted', 'preparing', 'ready', 'served', 'awaiting_payment', 'pending', 'cooking'])
       .order('created_at', { ascending: true })
     setOrders((data as QROrder[]) ?? [])
@@ -235,10 +242,21 @@ export default function IncomingOrders({ open, onClose, onOrderLoaded }: Props) 
                                 </span>
                               </div>
                               <p className="text-xs text-gray-400 font-semibold">{order.customer_name}</p>
-                              <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 <span className="text-[10px] text-gray-400">{ORDER_TYPE_LABEL[order.order_type]}</span>
                                 <span className="text-gray-300">·</span>
                                 <TimerAgo createdAt={order.created_at} />
+                                {order.source && SOURCE_BADGE[order.source] && (
+                                  <>
+                                    <span className="text-gray-300">·</span>
+                                    <span
+                                      className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                                      style={{ background: SOURCE_BADGE[order.source].bg, color: SOURCE_BADGE[order.source].color }}
+                                    >
+                                      {SOURCE_BADGE[order.source].label}
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             </div>
                             <div className="text-right">
