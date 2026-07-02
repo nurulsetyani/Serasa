@@ -545,10 +545,6 @@ export default function Cart({ tableParam }: Props) {
                 <span className="font-black">-{formatPrice(discountAmount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Saudi Incl. VAT ({taxPercent}%):</span>
-              <span className="font-semibold">{formatPrice(taxAmount)}</span>
-            </div>
             <div className="flex justify-between items-end border-t border-gray-100 pt-3 mt-1">
               <div>
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider font-inter mb-0.5">Grand Total</p>
