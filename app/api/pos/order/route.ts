@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Gagal menyimpan item' }, { status: 500 })
     }
 
-    // Auto-print kitchen ticket
-    await queuePrintJob(supabase, RESTAURANT_ID, 'kitchen', {
+    // Auto-print kitchen ticket — fire and forget, don't block the API response
+    queuePrintJob(supabase, RESTAURANT_ID, 'kitchen', {
       id: order.id,
       order_number: order.order_number,
       table_number: order.table_number,
