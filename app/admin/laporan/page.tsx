@@ -23,15 +23,21 @@ const C = {
 }
 const RESTAURANT_ID = process.env.NEXT_PUBLIC_RESTAURANT_ID!
 
-type Period = 'today' | 'kemarin' | '7d' | 'bulan_ini' | '30d'
+type Period = 'today' | 'kemarin' | '7d' | 'bulan_ini' | '30d' | 'pilih_bulan'
 
 const PERIOD_OPTIONS: { key: Period; label: string }[] = [
-  { key: 'today',     label: 'Hari Ini'  },
-  { key: 'kemarin',   label: 'Kemarin'   },
-  { key: '7d',        label: '7 Hari'    },
-  { key: 'bulan_ini', label: 'Bulan Ini' },
-  { key: '30d',       label: '30 Hari'   },
+  { key: 'today',       label: 'Hari Ini'   },
+  { key: 'kemarin',     label: 'Kemarin'    },
+  { key: '7d',          label: '7 Hari'     },
+  { key: 'bulan_ini',   label: 'Bulan Ini'  },
+  { key: '30d',         label: '30 Hari'    },
+  { key: 'pilih_bulan', label: 'Pilih Bulan' },
 ]
+
+function monthKey(iso: string) {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
 
 const PLATFORM_CFG: Record<string, { label: string; color: string }> = {
   pos:           { label: 'Kasir (POS)',    color: '#6366F1' },
@@ -193,9 +199,24 @@ export default function LaporanPage() {
   const [period, setPeriod]   = useState<Period>('today')
   const [orders, setOrders]   = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const currentMonthKey = monthKey(new Date().toISOString())
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthKey)
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
+    if (period === 'pilih_bulan') {
+      // Ambil SELURUH riwayat order (tanpa batas tanggal) supaya bulan-bulan
+      // lama (Juni, Juli, Agustus, dst) ikut muncul di rekap per bulan.
+      const { data } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('restaurant_id', RESTAURANT_ID)
+        .neq('status', 'cancelled')
+        .order('created_at', { ascending: false })
+      setOrders((data as Order[]) ?? [])
+      setLoading(false)
+      return
+    }
     const { from, to } = periodRange(period)
     const { data } = await supabase
       .from('orders')
@@ -211,15 +232,36 @@ export default function LaporanPage() {
 
   useEffect(() => { fetchOrders() }, [fetchOrders])
 
+  // Rekap per bulan (dihitung dari seluruh riwayat, cuma terisi saat tab "Pilih Bulan" aktif)
+  const monthlyRecap = (() => {
+    if (period !== 'pilih_bulan') return []
+    const map: Record<string, { key: string; label: string; revenue: number; count: number }> = {}
+    orders.forEach(o => {
+      const key = monthKey(o.created_at)
+      if (!map[key]) {
+        map[key] = { key, label: new Date(o.created_at).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }), revenue: 0, count: 0 }
+      }
+      map[key].revenue += o.total_price
+      map[key].count++
+    })
+    return Object.values(map).sort((a, b) => b.key.localeCompare(a.key))
+  })()
+
+  // Data yang benar-benar ditampilkan di KPI/chart/tabel di bawah:
+  // untuk "Pilih Bulan", persempit riwayat lengkap ke bulan yang dipilih.
+  const displayOrders = period === 'pilih_bulan'
+    ? orders.filter(o => monthKey(o.created_at) === selectedMonth)
+    : orders
+
   // ── Aggregations ────────────────────────────────────────────
-  const totalRevenue    = orders.reduce((s, o) => s + o.total_price, 0)
-  const totalOrders     = orders.length
+  const totalRevenue    = displayOrders.reduce((s, o) => s + o.total_price, 0)
+  const totalOrders     = displayOrders.length
   const avgOrder        = totalOrders ? Math.round(totalRevenue / totalOrders) : 0
-  const deliveredCount  = orders.filter(o => o.status === 'delivered').length
+  const deliveredCount  = displayOrders.filter(o => o.status === 'delivered' || o.status === 'paid').length
 
   // Platform breakdown
   const platformMap: Record<string, { revenue: number; count: number }> = {}
-  orders.forEach(o => {
+  displayOrders.forEach(o => {
     const src = o.source ?? 'pos'
     if (!platformMap[src]) platformMap[src] = { revenue: 0, count: 0 }
     platformMap[src].revenue += o.total_price
@@ -231,12 +273,18 @@ export default function LaporanPage() {
 
   // Revenue trend by day
   const dayMap: Record<string, number> = {}
-  orders.forEach(o => {
+  displayOrders.forEach(o => {
     const day = new Date(o.created_at).toISOString().slice(0, 10)
     dayMap[day] = (dayMap[day] ?? 0) + o.total_price
   })
-  const days = period === 'today' || period === 'kemarin' ? 1 : period === '7d' ? 7 : period === 'bulan_ini' ? new Date().getDate() : 30
-  const { from: trendFrom } = periodRange(period)
+  const selectedMonthDate = new Date(Number(selectedMonth.slice(0, 4)), Number(selectedMonth.slice(5, 7)) - 1, 1)
+  const days = period === 'today' || period === 'kemarin' ? 1
+    : period === '7d' ? 7
+    : period === 'bulan_ini' ? new Date().getDate()
+    : period === 'pilih_bulan'
+      ? (selectedMonth === currentMonthKey ? new Date().getDate() : new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0).getDate())
+      : 30
+  const trendFrom = period === 'pilih_bulan' ? selectedMonthDate : periodRange(period).from
   const trendData = Array.from({ length: days }, (_, i) => {
     const d = new Date(trendFrom); d.setDate(trendFrom.getDate() + i)
     const key = d.toISOString().slice(0, 10)
@@ -246,7 +294,7 @@ export default function LaporanPage() {
   // Peak hours (10–23)
   const hourlyMap: Record<number, { count: number; revenue: number }> = {}
   OPERATION_HOURS.forEach(h => { hourlyMap[h] = { count: 0, revenue: 0 } })
-  orders.forEach(o => {
+  displayOrders.forEach(o => {
     const h = new Date(o.created_at).getHours()
     if (h >= 10 && h <= 23) { hourlyMap[h].count++; hourlyMap[h].revenue += o.total_price }
   })
@@ -258,7 +306,7 @@ export default function LaporanPage() {
   const typeMap: Record<string, { count: number; revenue: number }> = {
     dine_in: { count: 0, revenue: 0 }, take_away: { count: 0, revenue: 0 }, delivery: { count: 0, revenue: 0 },
   }
-  orders.forEach(o => {
+  displayOrders.forEach(o => {
     const t = (o.order_type as string) ?? 'dine_in'
     if (!typeMap[t]) typeMap[t] = { count: 0, revenue: 0 }
     typeMap[t].count++; typeMap[t].revenue += o.total_price
@@ -266,13 +314,15 @@ export default function LaporanPage() {
 
   // Top items — exclude cancelled order_items
   const itemMap: Record<string, { name: string; qty: number; revenue: number }> = {}
-  orders.forEach(o => o.order_items?.filter(i => !i.cancelled).forEach(i => {
+  displayOrders.forEach(o => o.order_items?.filter(i => !i.cancelled).forEach(i => {
     if (!itemMap[i.name]) itemMap[i.name] = { name: i.name, qty: 0, revenue: 0 }
     itemMap[i.name].qty += i.qty; itemMap[i.name].revenue += i.price * i.qty
   }))
   const topItems = Object.values(itemMap).sort((a, b) => b.qty - a.qty).slice(0, 10)
 
-  const periodLabel = PERIOD_OPTIONS.find(p => p.key === period)?.label ?? ''
+  const periodLabel = period === 'pilih_bulan'
+    ? (monthlyRecap.find(m => m.key === selectedMonth)?.label ?? selectedMonthDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }))
+    : PERIOD_OPTIONS.find(p => p.key === period)?.label ?? ''
 
   return (
     <div className="min-h-dvh" style={{ background: C.bg, color: C.text }}>
@@ -316,7 +366,7 @@ export default function LaporanPage() {
               style={{ color: C.muted }}>
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             </button>
-            <button onClick={() => exportCSV(orders)}
+            <button onClick={() => exportCSV(displayOrders)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
               style={{ background: '#16A34A', color: 'white' }}>
               <Download size={13} /> CSV
@@ -331,6 +381,35 @@ export default function LaporanPage() {
       </header>
 
       <div className="p-4 lg:p-6 space-y-5 max-w-7xl mx-auto">
+
+        {/* ── Rekap Per Bulan — pilih bulan (Juni, Juli, Agustus, dst) ── */}
+        {period === 'pilih_bulan' && (
+          <div className="rounded-xl border p-5 no-print" style={{ background: C.card, borderColor: C.border }}>
+            <p className="text-sm font-semibold mb-4" style={{ color: C.text }}>Rekap Per Bulan — Pilih Bulan</p>
+            {loading ? (
+              <div className="flex gap-2">{[...Array(4)].map((_, i) => (
+                <div key={i} className="h-16 flex-1 rounded-lg animate-pulse" style={{ background: C.bg }} />
+              ))}</div>
+            ) : monthlyRecap.length === 0 ? (
+              <p className="text-sm" style={{ color: C.muted }}>Belum ada data pesanan</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {monthlyRecap.map(m => (
+                  <button key={m.key} onClick={() => setSelectedMonth(m.key)}
+                    className="px-3 py-2 rounded-lg border text-left transition-colors"
+                    style={selectedMonth === m.key
+                      ? { background: C.accent, borderColor: C.accent, color: '#000' }
+                      : { background: C.bg, borderColor: C.border, color: C.text }}>
+                    <p className="text-xs font-semibold capitalize">{m.label}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: selectedMonth === m.key ? 'rgba(0,0,0,0.6)' : C.muted }}>
+                      {m.count} pesanan · {formatPrice(m.revenue)}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── KPI Cards ───────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -520,9 +599,9 @@ export default function LaporanPage() {
                         <RefreshCw size={14} className="animate-spin" /> Memuat...
                       </div>
                     </td></tr>
-                  ) : orders.length === 0 ? (
+                  ) : displayOrders.length === 0 ? (
                     <tr><td colSpan={7} className="px-4 py-8 text-center" style={{ color: C.muted }}>Tidak ada pesanan</td></tr>
-                  ) : orders.map((o, i) => {
+                  ) : displayOrders.map((o, i) => {
                     const typeCfg = ORDER_TYPE_CFG[(o.order_type as string) ?? 'dine_in'] ?? ORDER_TYPE_CFG.dine_in
                     return (
                       <tr key={o.id} className="border-t transition-colors hover:bg-white/5"
@@ -547,7 +626,7 @@ export default function LaporanPage() {
                         </td>
                         <td className="px-3 py-2.5">
                           <span className="text-[10px] font-semibold capitalize"
-                            style={{ color: o.status === 'delivered' ? '#22C55E' : o.status === 'cancelled' ? '#EF4444' : C.muted }}>
+                            style={{ color: (o.status === 'delivered' || o.status === 'paid') ? '#22C55E' : o.status === 'cancelled' ? '#EF4444' : C.muted }}>
                             {o.status}
                           </span>
                         </td>
@@ -558,7 +637,7 @@ export default function LaporanPage() {
                     )
                   })}
                 </tbody>
-                {orders.length > 0 && (
+                {displayOrders.length > 0 && (
                   <tfoot>
                     <tr className="border-t-2" style={{ borderColor: `${C.accent}30`, background: C.bg }}>
                       <td colSpan={6} className="px-3 py-2.5 text-xs font-semibold" style={{ color: C.muted }}>
