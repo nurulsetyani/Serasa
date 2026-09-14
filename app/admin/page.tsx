@@ -8,7 +8,7 @@ import {
   RefreshCw, FileText, X, UtensilsCrossed,
   ClipboardList, ChefHat, BarChart3, Clock, CheckCircle2,
   Flame, CircleCheck, TrendingUp, ShoppingBag, AlertCircle,
-  Bell, Trash2
+  Bell, Trash2, CalendarRange
 } from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
 import { supabase } from '@/lib/supabase'
@@ -685,11 +685,18 @@ export default function AdminPage() {
   // mengikuti filter ini langsung dari database (bukan cuma 100 order
   // terbaru), supaya "Semua" beneran nampilin seluruh riwayat termasuk
   // bulan lama (Juni, Juli, Agustus, dst).
-  const [dateFilter, setDateFilter] = useState<'today'|'week'|'month'|'all'>('today')
+  const [dateFilter, setDateFilter] = useState<'today'|'week'|'month'|'all'|'custom'>('today')
+  // Rentang tanggal custom (format yyyy-mm-dd dari <input type="date">)
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
     if (IS_MOCK_MODE) { setOrders(MOCK_ORDERS); setLoading(false); return }
+    if (dateFilter === 'custom' && (!customFrom || !customTo)) {
+      // Belum pilih tanggal awal & akhir — jangan fetch dulu
+      setOrders([]); setLoading(false); return
+    }
     let query = supabase
       .from('orders').select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
@@ -705,13 +712,17 @@ export default function AdminPage() {
     } else if (dateFilter === 'month') {
       const from = new Date(now); from.setDate(1); from.setHours(0, 0, 0, 0)
       query = query.gte('created_at', from.toISOString())
+    } else if (dateFilter === 'custom') {
+      const from = new Date(`${customFrom}T00:00:00`)
+      const to   = new Date(`${customTo}T23:59:59.999`)
+      query = query.gte('created_at', from.toISOString()).lte('created_at', to.toISOString())
     }
     // dateFilter === 'all' → tanpa batas tanggal, ambil seluruh riwayat
 
     const { data } = await query
     if (data) setOrders(data as Order[])
     setLoading(false)
-  }, [dateFilter])
+  }, [dateFilter, customFrom, customTo])
 
   useEffect(() => {
     fetchOrders()
@@ -765,13 +776,16 @@ export default function AdminPage() {
     ready:     dateFiltered.filter(o => o.status === 'ready').length,
     delivered: dateFiltered.filter(o => o.status === 'delivered' || o.status === 'paid').length,
   }
-  // Pendapatan & label sub mengikuti filter tanggal yang aktif (Hari Ini / 7 Hari / Bulan Ini / Semua)
-  const revenueLabel = {
-    today: 'Pendapatan Hari Ini', week: 'Pendapatan 7 Hari', month: 'Pendapatan Bulan Ini', all: 'Pendapatan Semua',
-  }[dateFilter]
-  const periodSubLabel = {
-    today: 'Hari ini', week: '7 hari terakhir', month: 'Bulan ini', all: 'Semua waktu',
-  }[dateFilter]
+  // Pendapatan & label sub mengikuti filter tanggal yang aktif (Hari Ini / 7 Hari / Bulan Ini / Semua / custom)
+  const formatShortDate = (iso: string) => iso
+    ? new Date(`${iso}T00:00:00`).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })
+    : ''
+  const revenueLabel = dateFilter === 'custom'
+    ? (customFrom && customTo ? `Pendapatan ${formatShortDate(customFrom)} – ${formatShortDate(customTo)}` : 'Pendapatan Periode Ini')
+    : { today: 'Pendapatan Hari Ini', week: 'Pendapatan 7 Hari', month: 'Pendapatan Bulan Ini', all: 'Pendapatan Semua' }[dateFilter]
+  const periodSubLabel = dateFilter === 'custom'
+    ? (customFrom && customTo ? `${formatShortDate(customFrom)} – ${formatShortDate(customTo)}` : 'Pilih tanggal')
+    : { today: 'Hari ini', week: '7 hari terakhir', month: 'Bulan ini', all: 'Semua waktu' }[dateFilter]
   const periodRevenue = dateFiltered
     .filter(o => o.status !== 'cancelled')
     .reduce((s, o) => s + o.total_price, 0)
@@ -866,16 +880,31 @@ export default function AdminPage() {
           </div>
 
           {/* Date filter */}
-          <div className="flex gap-1.5 px-4 lg:px-6 py-2 overflow-x-auto scrollbar-hide border-t" style={{ borderColor: C.border }}>
-            {([['today','Hari Ini'],['week','7 Hari'],['month','Bulan Ini'],['all','Semua']] as const).map(([val, label]) => (
+          <div className="flex flex-wrap items-center gap-1.5 px-4 lg:px-6 py-2 border-t" style={{ borderColor: C.border }}>
+            {([['today','Hari Ini'],['week','7 Hari'],['month','Bulan Ini'],['all','Semua'],['custom','Pilih Tanggal']] as const).map(([val, label]) => (
               <button key={val} onClick={() => setDateFilter(val)}
-                className="px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all"
+                className="px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all flex items-center gap-1"
                 style={dateFilter === val
                   ? { background: C.accent, color: '#000' }
                   : { background: 'transparent', color: C.muted, border: `1px solid ${C.border}` }}>
+                {val === 'custom' && <CalendarRange size={11} />}
                 {label}
               </button>
             ))}
+
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-1.5 ml-1">
+                <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                  max={customTo || undefined}
+                  className="px-2 py-1 rounded-lg text-[11px] outline-none"
+                  style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, colorScheme: 'dark' }} />
+                <span className="text-[10px]" style={{ color: C.muted }}>s/d</span>
+                <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                  min={customFrom || undefined}
+                  className="px-2 py-1 rounded-lg text-[11px] outline-none"
+                  style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, colorScheme: 'dark' }} />
+              </div>
+            )}
           </div>
 
           {/* Status filter tabs */}
@@ -924,7 +953,11 @@ export default function AdminPage() {
                 <ClipboardList size={24} style={{ color: C.muted }} />
               </div>
               <p className="text-sm font-medium mb-1" style={{ color: C.text }}>Tidak ada pesanan</p>
-              <p className="text-xs" style={{ color: C.muted }}>Pesanan akan muncul di sini secara realtime</p>
+              <p className="text-xs" style={{ color: C.muted }}>
+                {dateFilter === 'custom' && (!customFrom || !customTo)
+                  ? 'Pilih tanggal awal & akhir dulu di atas'
+                  : 'Pesanan akan muncul di sini secara realtime'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
