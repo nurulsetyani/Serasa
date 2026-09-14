@@ -204,14 +204,19 @@ export default function LaporanPage() {
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
+    // Laporan Penjualan = laporan uang yang BENAR-BENAR masuk. Order yang
+    // masih new/accepted/preparing/ready/served/awaiting_payment belum lunas
+    // (belum dibayar), jadi tidak dihitung sebagai penjualan — cuma status
+    // "paid" (alur baru) dan "delivered" (alur lama) yang berarti sudah lunas.
+    const PAID_STATUSES = ['paid', 'delivered']
     if (period === 'pilih_bulan') {
-      // Ambil SELURUH riwayat order (tanpa batas tanggal) supaya bulan-bulan
+      // Ambil SELURUH riwayat order lunas (tanpa batas tanggal) supaya bulan-bulan
       // lama (Juni, Juli, Agustus, dst) ikut muncul di rekap per bulan.
       const { data } = await supabase
         .from('orders')
         .select('*, order_items(*)')
         .eq('restaurant_id', RESTAURANT_ID)
-        .neq('status', 'cancelled')
+        .in('status', PAID_STATUSES)
         .order('created_at', { ascending: false })
       setOrders((data as Order[]) ?? [])
       setLoading(false)
@@ -222,7 +227,7 @@ export default function LaporanPage() {
       .from('orders')
       .select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
-      .neq('status', 'cancelled')
+      .in('status', PAID_STATUSES)
       .gte('created_at', from.toISOString())
       .lte('created_at', to.toISOString())
       .order('created_at', { ascending: false })
@@ -254,10 +259,12 @@ export default function LaporanPage() {
     : orders
 
   // ── Aggregations ────────────────────────────────────────────
+  // displayOrders di sini isinya cuma order yang sudah lunas (paid/delivered) —
+  // lihat fetchOrders di atas — jadi semua angka di bawah ini murni "penjualan",
+  // bukan pesanan yang masih berjalan/belum dibayar.
   const totalRevenue    = displayOrders.reduce((s, o) => s + o.total_price, 0)
   const totalOrders     = displayOrders.length
   const avgOrder        = totalOrders ? Math.round(totalRevenue / totalOrders) : 0
-  const deliveredCount  = displayOrders.filter(o => o.status === 'delivered' || o.status === 'paid').length
 
   // Platform breakdown
   const platformMap: Record<string, { revenue: number; count: number }> = {}
@@ -415,7 +422,7 @@ export default function LaporanPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { icon: TrendingUp,  label: 'Total Pendapatan',  value: formatPrice(totalRevenue),  sub: `${totalOrders} pesanan`,       color: C.accent  },
-            { icon: ShoppingBag, label: 'Total Order',       value: String(totalOrders),        sub: `${deliveredCount} selesai`,    color: '#6366F1' },
+            { icon: ShoppingBag, label: 'Total Order',       value: String(totalOrders),        sub: 'pesanan lunas',                color: '#6366F1' },
             { icon: Receipt,     label: 'Rata-rata/Order',   value: formatPrice(avgOrder),      sub: 'per transaksi',                color: '#22C55E' },
             { icon: Clock,       label: 'Jam Tersibuk',
               value: peakCount > 0 ? `${peakHour}:00` : '–',

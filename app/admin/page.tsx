@@ -187,7 +187,7 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
       .from('orders')
       .select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
-      .neq('status', 'cancelled')
+      .in('status', ['paid', 'delivered']) // cuma order yang sudah lunas dihitung sebagai penjualan
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         if (!cancelled) { setAllOrders((data as Order[]) ?? []); setLoadingAll(false) }
@@ -217,14 +217,15 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
         return key === selectedMonth
       })
     : orders.filter(o => {
-        if (o.status === 'cancelled') return false
+        if (o.status !== 'paid' && o.status !== 'delivered') return false
         const d = new Date(o.created_at)
         if (period === 'today') return d.toDateString() === now.toDateString()
         return (now.getTime() - d.getTime()) < 7 * 86400000
       })
 
+  // `filtered`/`allOrders` sudah cuma berisi order berstatus paid/delivered
+  // (lihat query di atas), jadi ini murni angka penjualan yang sudah lunas.
   const totalRevenue = filtered.reduce((s, o) => s + o.total_price, 0)
-  const delivered = filtered.filter(o => o.status === 'delivered' || o.status === 'paid').length
   const avgOrder = filtered.length ? totalRevenue / filtered.length : 0
 
   const itemCount: Record<string, { name: string; qty: number }> = {}
@@ -306,8 +307,8 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Total Pesanan', value: filtered.length, sub: `${delivered} selesai` },
-              { label: 'Total Pendapatan', value: formatPrice(totalRevenue), sub: 'semua status' },
+              { label: 'Total Pesanan', value: filtered.length, sub: 'pesanan lunas' },
+              { label: 'Total Pendapatan', value: formatPrice(totalRevenue), sub: 'yang sudah lunas' },
               { label: 'Rata-rata/Pesanan', value: formatPrice(Math.round(avgOrder)), sub: 'per transaksi' },
             ].map(s => (
               <div key={s.label} className="rounded-lg p-3 border text-center" style={{ background: C.bg, borderColor: C.border }}>
@@ -316,23 +317,6 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
                 <p className="text-[10px] mt-0.5" style={{ color: '#555' }}>{s.sub}</p>
               </div>
             ))}
-          </div>
-
-          {/* Status breakdown */}
-          <div>
-            <p className="text-sm font-medium mb-3" style={{ color: C.text }}>Status Pesanan</p>
-            <div className="grid grid-cols-4 gap-2">
-              {(['new', 'preparing', 'ready', 'served', 'paid'] as OrderStatus[]).map(s => {
-                const count = filtered.filter(o => o.status === s).length
-                const cfg = STATUS_CONFIG[s]
-                return (
-                  <div key={s} className="rounded-lg p-3 border" style={{ background: C.bg, borderColor: C.border }}>
-                    <p className="text-xl font-bold" style={{ color: count > 0 ? cfg.dot.replace('bg-', '') : C.muted }}>{count}</p>
-                    <p className="text-[10px] mt-1" style={{ color: C.muted }}>{cfg.label}</p>
-                  </div>
-                )
-              })}
-            </div>
           </div>
 
           {/* Top items */}
@@ -786,8 +770,11 @@ export default function AdminPage() {
   const periodSubLabel = dateFilter === 'custom'
     ? (customFrom && customTo ? `${formatShortDate(customFrom)} – ${formatShortDate(customTo)}` : 'Pilih tanggal')
     : { today: 'Hari ini', week: '7 hari terakhir', month: 'Bulan ini', all: 'Semua waktu' }[dateFilter]
+  // Pendapatan = uang yang SUDAH lunas saja (status paid/delivered). Order yang
+  // masih new/preparing/served/awaiting_payment belum dibayar, jadi belum
+  // dihitung sebagai pendapatan meskipun sudah muncul di daftar pesanan.
   const periodRevenue = dateFiltered
-    .filter(o => o.status !== 'cancelled')
+    .filter(o => o.status === 'paid' || o.status === 'delivered')
     .reduce((s, o) => s + o.total_price, 0)
 
   return (
