@@ -9,6 +9,7 @@ const translations = {
     estTime: 'Est.', minutes: 'mnt', promo: 'Promo', noItems: 'Tidak ada menu',
     search: 'Cari menu...', table: 'Meja',
     featured: 'Unggulan', fullMenu: 'Semua Menu',
+    ourFavorites: 'Menu Favorit Kami', favoritesSubtitle: 'Dipilih langsung oleh chef kami', favoriteBadge: 'Favorit',
     // Categories
     noodles: 'Mie', rice: 'Nasi', main: 'Lauk', drinks: 'Minuman', snacks: 'Camilan',
     signature: 'Signature', mix_rice: 'Nasi Campur', fried_rice: 'Nasi Goreng',
@@ -83,6 +84,7 @@ const translations = {
     estTime: 'Est.', minutes: 'min', promo: 'Promo', noItems: 'No items available',
     search: 'Search menu...', table: 'Table',
     featured: 'Featured', fullMenu: 'Full Menu',
+    ourFavorites: 'Our Favorites', favoritesSubtitle: 'Hand-picked by our chef', favoriteBadge: 'Favorite',
     noodles: 'Noodles', rice: 'Rice', main: 'Mains', drinks: 'Drinks', snacks: 'Snacks',
     signature: 'Signature', mix_rice: 'Mix Rice', fried_rice: 'Fried Rice',
     satay: 'Satay', appetizer: 'Appetizer', meat: 'Meat', chicken: 'Chicken',
@@ -145,6 +147,7 @@ const translations = {
     estTime: 'الوقت', minutes: 'دقيقة', promo: 'عرض', noItems: 'لا توجد عناصر',
     search: 'ابحث في القائمة...', table: 'الطاولة',
     featured: 'مميز', fullMenu: 'القائمة الكاملة',
+    ourFavorites: 'أطباقنا المفضلة', favoritesSubtitle: 'باختيار الشيف بعناية', favoriteBadge: 'مفضل',
     noodles: 'نودلز', rice: 'أرز', main: 'أطباق رئيسية', drinks: 'مشروبات', snacks: 'وجبات خفيفة',
     signature: 'مميز', mix_rice: 'أرز مخلوط', fried_rice: 'أرز مقلي',
     satay: 'ساتيه', appetizer: 'مقبلات', meat: 'لحوم', chicken: 'دجاج',

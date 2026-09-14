@@ -218,117 +218,37 @@ function FoodCard({
   )
 }
 
-// ─── AYCE Promo Banner ────────────────────────────────────
-const AYCE_COPY: Record<Language, { badge: string; title: string; desc: string; cta: string }> = {
-  id: {
-    badge: 'PROMO SPESIAL',
-    title: 'All You Can Eat',
-    desc:  'Pesan sekali, makan sepuasnya. Nikmati semua menu pilihan kami tanpa batas!',
-    cta:   'Lihat Menu',
-  },
-  en: {
-    badge: 'SPECIAL OFFER',
-    title: 'All You Can Eat',
-    desc:  'One price, unlimited plates — enjoy every dish on our menu to your heart\'s content.',
-    cta:   'View Menu',
-  },
-  ar: {
-    badge: 'عرض خاص',
-    title: 'أكل بلا حدود',
-    desc:  'سعر واحد وأكل بلا حدود — استمتع بجميع أطباقنا الشهية كما تشاء.',
-    cta:   'عرض القائمة',
-  },
-}
+// ─── Favorites Slideshow ──────────────────────────────────
+// Satu slideshow tenang & elegan menampilkan menu favorit (is_best_seller) —
+// menggantikan banner promo "Special Offer" / "All You Can Eat" sebelumnya.
+const FAVORITES_AUTOPLAY_MS = 4800
 
-function AYCEBanner({ lang, onBrowse }: { lang: Language; onBrowse: () => void }) {
-  const copy = AYCE_COPY[lang]
-
-  return (
-    <div className="mx-4 mt-4">
-      <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        onClick={onBrowse}
-        className="relative rounded-3xl overflow-hidden cursor-pointer"
-        style={{ boxShadow: '0 6px 28px rgba(255,107,53,0.22)' }}
-      >
-        {/* Background */}
-        <div className="absolute inset-0"
-          style={{ background: 'linear-gradient(135deg, #1A0A00 0%, #3D1500 45%, #FF6B35 100%)' }} />
-
-        {/* Decorative blobs */}
-        <div className="absolute -right-6 -top-6 w-36 h-36 rounded-full"
-          style={{ background: 'rgba(255,107,53,0.12)' }} />
-        <div className="absolute right-8 -bottom-8 w-28 h-28 rounded-full"
-          style={{ background: 'rgba(212,175,55,0.10)' }} />
-
-        {/* Shimmer sweep */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%)' }}
-          animate={{ x: ['-100%', '200%'] }}
-          transition={{ duration: 3.5, repeat: Infinity, ease: 'linear', repeatDelay: 1.2 }}
-        />
-
-        {/* Content */}
-        <div className="relative z-10 px-5 py-5">
-          {/* Badge */}
-          <span className="inline-block text-[9px] font-black tracking-[0.28em] uppercase text-white/45 mb-2">
-            🍽️ {copy.badge}
-          </span>
-
-          {/* Title */}
-          <h3 className="text-white font-black text-[22px] leading-tight mb-1.5"
-            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.35)' }}>
-            {copy.title}
-          </h3>
-
-          {/* Description */}
-          <p className="text-white/65 text-[12px] leading-relaxed mb-4 max-w-[260px]">
-            {copy.desc}
-          </p>
-
-          {/* CTA */}
-          <motion.span
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center gap-1.5 text-[11px] font-black px-4 py-2 rounded-full"
-            style={{ background: PRIMARY, color: '#fff', boxShadow: '0 4px 14px rgba(255,107,53,0.45)' }}
-          >
-            {copy.cta} →
-          </motion.span>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-// ─── Featured Slideshow ───────────────────────────────────
-function FeaturedSlideshow({
-  items, lang, tableNumber, onAdd, cartItems,
+function FavoritesSlideshow({
+  items, lang, tableNumber, onAdd, cartItems, t,
 }: {
   items: MenuItem[]; lang: Language; tableNumber: string
   onAdd: (item: MenuItem) => void; cartItems: { id: string; qty: number }[]
+  t: (key: TranslationKey) => string
 }) {
   const router = useRouter()
-  const [idx, setIdx]     = useState(0)
-  const [dir, setDir]     = useState(1)
+  const [idx, setIdx]       = useState(0)
+  const [tick, setTick]     = useState(0) // ganti tiap transisi, biar progress bar restart dari nol
   const [paused, setPaused] = useState(false)
 
   useEffect(() => {
     if (paused || items.length < 2) return
     const id = setInterval(() => {
-      setDir(1)
       setIdx(i => (i + 1) % items.length)
-    }, 3500)
+      setTick(n => n + 1)
+    }, FAVORITES_AUTOPLAY_MS)
     return () => clearInterval(id)
   }, [items.length, paused])
 
   function goTo(next: number) {
-    setDir(next > idx ? 1 : -1)
     setIdx(next)
+    setTick(n => n + 1)
     setPaused(true)
-    setTimeout(() => setPaused(false), 5000)
+    setTimeout(() => setPaused(false), FAVORITES_AUTOPLAY_MS + 2000)
   }
 
   if (!items.length) return null
@@ -339,87 +259,87 @@ function FeaturedSlideshow({
   const inCart = cartItems.find(c => c.id === item.id)?.qty ?? 0
 
   return (
-    <div className="mx-4 mt-4">
+    <div className="mx-4">
       {/* Slide container */}
-      <div className="relative h-52 rounded-3xl overflow-hidden cursor-pointer"
-        style={{ boxShadow: '0 6px 28px rgba(0,0,0,0.13)' }}
+      <div className="relative h-56 rounded-3xl overflow-hidden cursor-pointer"
+        style={{ boxShadow: '0 10px 34px rgba(0,0,0,0.18)' }}
         onClick={() => router.push(`/menu/${item.id}?table=${tableNumber}`)}>
 
-        <AnimatePresence initial={false} custom={dir}>
+        <AnimatePresence>
           <motion.div key={item.id}
-            custom={dir}
-            variants={{
-              enter:  (d: number) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
-              center: { x: 0, opacity: 1 },
-              exit:   (d: number) => ({ x: d > 0 ? '-100%' : '100%', opacity: 0 }),
-            }}
-            initial="enter" animate="center" exit="exit"
-            transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0"
           >
-            <Image
-              src={item.image || '/hero-food.png'} alt={name} fill
-              className="object-cover" sizes="100vw" priority={idx === 0}
-            />
-            {/* Gradient */}
+            {/* Ken Burns — foto perlahan membesar selama slide tampil */}
+            <motion.div
+              key={`zoom-${item.id}-${tick}`}
+              initial={{ scale: 1 }} animate={{ scale: 1.08 }}
+              transition={{ duration: FAVORITES_AUTOPLAY_MS / 1000 + 1, ease: 'easeOut' }}
+              className="absolute inset-0"
+            >
+              <Image
+                src={item.image || '/hero-food.png'} alt={name} fill
+                className="object-cover" sizes="100vw" priority={idx === 0}
+              />
+            </motion.div>
             <div className="absolute inset-0"
-              style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 55%, transparent 100%)' }} />
+              style={{ background: 'linear-gradient(to top, rgba(10,7,5,0.88) 0%, rgba(10,7,5,0.18) 52%, transparent 80%)' }} />
           </motion.div>
         </AnimatePresence>
 
-        {/* Badges */}
-        <div className="absolute left-4 top-3.5 flex gap-2 z-10">
-          {item.is_best_seller && (
-            <span className="flex items-center gap-1 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md"
-              style={{ background: PRIMARY }}>
-              🔥 {lang === 'ar' ? 'الأكثر مبيعاً' : lang === 'id' ? 'TERLARIS' : 'BEST SELLER'}
-            </span>
-          )}
-        </div>
+        {/* Favorite mark */}
+        <motion.div key={`badge-${item.id}`}
+          initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="absolute left-4 top-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+          style={{ background: 'rgba(10,7,5,0.4)', backdropFilter: 'blur(6px)', border: `1px solid ${GOLD}55` }}>
+          <Star size={11} fill={GOLD} color={GOLD} />
+          <span className="text-[10px] font-semibold tracking-wide" style={{ color: GOLD }}>{t('favoriteBadge')}</span>
+        </motion.div>
 
         {/* Content */}
-        <div className="absolute bottom-0 left-0 p-4 z-10">
-          {hasDiscount && (
-            <motion.div
-              animate={{ scale: [1, 1.04, 1] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-              className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
-              style={{ background: 'rgba(239,68,68,0.9)', backdropFilter: 'blur(4px)' }}>
-              <span className="text-white font-black text-sm">💰 {formatPrice(finalPrice)}</span>
-              <span className="text-white/65 text-xs line-through">{formatPrice(item.price)}</span>
-              <span className="text-white font-black text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
-                -{item.discount_percent}%
-              </span>
-            </motion.div>
-          )}
-          <p className="text-white font-black text-xl leading-tight line-clamp-1 mb-1">{name}</p>
-          {!hasDiscount && (
+        <motion.div key={`content-${item.id}`}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute bottom-0 left-0 right-0 p-5 z-10">
+          <p className="text-white font-black text-2xl leading-tight line-clamp-1 mb-1.5"
+            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}>{name}</p>
+          <div className="flex items-center gap-2">
             <span className="text-white font-black text-base">{formatPrice(finalPrice)}</span>
-          )}
-        </div>
+            {hasDiscount && (
+              <span className="text-white/50 text-xs line-through">{formatPrice(item.price)}</span>
+            )}
+          </div>
+        </motion.div>
 
         {/* Add button */}
         <motion.button
           whileTap={{ scale: 0.88 }}
           onClick={e => { e.stopPropagation(); onAdd(item) }}
-          className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 text-white text-sm font-black px-3.5 py-2.5 rounded-full"
-          style={{ background: PRIMARY, boxShadow: `0 4px 14px rgba(255,107,53,0.45)` }}>
+          className="absolute bottom-5 right-5 z-10 flex items-center gap-1.5 text-white text-sm font-black px-4 py-2.5 rounded-full"
+          style={{ background: PRIMARY, boxShadow: `0 4px 16px rgba(255,107,53,0.5)` }}>
           <Plus size={14} />
-          {inCart > 0 ? `+${inCart}` : (lang === 'ar' ? 'أضف' : lang === 'id' ? 'Tambah' : 'Add')}
+          {inCart > 0 ? `+${inCart}` : t('addToCart')}
         </motion.button>
       </div>
 
-      {/* Dots */}
+      {/* Progress tabs — pengganti dot, nunjukin ritme autoplay */}
       {items.length > 1 && (
-        <div className="flex justify-center gap-1.5 mt-2.5">
+        <div className="flex gap-1.5 mt-3">
           {items.map((_, i) => (
             <button key={i} onClick={() => goTo(i)}
-              className="rounded-full transition-all duration-300"
-              style={{
-                width: i === idx ? 20 : 6,
-                height: 6,
-                background: i === idx ? PRIMARY : '#D1CAC4',
-              }} />
+              className="flex-1 h-[3px] rounded-full overflow-hidden"
+              style={{ background: 'var(--t-border)' }}>
+              {i === idx ? (
+                <motion.div key={`fill-${i}-${tick}`}
+                  initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
+                  style={{ height: '100%', width: '100%', transformOrigin: 'left', background: GOLD }}
+                  transition={{ duration: FAVORITES_AUTOPLAY_MS / 1000, ease: 'linear' }} />
+              ) : (
+                <div style={{ height: '100%', width: i < idx ? '100%' : '0%', background: `${GOLD}80` }} />
+              )}
+            </button>
           ))}
         </div>
       )}
@@ -727,14 +647,8 @@ export default function MenuPage() {
       return bScore - aScore
     })
 
-  // Featured items for slideshow: AYCE dulu, lalu diskon, lalu best seller
-  const featured = [
-    ...menu.filter(i => i.category === 'all_you_can_eat'),
-    ...menu.filter(i => (i.discount_percent ?? 0) > 0 && i.category !== 'all_you_can_eat'),
-    ...menu.filter(i => i.is_best_seller && !((i.discount_percent ?? 0) > 0) && i.category !== 'all_you_can_eat'),
-  ].slice(0, 8)
-
-  const hasAYCE = menu.some(i => i.category === 'all_you_can_eat')
+  // Menu favorit untuk slideshow (ditandai is_best_seller lewat Kelola Menu)
+  const favorites = menu.filter(i => i.is_best_seller).slice(0, 8)
 
   const total = calculateCartTotal(cartItems)
 
@@ -840,18 +754,21 @@ export default function MenuPage() {
         </div>
       </header>
 
-      {/* ═══════ AYCE PROMO BANNER ═════════════════════════ */}
-      {!search && activeCategory === 'all' && hasAYCE && (
-        <AYCEBanner lang={lang} onBrowse={() => setActiveCategory('all_you_can_eat')} />
-      )}
-
-      {/* ═══════ FEATURED SLIDESHOW ════════════════════════ */}
-      {!search && activeCategory === 'all' && featured.length > 0 && (
-        <FeaturedSlideshow
-          items={featured} lang={lang} tableNumber={tableNumber}
-          onAdd={handleAdd}
-          cartItems={cartItems.map(i => ({ id: i.id, qty: i.qty }))}
-        />
+      {/* ═══════ MENU FAVORIT — SLIDESHOW ══════════════════ */}
+      {!search && activeCategory === 'all' && favorites.length > 0 && (
+        <div className="mt-4">
+          <div className="px-4 mb-3">
+            <h2 className="font-display italic text-[21px] leading-tight" style={{ color: 'var(--t-text)' }}>
+              ✦ {t('ourFavorites')}
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--t-muted)' }}>{t('favoritesSubtitle')}</p>
+          </div>
+          <FavoritesSlideshow
+            items={favorites} lang={lang} tableNumber={tableNumber}
+            onAdd={handleAdd} t={t}
+            cartItems={cartItems.map(i => ({ id: i.id, qty: i.qty }))}
+          />
+        </div>
       )}
 
       {/* ═══════ GRID LABEL ════════════════════════════════ */}
