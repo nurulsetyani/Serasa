@@ -681,16 +681,37 @@ export default function AdminPage() {
   const [newOrderId, setNewOrderId] = useState<string | null>(null)
   const [showReport, setShowReport] = useState(false)
 
+  // Date filter — dipindah ke atas fetchOrders karena query-nya sekarang
+  // mengikuti filter ini langsung dari database (bukan cuma 100 order
+  // terbaru), supaya "Semua" beneran nampilin seluruh riwayat termasuk
+  // bulan lama (Juni, Juli, Agustus, dst).
+  const [dateFilter, setDateFilter] = useState<'today'|'week'|'month'|'all'>('today')
+
   const fetchOrders = useCallback(async () => {
     setLoading(true)
     if (IS_MOCK_MODE) { setOrders(MOCK_ORDERS); setLoading(false); return }
-    const { data } = await supabase
+    let query = supabase
       .from('orders').select('*, order_items(*)')
       .eq('restaurant_id', RESTAURANT_ID)
-      .order('created_at', { ascending: false }).limit(100)
+      .order('created_at', { ascending: false })
+
+    const now = new Date()
+    if (dateFilter === 'today') {
+      const from = new Date(now); from.setHours(0, 0, 0, 0)
+      query = query.gte('created_at', from.toISOString())
+    } else if (dateFilter === 'week') {
+      const from = new Date(now); from.setDate(from.getDate() - 6); from.setHours(0, 0, 0, 0)
+      query = query.gte('created_at', from.toISOString())
+    } else if (dateFilter === 'month') {
+      const from = new Date(now); from.setDate(1); from.setHours(0, 0, 0, 0)
+      query = query.gte('created_at', from.toISOString())
+    }
+    // dateFilter === 'all' → tanpa batas tanggal, ambil seluruh riwayat
+
+    const { data } = await query
     if (data) setOrders(data as Order[])
     setLoading(false)
-  }, [])
+  }, [dateFilter])
 
   useEffect(() => {
     fetchOrders()
@@ -731,16 +752,9 @@ export default function AdminPage() {
     setUpdating(null)
   }
 
-  // Date filter
-  const [dateFilter, setDateFilter] = useState<'today'|'week'|'month'|'all'>('today')
-  const now = new Date()
-  const dateFiltered = orders.filter(o => {
-    const d = new Date(o.created_at)
-    if (dateFilter === 'today') return d.toDateString() === now.toDateString()
-    if (dateFilter === 'week')  return (now.getTime() - d.getTime()) < 7 * 86400000
-    if (dateFilter === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-    return true
-  })
+  // `orders` sudah difilter sesuai `dateFilter` langsung dari query database
+  // (lihat fetchOrders di atas), jadi di sini tidak perlu filter tanggal lagi.
+  const dateFiltered = orders
 
   const filtered = (filter === 'all' ? dateFiltered : dateFiltered.filter(o => o.status === filter))
   const counts = {
@@ -749,10 +763,17 @@ export default function AdminPage() {
     pending:   dateFiltered.filter(o => o.status === 'pending').length,
     cooking:   dateFiltered.filter(o => o.status === 'cooking').length,
     ready:     dateFiltered.filter(o => o.status === 'ready').length,
-    delivered: dateFiltered.filter(o => o.status === 'delivered').length,
+    delivered: dateFiltered.filter(o => o.status === 'delivered' || o.status === 'paid').length,
   }
-  const todayRevenue = orders
-    .filter(o => o.status !== 'cancelled' && new Date(o.created_at).toDateString() === new Date().toDateString())
+  // Pendapatan & label sub mengikuti filter tanggal yang aktif (Hari Ini / 7 Hari / Bulan Ini / Semua)
+  const revenueLabel = {
+    today: 'Pendapatan Hari Ini', week: 'Pendapatan 7 Hari', month: 'Pendapatan Bulan Ini', all: 'Pendapatan Semua',
+  }[dateFilter]
+  const periodSubLabel = {
+    today: 'Hari ini', week: '7 hari terakhir', month: 'Bulan ini', all: 'Semua waktu',
+  }[dateFilter]
+  const periodRevenue = dateFiltered
+    .filter(o => o.status !== 'cancelled')
     .reduce((s, o) => s + o.total_price, 0)
 
   return (
@@ -881,12 +902,12 @@ export default function AdminPage() {
         <main className="px-4 lg:px-6 py-5 space-y-5 pb-10">
           {/* Stat cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatCard icon={ShoppingBag}    label="Total Pesanan"     value={counts.all}               color={C.accent} />
-            <StatCard icon={TrendingUp}     label="Pendapatan Hari Ini" value={formatPrice(todayRevenue)} color={C.success} />
-            <StatCard icon={AlertCircle}    label="Belum Konfirmasi" value={counts.new}                color={C.warning}
+            <StatCard icon={ShoppingBag}    label="Total Pesanan"    value={counts.all}                  color={C.accent}  sub={periodSubLabel} />
+            <StatCard icon={TrendingUp}     label={revenueLabel}     value={formatPrice(periodRevenue)}  color={C.success} />
+            <StatCard icon={AlertCircle}    label="Belum Konfirmasi" value={counts.new}                  color={C.warning}
               sub={counts.new > 0 ? 'Tunggu kasir' : 'Semua sudah diproses'} />
-            <StatCard icon={CheckCircle2}   label="Selesai"          value={counts.delivered}          color="#6366F1"
-              sub="Hari ini" />
+            <StatCard icon={CheckCircle2}   label="Selesai"          value={counts.delivered}            color="#6366F1"
+              sub={periodSubLabel} />
           </div>
 
           {/* Orders grid */}
