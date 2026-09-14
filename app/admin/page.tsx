@@ -170,16 +170,61 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
   const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
   const [period, setPeriod] = useState<'today' | 'week' | 'month'>('today')
   const now = new Date()
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthKey)
 
-  const filtered = orders.filter(o => {
-    const d = new Date(o.created_at)
-    if (period === 'today') return d.toDateString() === now.toDateString()
-    if (period === 'week') return (now.getTime() - d.getTime()) < 7 * 86400000
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-  })
+  // Riwayat lengkap semua order (semua bulan, tanpa dibatasi 100 terbaru) —
+  // di-fetch langsung dari database saat tab "Bulan" dibuka, supaya bulan-bulan
+  // lama (Juni, Juli, Agustus, dst) ikut muncul, bukan cuma order terbaru.
+  const [allOrders, setAllOrders] = useState<Order[]>([])
+  const [loadingAll, setLoadingAll] = useState(false)
+
+  useEffect(() => {
+    if (period !== 'month') return
+    let cancelled = false
+    setLoadingAll(true)
+    supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .neq('status', 'cancelled')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (!cancelled) { setAllOrders((data as Order[]) ?? []); setLoadingAll(false) }
+      })
+    return () => { cancelled = true }
+  }, [period])
+
+  // Rekap per bulan dari riwayat lengkap
+  const monthlyRecap = (() => {
+    const map: Record<string, { key: string; label: string; revenue: number; count: number }> = {}
+    allOrders.forEach(o => {
+      const d = new Date(o.created_at)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      if (!map[key]) {
+        map[key] = { key, label: d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }), revenue: 0, count: 0 }
+      }
+      map[key].revenue += o.total_price
+      map[key].count++
+    })
+    return Object.values(map).sort((a, b) => b.key.localeCompare(a.key))
+  })()
+
+  const filtered = period === 'month'
+    ? allOrders.filter(o => {
+        const d = new Date(o.created_at)
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        return key === selectedMonth
+      })
+    : orders.filter(o => {
+        if (o.status === 'cancelled') return false
+        const d = new Date(o.created_at)
+        if (period === 'today') return d.toDateString() === now.toDateString()
+        return (now.getTime() - d.getTime()) < 7 * 86400000
+      })
 
   const totalRevenue = filtered.reduce((s, o) => s + o.total_price, 0)
-  const delivered = filtered.filter(o => o.status === 'delivered').length
+  const delivered = filtered.filter(o => o.status === 'delivered' || o.status === 'paid').length
   const avgOrder = filtered.length ? totalRevenue / filtered.length : 0
 
   const itemCount: Record<string, { name: string; qty: number }> = {}
@@ -190,7 +235,9 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
     })
   })
   const topItems = Object.values(itemCount).sort((a, b) => b.qty - a.qty).slice(0, 5)
-  const periodLabel = { today: 'Hari Ini', week: '7 Hari Terakhir', month: 'Bulan Ini' }[period]
+  const periodLabel = period === 'month'
+    ? (monthlyRecap.find(m => m.key === selectedMonth)?.label ?? 'Bulan')
+    : { today: 'Hari Ini', week: '7 Hari Terakhir' }[period]
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center overflow-auto p-4">
@@ -227,6 +274,35 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
             <p className="text-xs mt-0.5" style={{ color: C.muted }}>Dicetak: {today}</p>
           </div>
 
+          {/* Rekap per bulan — pilih bulan (Juni, Juli, Agustus, dst) */}
+          {period === 'month' && (
+            <div className="no-print">
+              <p className="text-sm font-medium mb-3" style={{ color: C.text }}>Rekap Per Bulan — Pilih Bulan</p>
+              {loadingAll ? (
+                <div className="flex gap-2">{[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-14 flex-1 rounded-lg animate-pulse" style={{ background: C.bg }} />
+                ))}</div>
+              ) : monthlyRecap.length === 0 ? (
+                <p className="text-sm" style={{ color: C.muted }}>Belum ada data pesanan</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {monthlyRecap.map(m => (
+                    <button key={m.key} onClick={() => setSelectedMonth(m.key)}
+                      className="px-3 py-2 rounded-lg border text-left transition-colors"
+                      style={selectedMonth === m.key
+                        ? { background: C.accent, borderColor: C.accent, color: '#000' }
+                        : { background: C.bg, borderColor: C.border, color: C.text }}>
+                      <p className="text-xs font-semibold capitalize">{m.label}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: selectedMonth === m.key ? 'rgba(0,0,0,0.6)' : C.muted }}>
+                        {m.count} pesanan · {formatPrice(m.revenue)}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -246,7 +322,7 @@ function ReportModal({ orders, onClose }: { orders: Order[]; onClose: () => void
           <div>
             <p className="text-sm font-medium mb-3" style={{ color: C.text }}>Status Pesanan</p>
             <div className="grid grid-cols-4 gap-2">
-              {(['new', 'pending', 'cooking', 'ready', 'delivered'] as OrderStatus[]).map(s => {
+              {(['new', 'preparing', 'ready', 'served', 'paid'] as OrderStatus[]).map(s => {
                 const count = filtered.filter(o => o.status === s).length
                 const cfg = STATUS_CONFIG[s]
                 return (
@@ -676,7 +752,7 @@ export default function AdminPage() {
     delivered: dateFiltered.filter(o => o.status === 'delivered').length,
   }
   const todayRevenue = orders
-    .filter(o => o.status === 'delivered' && new Date(o.created_at).toDateString() === new Date().toDateString())
+    .filter(o => o.status !== 'cancelled' && new Date(o.created_at).toDateString() === new Date().toDateString())
     .reduce((s, o) => s + o.total_price, 0)
 
   return (
